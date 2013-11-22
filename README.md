@@ -9,11 +9,9 @@ Contributor: Dominik Schrempf
 For a reference, please see and cite: De Maio, Schlotterer, Kosiol
 (MBE, 2013), and/or: De Maio, Kosiol (in preparation).  You can use
 this software for non-commercial purposes but please always
-acknowledge the authors.  For suggestions, doubts, bugs, etc., please
-contact nicola.de.maio.85@gmail.com.
+acknowledge the authors.
 
-* auto-gen TOC:
-{:toc}
+Feel free to post any suggestions, doubts and bugs.
 
 Installation
 ====
