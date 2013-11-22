@@ -17,8 +17,8 @@ Installation
 ====
 PoMo heavily relies on HYPHY. To build HYPHY, extract the
 `HYPHY.tar.gz` to a folder and do
-`cd path_to_HYPHY/`
-`cmake ./`
+`cd path_to_HYPHY/`  
+`cmake ./`  
 `make MP2`
 
 Running PoMo
