@@ -3,8 +3,8 @@ PoMo
 Implementation of a polymorphism aware phylogenetic model using HYPHY.
 
 PoMo version 1.0  
-Created by: Nicola De Maio.  
-Contributors: Dominik Schrempf
+Created by: Nicola De Maio  
+Contributor: Dominik Schrempf
 
 For a reference, please see and cite: De Maio, Schlotterer, Kosiol
 (MBE, 2013), and/or: De Maio, Kosiol (in preparation).  You can use
@@ -12,7 +12,10 @@ this software for non-commercial purposes but please always
 acknowledge the authors.  For suggestions, doubts, bugs, etc., please
 contact nicola.de.maio.85@gmail.com.
 
-INSTALLATION
+* auto-gen TOC:
+{:toc}
+
+Installation
 ====
 PoMo heavily relies on HYPHY. To build HYPHY, extract the
 `HYPHY.tar.gz` to a folder and do
@@ -20,15 +23,19 @@ PoMo heavily relies on HYPHY. To build HYPHY, extract the
 cmake ./  
 make MP2`
 
-RUNNING PoMo
+Running PoMo
 ====
-Type from terminal:
+To run PoMo, type from terminal:
 
-`python path_to_PoMo/PoMo/PoMo.py  path_to_data/Data.txt`
+`python path_to_PoMo/PoMo.py  path_to_data/Data.txt`
 
-To run PoMo. Data must either be in Fasta format, or in allele count
-format (see example files).  There are some further optional
-parameters that can be specified from command line:
+Data must either be in Fasta format, or in allele count format (see
+example files).
+
+Options
+====
+There are some further optional parameters that can
+be specified from command line:
 
 `-m 0` Turns off the molecular clock.
 
@@ -48,7 +55,7 @@ called "Data_PoMo_output.txt", and contains the log-likelihood, the
 parameters estimated, and the species tree estimated. The output will
 be placed in the same folder that contains your data.
 
-NOTES
+Notes
 ====
 PoMo works best if data about within-population variation is
 provided. So, in case you do only have a single sample per species,
