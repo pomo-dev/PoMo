@@ -35,6 +35,8 @@ Options
 There are some further optional parameters that can
 be specified from command line:
 
+`--help` Prints help.
+
 `-m 0` Turns off the molecular clock.
 
 `-v` Turns on verbosity.
