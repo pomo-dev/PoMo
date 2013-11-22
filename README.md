@@ -23,11 +23,11 @@ PoMo heavily relies on HYPHY. To build HYPHY, extract the
 
 Running PoMo
 ====
-To run PoMo, type from terminal:
+To run PoMo, execute
 
 `python path_to_PoMo/PoMo.py  path_to_data/Data.txt`
 
-Data must either be in Fasta format, or in allele count format (see
+The data file must either be in Fasta format, or in allele count format (see
 example files).
 
 Options
