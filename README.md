@@ -1,16 +1,17 @@
 PoMo
 ====
 
-Implementation of a polymorphism aware phylogenetic model using HYPHY
+Implementation of a polymorphism aware phylogenetic model using HYPHY.
 
-PoMo version 1.0
-Created by Nicola De Maio.
+PoMo version 1.0  
+Created by: Nicola De Maio.  
+Contributors: Dominik Schrempf
 
 For a reference, please see and cite: De Maio, Schlotterer, Kosiol
 (MBE, 2013), and/or: De Maio, Kosiol (in preparation).  You can use
-this software for non-commercial purposes, but please, always
+this software for non-commercial purposes but please always
 acknowledge the authors.  For suggestions, doubts, bugs, etc., please
-contact nicola.de.maio.85@gmail.com
+contact nicola.de.maio.85@gmail.com.
 
 INSTALLATION
 ====
@@ -30,9 +31,9 @@ To run PoMo. Data must either be in Fasta format, or in allele count
 format (see example files).  There are some further optional
 parameters that can be specified from command line:
 
-`-m 0`    Turns off the molecular clock.
+`-m 0` Turns off the molecular clock.
 
-`-v`      Turns on verbosity.
+`-v` Turns on verbosity.
 
 `-d 0.90` At least 90% of the sites are kept when downsampling (or any
 other proportion if you specify a different one between 0 and
@@ -47,10 +48,6 @@ If your dataset is called "Data.txt" the final output of PoMo will be
 called "Data_PoMo_output.txt", and contains the log-likelihood, the
 parameters estimated, and the species tree estimated. The output will
 be placed in the same folder that contains your data.
-
-
-
-
 
 NOTES
 ====
