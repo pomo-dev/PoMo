@@ -25,15 +25,15 @@ Running PoMo
 ====
 To run PoMo, execute
 
-`python path_to_PoMo/PoMo.py  path_to_data/Data.txt`
+`python path_to_PoMo/PoMo.py  path_to_HYPHY/HYPHYMP path_to_data/data.txt`
 
-The data file must either be in Fasta format, or in allele count format (see
-example files).
+The data file must either be in fasta format, or in allele count format (see
+example files in `./data/`).
 
 Options
 ====
 There are some further optional parameters that can
-be specified from command line:
+be specified from the command line:
 
 `--help` Prints help.
 
@@ -53,7 +53,7 @@ threshold. The default threshold is 0.66.
 If your dataset is called "Data.txt" the final output of PoMo will be
 called "Data_PoMo_output.txt", and contains the log-likelihood, the
 parameters estimated, and the species tree estimated. The output will
-be placed in the same folder that contains your data.
+be placed in the folder that you run PoMo from.
 
 Notes
 ====

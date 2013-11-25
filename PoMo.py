@@ -1,15 +1,18 @@
-#PoMo 10 script
+# PoMo 10 script
 import sys
 import os
 import random
 import argparse
 import re
-##from time import clock, time
 from libPoMo.main import probability_matrix, a, dsRatio
 
 
-#parse command line arguments
+# parse command line arguments
 parser = argparse.ArgumentParser(description="PoMo10 script")
+
+parser.add_argument('hyphy_bin', help="""Absolute path of the
+HYPHY binary used to maximize the likelihood.""")
+
 parser.add_argument('file', help="""Name of the fasta file containing
 the alignment. Each individual's name must be species_n where
 \"species\" is the name of its species, without underscores, and \"n\"
@@ -55,28 +58,44 @@ elif args.molecular_clock == 0:
 verbosity = args.verbose
 thresh = args.ds_ratio
 
-#define paths to files
+# define paths to files
 in_name = str(args.file)
 infile = open(in_name)
 in_name_no_extension = in_name.rsplit(".", maxsplit=1)[0]
-out_name = in_name_no_extension + "_PoMo_output.txt"
-PoModata_name = in_name_no_extension + "_PoMo_HyPhy.txt"
-PoModata_name_cons = in_name_no_extension + "_consensus_HyPhy.txt"
+in_basename_no_extension = os.path.basename(in_name)
+in_basename_no_extension = in_basename_no_extension.rsplit(".", maxsplit=1)[0]
+out_name = in_basename_no_extension + "_PoMo_output.txt"
+PoModata_name = in_basename_no_extension + "_PoMo_HyPhy.txt"
+PoModata_name_cons = in_basename_no_extension + "_consensus_HyPhy.txt"
 
-#create file descriptors
+# create file descriptors
 PoModatafile = open(PoModata_name, "w")
 PoModatafile_cons = open(PoModata_name_cons, "w")
 
-path = os.path.abspath(os.path.dirname(in_name))
-path = path+"/"
+# get path of data file
+path_data = os.path.abspath(os.path.dirname(in_name))
+path_data = path_data + "/"
 
+# get currnt working directory
+path_cwd = os.getcwd()
+path_cwd = path_cwd + "/"
+
+# get path of PoMo.py
 try:
     path_PoMo = os.path.abspath(os.path.dirname(__file__))
 except:
     path_PoMo = os.path.abspath(os.path.dirname(sys.argv[0]))
-path_PoMo = path_PoMo+"/"
+path_PoMo = path_PoMo + "/"
 
-#define PoMo10 states
+# get path of HyPhy
+HyPhy_bin = str(args.hyphy_bin)
+path_HyPhy = os.path.abspath(os.path.dirname(HyPhy_bin))
+path_HyPhy = path_HyPhy + "/"
+
+# define path of batchfiles
+path_bf = path_PoMo + "batchfiles/"
+
+# define PoMo10 states
 codons = ["aaa", "aac", "aag", "aat", "aca", "acc", "acg", "act",
           "aga", "agc", "agg", "agt", "ata", "atc", "atg", "att", "caa",
           "cac", "cag", "cat", "cca", "ccc", "ccg", "cct", "cga", "cgc",
@@ -87,13 +106,13 @@ codons = ["aaa", "aac", "aag", "aat", "aca", "acc", "acg", "act",
 nucs = ["A", "C", "G", "T"]
 N = 10
 
-#number of species
+# number of species
 n_species = 0
-#list with species names
+# list with species names
 sp_names = []
-#list with sample size of each species
+# list with sample size of each species
 sp_samples = []
-#list with actual data
+# list with actual data
 sp_data = []
 
 line = infile.readline()
@@ -105,7 +124,7 @@ while line[0] != ">":
 
 VCF = 0
 if line == "":
-    #input is in vcf format
+    # input is in vcf format
     infile.close()
     infile = open(in_name)
     while len(line) > 0 and line[0] == "#":
@@ -148,7 +167,7 @@ if line == "":
     leng = len(sp_data[0])
 
 
-#In case of Fasta format:
+# In case of Fasta format:
 while line != "":
     if line[0] == ">":
         linelist = line.split()
@@ -198,7 +217,7 @@ while line != "":
     if len(line) > 0 and line[0] != ">":
         line = infile.readline()
 
-#Put fasta data in counts format
+# Put fasta data in counts format
 DNA = ["A", "C", "G", "T"]
 DNA2 = ["a", "c", "g", "t"]
 if VCF == 0:
@@ -225,7 +244,7 @@ if VCF == 0:
             p = count
             sp_data[l].append(p)
 
-#Sites where some species have coverage 0 are removed
+# Sites where some species have coverage 0 are removed
 to_remove = []
 for i in range(leng):
     total = 1
@@ -244,7 +263,7 @@ for i in range(len(to_remove)):
         rem = sp_data[s].pop(to_remove[i]-summ)
     summ += 1
 
-#Now, downsample if necessary
+# Now, downsample if necessary
 print("Doing downsampling\n")
 sp_samples2 = []
 for i in range(n_species):
@@ -293,7 +312,7 @@ while float(covered)/leng < thresh:
 
 sp_samples = sp_samples2
 
-#Sites where some species have not sufficient coverage are removed
+# Sites where some species have not sufficient coverage are removed
 to_remove = []
 for i in range(len(sp_data[0])):
     total = 1
@@ -339,14 +358,15 @@ if n_species < 2:
     print("Error: cannot calculate a tree with fewer than 2 species.")
     exit()
 
-#default options
+# default options
 sampling = 1
 onlysampling = 1
 mbin = 0
 
-#Writing the HyPhy batch file for PoMo
-newsamfile = open(path+"PoMo10_root_only_sampling_preliminary_used.bf", "w")
-samfile = open(path_PoMo+"PoMo10_root_only_sampling_preliminary.bf")
+# Writing the HyPhy batch file for PoMo
+newsamfile = open("PoMo10_root_only_sampling_preliminary_used.bf",
+                  "w")
+samfile = open(path_bf + "PoMo10_root_only_sampling_preliminary.bf")
 line = "\n"
 while line != "/*Find Root*/\n":
     line = samfile.readline()
@@ -380,9 +400,9 @@ samfile.close()
 newsamfile.close()
 
 
-#Writing the HyPhy batch file for PoMo with NNI
-newsamfile = open(path+"PoMo10_NNI_sampling_preliminary_used.bf", "w")
-samfile = open(path_PoMo+"PoMo10_NNI_sampling.bf")
+# Writing the HyPhy batch file for PoMo with NNI
+newsamfile = open("PoMo10_NNI_sampling_preliminary_used.bf", "w")
+samfile = open(path_bf + "PoMo10_NNI_sampling.bf")
 line = "\n"
 while line != "/*pre-ML*/\n":
     line = samfile.readline()
@@ -415,7 +435,7 @@ while line != "":
 samfile.close()
 newsamfile.close()
 
-#creating HyPhy input file
+# creating HyPhy input file
 for l in range(n_species):
     PoModatafile.write(">s"+str(l+1)+"\n")
     PoModatafile_cons.write(">s"+str(l+1)+"\n")
@@ -485,19 +505,19 @@ PoModatafile.close()
 PoModatafile_cons.close()
 
 print("\nRunning 1: NJ consensus\n")
-#Run HyPhy concatenation, NJ and root positioning, on consensus data
-HPfile = open(path_PoMo+"Nuc_NJandRoot.bf")
-HPfile2 = open(path+"Nuc_NJandRoot_used.bf", "w")
+# Run HyPhy concatenation, NJ and root positioning, on consensus data
+HPfile = open(path_bf + "Nuc_NJandRoot.bf")
+HPfile2 = open("Nuc_NJandRoot_used.bf", "w")
 line = HPfile.readline()
 line = HPfile.readline()
-HPfile2.write("inp=\""+PoModata_name_cons+"\";\n")
-HPfile2.write("out2=\"" + in_name.split(".")[0] +
+HPfile2.write("inp=\"" + PoModata_name_cons + "\";\n")
+HPfile2.write("out2=\"" + in_basename_no_extension +
               "_consensus_NJandRoot_out.txt\";\n")
 while line != "":
     line = HPfile.readline()
     linelist = line.split()
     if len(linelist) > 0 and linelist[0] == "ExecuteAFile":
-        HPfile2.write(line.replace("pairwise", path_PoMo + "pairwise"))
+        HPfile2.write(line.replace("pairwise", path_bf + "pairwise"))
     elif len(linelist) > 1 and linelist[0] == "fprintf" \
          and linelist[1] == "(stdout," and verbosity is None:  # noqa
         HPfile2.write("/*" + line.replace("\n", "") + "*/\n")
@@ -505,9 +525,9 @@ while line != "":
         HPfile2.write(line)
 HPfile2.close()
 HPfile.close()
-os.system("cd "+path_PoMo+"\n"+"./HYPHYMP "+path+"Nuc_NJandRoot_used.bf \n")
+os.system(HyPhy_bin + " Nuc_NJandRoot_used.bf")
 
-file = open(in_name.split(".")[0]+"_consensus_NJandRoot_out.txt")
+file = open(in_basename_no_extension + "_consensus_NJandRoot_out.txt")
 line = file.readline()
 linel = line.split()
 while line != "":
@@ -522,24 +542,24 @@ file.close()
 
 if n_species > 3:
     print("\nRunning 2: NNI consensus\n")
-    #Running HyPhy concatenation, finding topology and root altogether
-    #with NNI and rooting, on consensus data
-    HPfile = open(path_PoMo+"Nuc_NNIwithRoot.bf")
-    HPfile3 = open(path + "Nuc_NNIwithRoot_used.bf", "w")
+    # Running HyPhy concatenation, finding topology and root altogether
+    # with NNI and rooting, on consensus data
+    HPfile = open(path_bf + "Nuc_NNIwithRoot.bf")
+    HPfile3 = open("Nuc_NNIwithRoot_used.bf", "w")
     line = HPfile.readline()
     line = HPfile.readline()
     line = HPfile.readline()
     HPfile3.write("inp = \""+PoModata_name_cons+"\";\n")
-    HPfile3.write("out2=\"" + in_name.split(".")[0] +
+    HPfile3.write("out2=\"" + in_basename_no_extension +
                   "_consensus_NNIwithRoot_out.txt\";\n")
     HPfile3.write("treeString=\""+NucNJtree_cons+"\";\n")
     while line != "":
         line = HPfile.readline()
         linelist = line.split()
         if len(linelist) > 0 and linelist[0] == "ExecuteAFile":
-            HPfile3.write(line.replace("pairwise", path_PoMo+"pairwise"))
+            HPfile3.write(line.replace("pairwise", path_bf+"pairwise"))
         elif len(linelist) > 0 and linelist[0] == "#include":
-            HPfile3.write(line.replace("heuristic", path_PoMo + "heuristic"))
+            HPfile3.write(line.replace("heuristic", path_bf + "heuristic"))
         elif len(linelist) > 1 and linelist[0] == "fprintf" \
              and linelist[1] == "(stdout," and verbosity is None:  # noqa
             HPfile3.write("/*" + line.replace("\n", "") + "*/\n")
@@ -547,9 +567,8 @@ if n_species > 3:
             HPfile3.write(line)
     HPfile3.close()
     HPfile.close()
-    os.system(path_PoMo+"HYPHYMP "+path+"Nuc_NNIwithRoot_used.bf \n")
-
-    HPofile = open(in_name.split(".")[0]+"_consensus_NNIwithRoot_out.txt")
+    os.system(HyPhy_bin + " Nuc_NNIwithRoot_used.bf")
+    HPofile = open(in_basename_no_extension + "_consensus_NNIwithRoot_out.txt")
     line = HPofile.readline()
     while line != "":
         line = HPofile.readline()
@@ -563,9 +582,9 @@ if n_species > 3:
     HPofile.close()
 
     print("\nRunning 3: NNI PoMo\n")
-    #Running PoMo10, finding the topology with NNI
-    HPfile = open(path+"PoMo10_NNI_sampling_preliminary_used.bf")
-    HPfile2 = open(path+"PoMo10_NNI_sampling_used.bf", "w")
+    # Running PoMo10, finding the topology with NNI
+    HPfile = open("PoMo10_NNI_sampling_preliminary_used.bf")
+    HPfile2 = open("PoMo10_NNI_sampling_used.bf", "w")
     line = HPfile.readline()
     line = HPfile.readline()
     line = HPfile.readline()
@@ -574,8 +593,8 @@ if n_species > 3:
     line = HPfile.readline()
     line = HPfile.readline()
     line = HPfile.readline()
-    HPfile2.write("inp = \""+PoModata_name+"\";\n")
-    HPfile2.write("out2=\""+path+"PoMo10_NNI_sampling_out.txt\";\n")
+    HPfile2.write("inp = \"" + PoModata_name + "\";\n")
+    HPfile2.write("out2=\"" + "PoMo10_NNI_sampling_out.txt\";\n")
     if all_one == 1:
         HPfile2.write("user_defining=1;\n")
     else:
@@ -607,15 +626,15 @@ if n_species > 3:
         line = HPfile.readline()
         linelist = line.split()
         if len(linelist) > 0 and linelist[0] == "ExecuteAFile":
-            HPfile2.write(line.replace("pairwise", path_PoMo + "pairwise"))
+            HPfile2.write(line.replace("pairwise", path_bf + "pairwise"))
         elif len(linelist) > 0 and linelist[0] == "#include":
-            HPfile2.write(line.replace("heuristic", path_PoMo + "heuristic"))
+            HPfile2.write(line.replace("heuristic", path_bf + "heuristic"))
         else:
             HPfile2.write(line)
     HPfile2.close()
     HPfile.close()
-    os.system(path_PoMo+"HYPHYMP "+path+"PoMo10_NNI_sampling_used.bf \n")
-    HPofile = open(path+"PoMo10_NNI_sampling_out.txt")
+    os.system(HyPhy_bin + " PoMo10_NNI_sampling_used.bf")
+    HPofile = open("PoMo10_NNI_sampling_out.txt")
     line = HPofile.readline()
     while line != "":
         line = HPofile.readline()
@@ -632,8 +651,8 @@ else:
 
 # What happens when there is no molecular clock?
 if n_species > 3 and noMC == 1:
-    #If PoMo NNI has been done, output outcome
-    HPofile = open(path+"PoMo10_NNI_sampling_out.txt")
+    # If PoMo NNI has been done, output outcome
+    HPofile = open("PoMo10_NNI_sampling_out.txt")
     line = HPofile.readline()
     out_wr = line
     out_wr2 = ""
@@ -654,11 +673,11 @@ if n_species > 3 and noMC == 1:
 
 
 elif n_species <= 3 and noMC == 1:
-    #If no PoMo NNI has been done, do a single ML run without looking
-    #for best topology Writing the HyPhy batch file for PoMo without
-    #NNI
-    newsamfile = open(path + "PoMo10_NoMolClock_preliminary.bf", "w")
-    samfile = open(path_PoMo+"PoMo10_NoMolClock.bf")
+    # If no PoMo NNI has been done, do a single ML run without looking
+    # for best topology Writing the HyPhy batch file for PoMo without
+    # NNI
+    newsamfile = open("PoMo10_NoMolClock_preliminary.bf", "w")
+    samfile = open(path_bf + "PoMo10_NoMolClock.bf")
     line = "\n"
     while line != "/*pre-ML*/\n":
         line = samfile.readline()
@@ -687,9 +706,9 @@ elif n_species <= 3 and noMC == 1:
     newsamfile.close()
 
     print("\nRunning PoMo without Molecular clock\n")
-    #Running PoMo10, finding the topology with NNI
-    HPfile = open(path + "PoMo10_NoMolClock_preliminary.bf")
-    HPfile2 = open(path + "PoMo10_NoMolClock_used.bf", "w")
+    # Running PoMo10, finding the topology with NNI
+    HPfile = open("PoMo10_NoMolClock_preliminary.bf")
+    HPfile2 = open("PoMo10_NoMolClock_used.bf", "w")
     line = HPfile.readline()
     line = HPfile.readline()
     line = HPfile.readline()
@@ -699,7 +718,7 @@ elif n_species <= 3 and noMC == 1:
     line = HPfile.readline()
     line = HPfile.readline()
     HPfile2.write("inp = \"" + PoModata_name + "\";\n")
-    HPfile2.write("out2=\"" + path + "PoMo10_NoMolClock_out.txt\";\n")
+    HPfile2.write("out2=\"" + "PoMo10_NoMolClock_out.txt\";\n")
     if all_one == 1:
         HPfile2.write("user_defining=1;\n")
     else:
@@ -730,15 +749,15 @@ elif n_species <= 3 and noMC == 1:
         line = HPfile.readline()
         linelist = line.split()
         if len(linelist) > 0 and linelist[0] == "ExecuteAFile":
-            HPfile2.write(line.replace("pairwise", path_PoMo + "pairwise"))
+            HPfile2.write(line.replace("pairwise", path_bf + "pairwise"))
         elif len(linelist) > 0 and linelist[0] == "#include":
-            HPfile2.write(line.replace("heuristic", path_PoMo + "heuristic"))
+            HPfile2.write(line.replace("heuristic", path_bf + "heuristic"))
         else:
             HPfile2.write(line)
     HPfile2.close()
     HPfile.close()
-    os.system(path_PoMo+"HYPHYMP "+path+"PoMo10_NoMolClock_used.bf \n")
-    HPofile = open(path+"PoMo10_NoMolClock_out.txt")
+    os.system(HyPhy_bin + " PoMo10_NoMolClock_used.bf \n")
+    HPofile = open("PoMo10_NoMolClock_out.txt")
     line = HPofile.readline()
     out_wr = line
     out_wr2 = ""
@@ -759,17 +778,17 @@ elif n_species <= 3 and noMC == 1:
 
 else:
     print("\nRunning 4: Rooting PoMo\n")
-    #Running PoMo10, finding root from the topology estimated with NNI
-    #and PoMo10
-    HPfile = open(path + "PoMo10_root_only_sampling_preliminary_used.bf")
-    HPfile2 = open(path + "PoMo10_root_only_sampling_used.bf", "w")
+    # Running PoMo10, finding root from the topology estimated with NNI
+    # and PoMo10
+    HPfile = open("PoMo10_root_only_sampling_preliminary_used.bf")
+    HPfile2 = open("PoMo10_root_only_sampling_used.bf", "w")
     line = HPfile.readline()
     line = HPfile.readline()
     line = HPfile.readline()
     line = HPfile.readline()
     line = HPfile.readline()
-    HPfile2.write("inp = \"" + PoModata_name+"\";\n")
-    HPfile2.write("out2=\"" + path + "PoMo10_NNI_sampling_rooted_out.txt\";\n")
+    HPfile2.write("inp = \"" + PoModata_name + "\";\n")
+    HPfile2.write("out2=\"" + "PoMo10_NNI_sampling_rooted_out.txt\";\n")
     if all_one == 1:
         HPfile2.write("user_defining=1;\n")
     else:
@@ -802,9 +821,9 @@ else:
             HPfile2.write(line)
     HPfile2.close()
     HPfile.close()
-    os.system(path_PoMo+"HYPHYMP "+path+"PoMo10_root_only_sampling_used.bf \n")
+    os.system(HyPhy_bin + " PoMo10_root_only_sampling_used.bf")
 
-    HPofile = open(path+"PoMo10_NNI_sampling_rooted_out.txt")
+    HPofile = open("PoMo10_NNI_sampling_rooted_out.txt")
     line = HPofile.readline()
     out_wr = line
     out_wr2 = ""
@@ -823,33 +842,38 @@ else:
     swap_fast_samp_tree = lasttree
     HPofile.close()
 
-#Write final output to file
+# Write final output to file
 for spes in range(n_species):
     pap = re.compile("\\(s" + str(n_species-spes) + ":" + "\\d+(\\.\\d+)?" +
                      "(e-\\d\\d)?\\)u" + str(n_species-spes))
     mam = pap.search(swap_fast_samp_tree)
     swap_fast_samp_tree = swap_fast_samp_tree.replace(mam.group(), sp_names[(n_species - 1) - spes])  # noqa
-# for i in range(n_species):
-#     swap_fast_samp_tree = swap_fast_samp_tree.replace("s" + str((n_species)-i), sp_names[(n_species-1)-i])  # noqa
 out_wr2 += swap_fast_samp_tree
 outfile = open(out_name, "w")
 outfile.write(out_wr2)
 outfile.write("\n")
 outfile.close
 
-os.system("rm -f "+path+"Nuc_NJandRoot_used.bf")
-os.system("rm -f "+in_name.split(".")[0]+"_consensus_NJandRoot_out.txt")
-os.system("rm -f "+path+"Nuc_NNIwithRoot_used.bf")
-os.system("rm -f "+in_name.split(".")[0]+"_consensus_NNIwithRoot_out.txt")
-os.system("rm -f "+path+"PoMo10_NNI_sampling_used.bf")
-os.system("rm -f "+path+"PoMo10_NNI_sampling_out.txt")
-os.system("rm -f "+path+"PoMo10_root_only_sampling_used.bf")
-os.system("rm -f "+path+"PoMo10_NNI_sampling_rooted_out.txt")
-os.system("rm -f "+path+"PoMo10_root_only_sampling_preliminary_used.bf")
-os.system("rm -f "+path+"PoMo10_NNI_sampling_preliminary_used.bf")
+os.system("rm -f Nuc_NJandRoot_used.bf")
+os.system("rm -f " + in_basename_no_extension + "_consensus_NJandRoot_out.txt")
+os.system("rm -f Nuc_NNIwithRoot_used.bf")
+os.system("rm -f " + in_basename_no_extension +
+          "_consensus_NNIwithRoot_out.txt")
+os.system("rm -f PoMo10_NNI_sampling_used.bf")
+os.system("rm -f PoMo10_NNI_sampling_out.txt")
+os.system("rm -f PoMo10_root_only_sampling_used.bf")
+os.system("rm -f PoMo10_NNI_sampling_rooted_out.txt")
+os.system("rm -f PoMo10_root_only_sampling_preliminary_used.bf")
+os.system("rm -f PoMo10_NNI_sampling_preliminary_used.bf")
 os.system("rm -f "+PoModata_name_cons)
 os.system("rm -f "+PoModata_name)
-os.system("rm -f "+path+"PoMo10_NoMolClock_out.txt")
-os.system("rm -f "+path+"PoMo10_NoMolClock_preliminary.bf")
-os.system("rm -f "+path+"PoMo10_NoMolClock_used.bf")
+os.system("rm -f PoMo10_NoMolClock_out.txt")
+os.system("rm -f PoMo10_NoMolClock_preliminary.bf")
+os.system("rm -f PoMo10_NoMolClock_used.bf")
 exit()
+
+
+
+
+
+
