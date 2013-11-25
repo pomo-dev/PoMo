@@ -22,55 +22,54 @@ means, you have to remove columns where one of the individuals has
 missing characters or unknowns. It does not matter from which
 individual each base comes, so you can sub-sample and randomly assign
 to individuals within a species.""")
-parser.add_argument('--molecular-clock', '-m', type=int,
+parser.add_argument('-m', '--molecular-clock', type=int,
                     choices=[0, 1], default=1, help="""Determines if
                     you want the molecular clock constraint (and
                     therefore also look for a root) or not. Default is
-                    yes. To specify no molecular clock, type \"-m
-                    0\".""")
-parser.add_argument('--MM', '-u', type=pm.mutModel, default="HKY",
+                    yes. Type `-m 0` to specify no molecular clock.""")
+parser.add_argument('-u', '--MM', type=pm.mutModel, default="HKY",
                     help="""Allows to choose a mutation model
                     different from the HKY (default option). \"GTR\"
                     corresponds to the general time reversible,
                     \"F81\" to the Felsenstein 1981 (reversible, equal
                     mutation rates), and \"NONREV\" to the general
                     nonreversible model (all substitution rates are
-                    independent). To change, type for example \"--MM
-                    GTR\".""")
-parser.add_argument('--SM', '-s', type=pm.selModel, default="NoSel",
-                    help="""Allows to choose fixation rates. By
-                    default, fixation rates are equal for all
-                    nucleotides (\"NoSel\"). \"GCvsAT\": one parameter
+                    independent). To change, type for example `--MM
+                    GTR`.""")
+parser.add_argument('-s', '--SM', type=pm.selModel, default="NoSel",
+                    help="""Allows to choose fixation rates.  `-s
+                    NoSel`: fixation rates are equal for all
+                    nucleotides; default.  `-s GCvsAT`: one parameter
                     describes fixation difference of GC versus AT, as
-                    is expected from biased gene
-                    conversion. \"AllNuc\": each nucleotide has a
-                    different fitness (3 free parameters since only
-                    fitness differences matter). To change, type for
-                    example \"--MS GCvsAT\". Warning: estimating
-                    fixation biases will be more time consuming.""")
-parser.add_argument('--GM', '-g', type=int, default=0,
-                    help="""Allows to set a variable mutation rate
-                    over sites, gamma-distributed, approximated with a
-                    number of classes as specified by the
-                    user. Default: uniform mutation rate. For example,
-                    \"--GM 6\" specifies a gamma distribution of total
-                    mutation rate with 6 discrete cathegories.""")
-parser.add_argument('--GS', '-f', type=int, default=0,
-                    help="""Allows to set a variable fixation bias
-                    over sites, gamma-distributed, approximated with a
-                    number of classes as specified by the
-                    user. Default: uniform fixation rate.""")
-parser.add_argument('--ds-ratio', '-d', type=pm.dsRatio, default=0.66,
-                    help="""Determines which proportion of the data
-                    is kept after downsampling. The default is
-                    0.66. This means that, if sites have different
-                    sample sizes (because of mising data etc.), by
-                    default sample sizes are decreased until at least
-                    2 thirds of the sites are included in the current
-                    sample sizes.""")
-parser.add_argument('--verbose', '-v', action='count', help="""Counts
-the level of verbosity (e.g. -vv). Without -v very few information is
-printed to the screen.""")
+                    is expected from biased gene conversion.  `-s
+                    AllNuc`: each nucleotide has a different fitness
+                    (3 free parameters since only fitness differences
+                    matter).  Warning: estimating fixation biases will
+                    be more time consuming.""")
+parser.add_argument('-g', '--GM', type=int, default=0, help="""Allows
+to set a variable mutation rate over sites, gamma-distributed,
+approximated with a number of classes as specified by the
+user. Default: uniform mutation rate. For example, `--GM 6` specifies
+a gamma distribution of total mutation rate with 6 discrete
+cathegories.""")
+parser.add_argument('-f', '--GS', type=int, default=0, help="""Allows
+to set a variable fixation bias over sites, gamma-distributed,
+approximated with a number of classes as specified by the
+user. Default: uniform fixation rate (`f 0`).""")
+parser.add_argument('-d', '--ds-ratio', type=pm.dsRatio, default=0.66,
+                    help="""Determines which proportion of the data is
+                    kept after downsampling. Downsampling is done when
+                    sites do not have the same coverage along the
+                    genome. In such a case, all sites with coverage
+                    higher than a certain sample size are downsampled,
+                    those with lower coverage are discarded. The
+                    threshold sample size is chosen as the highest
+                    possible that leaves the kept number of sites
+                    above the specified threshold.  By default, sample
+                    sizes are decreased until at least 2 thirds of the
+                    sites are included (`-d 0.66`).""")
+parser.add_argument('-v', '--verbose', action='count',
+                    help="""Turns on verbosity.""")
 args = parser.parse_args()
 
 print("""PoMo version 1.0 Created by Nicola De Maio. For a reference, please
