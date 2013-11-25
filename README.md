@@ -1,8 +1,7 @@
-PoMo
+PoMo 1.0.2
 ====
 Implementation of a polymorphism aware phylogenetic model using HYPHY.
 
-PoMo version 1.0  
 Created by: Nicola De Maio  
 Contributor: Dominik Schrempf
 
@@ -33,15 +32,21 @@ example files in `./data/`).
 Options
 ====
 There are some further optional parameters that can
-be specified from the command line:
+be specified from the command line. Type `python path_to_PoMo/Pomo.py
+--help` for detailed information.
 
-`--help` Prints help.
+`--help`
+: prints detailed help.
 
-`-m 0` Turns off the molecular clock.
+`-m 0` turns off the molecular clock.
 
-`-v` Turns on verbosity.
+`-u GTR` allows to choose a mutation model different from the HKY
+(default option).  "GTR" corresponds to the general time reversible,
+"F81" to the Felsenstein 1981 (reversible, equal mutation rates), and
+"NONREV" to the general nonreversible model (all substitution rates
+are independent).
 
-`-d 0.90` At least 90% of the sites are kept when downsampling (or any
+`-d 0.90` keeps at least 90% of the sites when downsampling (or any
 other proportion if you specify a different one between 0 and
 1). Downsampling is done when sites do not have the same coverage
 along the genome. In such a case, all sites with coverage higher than
@@ -50,8 +55,10 @@ discarded. The new sample size is chosen as the highest possible among
 those that leave the number of sites above the specified
 threshold. The default threshold is 0.66.
 
-If your dataset is called "Data.txt" the final output of PoMo will be
-called "Data_PoMo_output.txt", and contains the log-likelihood, the
+`-v` turns on verbosity.
+
+If your dataset is called "data.txt" the final output of PoMo will be
+called "data_PoMo_output.txt", and contains the log-likelihood, the
 parameters estimated, and the species tree estimated. The output will
 be placed in the folder that you run PoMo from.
 

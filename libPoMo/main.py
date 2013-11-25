@@ -2,8 +2,62 @@
 import argparse
 from scipy.misc import comb as choose
 
+# Define mutation models
+mutmod = {}
+mutmod["F81"] = ["global mu=0.01;\n", "mac:=mu;\n", "mag:=mu;\n",
+                 "mat:=mu;\n", "mca:=mu;\n", "mct:=mu;\n",
+                 "mcg:=mu;\n", "mgc:=mu;\n", "mga:=mu;\n",
+                 "mgt:=mu;\n", "mta:=mu;\n", "mtc:=mu;\n",
+                 "mtg:=mu;\n"]
+mutmod["HKY"] = ["global kappa=0.01;\n", "global mu=0.01;\n",
+                 "mac:=mu;\n", "mag:=kappa;\n", "mat:=mu;\n",
+                 "mca:=mu;\n", "mct:=kappa;\n", "mcg:=mu;\n",
+                 "mgc:=mu;\n", "mga:=kappa;\n", "mgt:=mu;\n",
+                 "mta:=mu;\n", "mtc:=kappa;\n", "mtg:=mu;\n"]
+mutmod["GTR"] = ["global muac=0.01;\n", "global muag=0.01;\n",
+                 "global muat=0.01;\n", "global mucg=0.01;\n",
+                 "global muct=0.01;\n", "global mugt=0.01;\n",
+                 "mac:=muac;\n", "mag:=muag;\n", "mat:=muat;\n",
+                 "mca:=muac;\n", "mct:=muct;\n", "mcg:=mucg;\n",
+                 "mgc:=mucg;\n", "mga:=muag;\n", "mgt:=mugt;\n",
+                 "mta:=muat;\n", "mtc:=muct;\n", "mtg:=mugt;\n"]
+mutmod["NONREV"] = ["global mac=0.01;\n", "global mag=0.01;\n",
+                    "global mat=0.01;\n", "global mcg=0.01;\n",
+                    "global mct=0.01;\n", "global mgt=0.01;\n",
+                    "global mca=0.01;\n", "global mga=0.01;\n",
+                    "global mta=0.01;\n", "global mgc=0.01;\n",
+                    "global mtc=0.01;\n", "global mtg=0.01;\n"]
 
-#define downsampling ratio type for argparse
+
+# define mutModel type for argparse
+def mutModel(mm):
+    value = str(mm)
+    if not (mm in mutmod.keys()):
+        msg = "%r is not a valid mutation model" % mm
+        raise argparse.ArgumentTypeError(msg)
+    return value
+
+
+# define selection models
+selmod = {}
+selmod["NoSel"] = ["sc := 0.0;\n", "sa := 0.0;\n", "st := 0.0;\n",
+                   "sg := 0.0;\n"]
+selmod["GCvsAT"] = ["global Sgc=0.0001;\n", "sc := Sgc;\n", "sa := 0.0;\n",
+                    "st := 0.0;\n", "sg := Sgc;\n"]
+selmod["AllNuc"] = ["global sc=0.0003;\n", "global sg=0.0003;\n",
+                    "sa := 0.0;\n", "global st=0.0001;\n"]
+
+
+# define selModel type for argparse
+def selModel(sm):
+    value = str(sm)
+    if not (sm in selmod.keys()):
+        msg = "%r is not a valid selection model" % sm
+        raise argparse.ArgumentTypeError(msg)
+    return value
+
+
+# define downsampling ratio type for argparse
 def dsRatio(dsR):
     value = float(dsR)
     if not (0 < value <= 1):
@@ -27,10 +81,6 @@ def is_number(s):
         return True
     except ValueError:
         return False
-
-# def choose(n,m):
-#     """Calculate n choose m."""
-#     return math.factorial(n) / (math.factorial(m)*math.factorial(n-m))
 
 
 def binom(s, p, n):

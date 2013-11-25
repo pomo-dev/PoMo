@@ -4,15 +4,14 @@ import os
 import random
 import argparse
 import re
-from libPoMo.main import probability_matrix, a, dsRatio
-
+# from libPoMo.main import probability_matrix, a, mutModel, selModel, dsRatio
+import libPoMo.main as pm
 
 # parse command line arguments
 parser = argparse.ArgumentParser(description="PoMo10 script")
 
 parser.add_argument('hyphy_bin', help="""Absolute path of the
 HYPHY binary used to maximize the likelihood.""")
-
 parser.add_argument('file', help="""Name of the fasta file containing
 the alignment. Each individual's name must be species_n where
 \"species\" is the name of its species, without underscores, and \"n\"
@@ -23,25 +22,55 @@ means, you have to remove columns where one of the individuals has
 missing characters or unknowns. It does not matter from which
 individual each base comes, so you can sub-sample and randomly assign
 to individuals within a species.""")
-
 parser.add_argument('--molecular-clock', '-m', type=int,
                     choices=[0, 1], default=1, help="""Determines if
                     you want the molecular clock constraint (and
                     therefore also look for a root) or not. Default is
                     yes. To specify no molecular clock, type \"-m
                     0\".""")
-parser.add_argument('--ds-ratio', '-d', type=dsRatio, default=0.66,
-                    help=
-                    """Determines which proportion of the data is kept after
-                    downsampling. The default is 0.66. This means
-                    that, if sites have different sample sizes
-                    (because of mising data etc.), by default sample
-                    sizes are decreased until at least 2 thirds of the
-                    sites are included in the current sample sizes.""")
-parser.add_argument('--verbose', '-v', action='count',
-                    help='Counts the level of verbosity (e.g. -vv).'
-                    'Without -v very few information is'
-                    'printed to the screen.')
+parser.add_argument('--MM', '-u', type=pm.mutModel, default="HKY",
+                    help="""Allows to choose a mutation model
+                    different from the HKY (default option). \"GTR\"
+                    corresponds to the general time reversible,
+                    \"F81\" to the Felsenstein 1981 (reversible, equal
+                    mutation rates), and \"NONREV\" to the general
+                    nonreversible model (all substitution rates are
+                    independent). To change, type for example \"--MM
+                    GTR\".""")
+parser.add_argument('--SM', '-s', type=pm.selModel, default="NoSel",
+                    help="""Allows to choose fixation rates. By
+                    default, fixation rates are equal for all
+                    nucleotides (\"NoSel\"). \"GCvsAT\": one parameter
+                    describes fixation difference of GC versus AT, as
+                    is expected from biased gene
+                    conversion. \"AllNuc\": each nucleotide has a
+                    different fitness (3 free parameters since only
+                    fitness differences matter). To change, type for
+                    example \"--MS GCvsAT\". Warning: estimating
+                    fixation biases will be more time consuming.""")
+parser.add_argument('--GM', '-g', type=int, default=0,
+                    help="""Allows to set a variable mutation rate
+                    over sites, gamma-distributed, approximated with a
+                    number of classes as specified by the
+                    user. Default: uniform mutation rate. For example,
+                    \"--GM 6\" specifies a gamma distribution of total
+                    mutation rate with 6 discrete cathegories.""")
+parser.add_argument('--GS', '-f', type=int, default=0,
+                    help="""Allows to set a variable fixation bias
+                    over sites, gamma-distributed, approximated with a
+                    number of classes as specified by the
+                    user. Default: uniform fixation rate.""")
+parser.add_argument('--ds-ratio', '-d', type=pm.dsRatio, default=0.66,
+                    help="""Determines which proportion of the data
+                    is kept after downsampling. The default is
+                    0.66. This means that, if sites have different
+                    sample sizes (because of mising data etc.), by
+                    default sample sizes are decreased until at least
+                    2 thirds of the sites are included in the current
+                    sample sizes.""")
+parser.add_argument('--verbose', '-v', action='count', help="""Counts
+the level of verbosity (e.g. -vv). Without -v very few information is
+printed to the screen.""")
 args = parser.parse_args()
 
 print("""PoMo version 1.0 Created by Nicola De Maio. For a reference, please
@@ -55,7 +84,35 @@ if args.molecular_clock == 1:
     noMC = 0
 elif args.molecular_clock == 0:
     noMC = 1
+
+# mutation model
+muts = pm.mutmod[args.MM]
+
+# variable mutation rate (+Gamma)
+if int(args.GM) > 0:
+    mutgamma = ["global shape;\n", "category rateCatMut =(" +
+                str(args.GM) +
+                ", EQUAL, MEAN, GammaDist(_x_,shape,shape), "
+                "CGammaDist(_x_,shape,shape),0,1e25);\n"]
+else:
+    mutgamma = ["rateCatMut := 1.0;\n"]
+
+# fixation bias
+if int(args.GS) > 0:
+    selgamma = ["global shape2;\n", "category rateCatSel =(" +
+                str(args.GS) +
+                ", EQUAL, MEAN, GammaDist(_x_,shape2,shape2), "
+                "CGammaDist(_x_,shape2,shape2),0,1e25);\n"]
+else:
+    selgamma = ["rateCatSel := 1.0;\n"]
+
+# selection model
+sels = pm.selmod[args.SM]
+
+# Verbosity
 verbosity = args.verbose
+
+# Threshold of data discard for downsampling
 thresh = args.ds_ratio
 
 # define paths to files
@@ -65,6 +122,9 @@ in_name_no_extension = in_name.rsplit(".", maxsplit=1)[0]
 in_basename_no_extension = os.path.basename(in_name)
 in_basename_no_extension = in_basename_no_extension.rsplit(".", maxsplit=1)[0]
 out_name = in_basename_no_extension + "_PoMo_output.txt"
+
+# define the names of the PoMo data files; they are created in the
+# current working directory
 PoModata_name = in_basename_no_extension + "_PoMo_HyPhy.txt"
 PoModata_name_cons = in_basename_no_extension + "_consensus_HyPhy.txt"
 
@@ -87,13 +147,13 @@ except:
     path_PoMo = os.path.abspath(os.path.dirname(sys.argv[0]))
 path_PoMo = path_PoMo + "/"
 
+# define path of batchfiles
+path_bf = path_PoMo + "batchfiles/"
+
 # get path of HyPhy
 HyPhy_bin = str(args.hyphy_bin)
 path_HyPhy = os.path.abspath(os.path.dirname(HyPhy_bin))
 path_HyPhy = path_HyPhy + "/"
-
-# define path of batchfiles
-path_bf = path_PoMo + "batchfiles/"
 
 # define PoMo10 states
 codons = ["aaa", "aac", "aag", "aat", "aca", "acc", "acg", "act",
@@ -137,7 +197,7 @@ if line == "":
     sp_names = line.split()
     n_species = len(sp_names)
     if n_species < 2:
-        print("Error: No sufficiently many species (<2).\n")
+        print("Error: Not sufficiently many species (<2).\n")
         exit()
     VCF = 1
     line = infile.readline()
@@ -379,7 +439,7 @@ while line != "/*Find Root*/\n":
 samples_num = []
 for i in range(n_species):
     if not (sp_samples[i] in samples_num):
-        newsamfile.write(probability_matrix(sp_samples[i]))
+        newsamfile.write(pm.probability_matrix(sp_samples[i]))
         samples_num.append(sp_samples[i])
         newsamfile.write("\n\n\n")
 line = "\n"
@@ -409,13 +469,13 @@ while line != "/*pre-ML*/\n":
     linelist = line.split()
     if len(linelist) > 1 and linelist[0] == "fprintf" \
        and linelist[1] == "(stdout," and verbosity is None:
-        newsamfile.write("/*"+line.replace("\n", "")+"*/\n")
+        newsamfile.write("/*" + line.replace("\n", "") + "*/\n")
     else:
         newsamfile.write(line)
 samples_num = []
 for i in range(n_species):
     if not (sp_samples[i] in samples_num):
-        newsamfile.write(probability_matrix(sp_samples[i]))
+        newsamfile.write(pm.probability_matrix(sp_samples[i]))
         samples_num.append(sp_samples[i])
         newsamfile.write("\n\n\n")
 line = "\n"
@@ -437,8 +497,8 @@ newsamfile.close()
 
 # creating HyPhy input file
 for l in range(n_species):
-    PoModatafile.write(">s"+str(l+1)+"\n")
-    PoModatafile_cons.write(">s"+str(l+1)+"\n")
+    PoModatafile.write(">s" + str(l+1) + "\n")
+    PoModatafile_cons.write(">s" + str(l+1) + "\n")
     for m in range(leng):
         count = sp_data[l][m]
         p = count
@@ -549,15 +609,15 @@ if n_species > 3:
     line = HPfile.readline()
     line = HPfile.readline()
     line = HPfile.readline()
-    HPfile3.write("inp = \""+PoModata_name_cons+"\";\n")
+    HPfile3.write("inp = \"" + PoModata_name_cons + "\";\n")
     HPfile3.write("out2=\"" + in_basename_no_extension +
                   "_consensus_NNIwithRoot_out.txt\";\n")
-    HPfile3.write("treeString=\""+NucNJtree_cons+"\";\n")
+    HPfile3.write("treeString=\"" + NucNJtree_cons + "\";\n")
     while line != "":
         line = HPfile.readline()
         linelist = line.split()
         if len(linelist) > 0 and linelist[0] == "ExecuteAFile":
-            HPfile3.write(line.replace("pairwise", path_bf+"pairwise"))
+            HPfile3.write(line.replace("pairwise", path_bf + "pairwise"))
         elif len(linelist) > 0 and linelist[0] == "#include":
             HPfile3.write(line.replace("heuristic", path_bf + "heuristic"))
         elif len(linelist) > 1 and linelist[0] == "fprintf" \
@@ -594,7 +654,7 @@ if n_species > 3:
     line = HPfile.readline()
     line = HPfile.readline()
     HPfile2.write("inp = \"" + PoModata_name + "\";\n")
-    HPfile2.write("out2=\"" + "PoMo10_NNI_sampling_out.txt\";\n")
+    HPfile2.write("out2=\"PoMo10_NNI_sampling_out.txt\";\n")
     if all_one == 1:
         HPfile2.write("user_defining=1;\n")
     else:
@@ -605,9 +665,9 @@ if n_species > 3:
     else:
         a_total = 0.0
         for i in range(n_species):
-            a_total += a(sp_samples[i])
+            a_total += pm.a(sp_samples[i])
         a_total = a_total/n_species
-        HPfile2.write("scale_Ppol:="+str(a(N)/a_total)+";\n")
+        HPfile2.write("scale_Ppol:=" + str(pm.a(N)/a_total)+";\n")
     HPfile2.write("sample:=0;\n")
     NJtree2 = consetree
     NJtree2Samp = NJtree2
@@ -690,7 +750,7 @@ elif n_species <= 3 and noMC == 1:
     samples_num = []
     for i in range(n_species):
         if not (sp_samples[i] in samples_num):
-            newsamfile.write(probability_matrix(sp_samples[i]))
+            newsamfile.write(pm.probability_matrix(sp_samples[i]))
             samples_num.append(sp_samples[i])
             newsamfile.write("\n\n\n")
     line = "\n"
@@ -718,7 +778,7 @@ elif n_species <= 3 and noMC == 1:
     line = HPfile.readline()
     line = HPfile.readline()
     HPfile2.write("inp = \"" + PoModata_name + "\";\n")
-    HPfile2.write("out2=\"" + "PoMo10_NoMolClock_out.txt\";\n")
+    HPfile2.write("out2=\"PoMo10_NoMolClock_out.txt\";\n")
     if all_one == 1:
         HPfile2.write("user_defining=1;\n")
     else:
@@ -788,7 +848,7 @@ else:
     line = HPfile.readline()
     line = HPfile.readline()
     HPfile2.write("inp = \"" + PoModata_name + "\";\n")
-    HPfile2.write("out2=\"" + "PoMo10_NNI_sampling_rooted_out.txt\";\n")
+    HPfile2.write("out2=\"PoMo10_NNI_sampling_rooted_out.txt\";\n")
     if all_one == 1:
         HPfile2.write("user_defining=1;\n")
     else:
@@ -799,9 +859,9 @@ else:
     else:
         a_total = 0.0
         for i in range(n_species):
-            a_total += a(sp_samples[i])
+            a_total += pm.a(sp_samples[i])
         a_total = a_total/n_species
-        HPfile2.write("scale_Ppol:="+str(a(N)/a_total)+";\n")
+        HPfile2.write("scale_Ppol:="+str(pm.a(N)/a_total)+";\n")
 
     NJtree2 = NNItreesamp
     while line != "":
@@ -865,15 +925,10 @@ os.system("rm -f PoMo10_root_only_sampling_used.bf")
 os.system("rm -f PoMo10_NNI_sampling_rooted_out.txt")
 os.system("rm -f PoMo10_root_only_sampling_preliminary_used.bf")
 os.system("rm -f PoMo10_NNI_sampling_preliminary_used.bf")
-os.system("rm -f "+PoModata_name_cons)
-os.system("rm -f "+PoModata_name)
+os.system("rm -f " + PoModata_name_cons)
+os.system("rm -f " + PoModata_name)
 os.system("rm -f PoMo10_NoMolClock_out.txt")
 os.system("rm -f PoMo10_NoMolClock_preliminary.bf")
 os.system("rm -f PoMo10_NoMolClock_used.bf")
+print("Done!")
 exit()
-
-
-
-
-
-
