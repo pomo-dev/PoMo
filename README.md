@@ -16,9 +16,11 @@ Installation
 ====
 PoMo heavily relies on HYPHY. To build HYPHY, extract the
 `HYPHY.tar.gz` to a folder and do
-`cd path_to_HYPHY/`  
-`cmake ./`  
-`make MP2`
+```sh
+cd path_to_HYPHY/
+cmake ./
+make MP2
+```
 
 Running PoMo
 ====
@@ -27,7 +29,7 @@ To run PoMo, execute
 `python path_to_PoMo/PoMo.py  path_to_HYPHY/HYPHYMP path_to_data/data.txt`
 
 The data file must either be in fasta format, or in allele count format (see
-example files in `./data/`).
+example files in `./sample-data/`).
 
 If your dataset is called "data.txt" the final output of PoMo will be
 called "data_PoMo_output.txt", and contains the log-likelihood, the
