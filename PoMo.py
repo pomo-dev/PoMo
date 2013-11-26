@@ -29,10 +29,10 @@ parser.add_argument('-m', '--molecular-clock', type=int,
                     yes. Type `-m 0` to specify no molecular clock.""")
 parser.add_argument('-u', '--MM', type=pm.mutModel, default="HKY",
                     help="""Allows to choose a mutation model
-                    different from the HKY (default option). \"GTR\"
+                    different from the HKY (default option). `GTR`
                     corresponds to the general time reversible,
-                    \"F81\" to the Felsenstein 1981 (reversible, equal
-                    mutation rates), and \"NONREV\" to the general
+                    `F81` to the Felsenstein 1981 (reversible, equal
+                    mutation rates), and `NONREV` to the general
                     nonreversible model (all substitution rates are
                     independent). To change, type for example `--MM
                     GTR`.""")
@@ -153,13 +153,14 @@ codons = ["aaa", "aac", "aag", "aat", "aca", "acc", "acg", "act",
 nucs = ["A", "C", "G", "T"]
 N = 10
 
+# define variables
 # number of species
 n_species = 0
-# list with species names
+# species names
 sp_names = []
-# list with sample size of each species
+# sample size of each species
 sp_samples = []
-# list with actual data
+# actual data
 sp_data = []
 
 # TODO
@@ -318,44 +319,64 @@ for i in range(n_species):
     else:
         sp_samples2.append(sp_samples[i])
 
+advantages = {}
 covered = 0
+for i in range(len(sp_data[0])):
+    summs = []
+    newlims = []
+    cov = 1
+    for s in range(n_species):
+        summs.append(0)
+        newlims.append(sp_samples2[s])
+        for d in range(4):
+            summs[s] += sp_data[s][i][d]
+        if summs[s] < sp_samples2[s]:
+            newlims[s] = summs[s]
+            cov = 0
+    limkey = ""
+    for ne in range(len(newlims)):
+        limkey += (str(newlims[ne])+":")
+    if cov == 1:
+        covered += 1
+    elif limkey in advantages.keys():
+        advantages[limkey] += 1
+    else:
+        advantages[limkey] = 1
+ke = list(advantages)
 while float(covered)/leng < thresh:
-    advantages = []
     increments = []
-    covered = 0
-    for i in range(n_species):
-        advantages.append(0)
-        increments.append(10000000)
-    for i in range(len(sp_data[0])):
-        cov = 1
-        for s in range(n_species):
-            summ = 0
-            for d in range(4):
-                summ += sp_data[s][i][d]
-            if summ < sp_samples2[s]:
-                cov = 0
-                if summ != 1 and summ == (sp_samples2[s]-increments[s]):
-                    advantages[s] += 1
-                elif summ != 1 and (sp_samples2[s]-summ) < increments[s]:
-                    advantages[s] = 1
-                    increments[s] = sp_samples2[s]-summ
-        if cov == 1:
-            covered += 1
-    if float(covered)/leng >= thresh:
-        break
+    advs = []
+    for s in range(n_species):
+        advs.append(0)
+        increments.append(1)
+        while advs[s] == 0:
+            for k in range(len(ke)):
+                kl = ke[k].split(":")
+                valid = 1
+                for s2 in range(n_species):
+                    if s2 != s and int(kl[s2]) < sp_samples2[s2]:
+                        valid = 0
+                if valid == 1 and int(kl[s]) >= sp_samples2[s] - increments[s]\
+                   and int(kl[s]) < sp_samples2[s]:
+                    advs[s] += advantages[ke[k]]
+            if advs[s] == 0:
+                if increments[s] < sp_samples2[s] - 1:
+                    increments[s] += 1
+                else:
+                    break
     max_ad = 0
     max_ind = -1
     for s in range(n_species):
-        if advantages[s] > max_ad:
-            max_ad = advantages[s]
+        if advs[s] > max_ad:
+            max_ad = advs[s]
             max_ind = s
     if max_ad == 0:
         print("Downsampling with threshold " + str(thresh) +
-              " is not possible."
-              " Please lower the threshold using option --DS.\n")
+              " reached an empasse. Please lower the threshold using option"
+              " --DS, change downsampling strategy, or ask for assistance!\n")
         exit()
-    sp_samples2[max_ind] = sp_samples2[max_ind]-increments[s]
-
+    sp_samples2[max_ind] = sp_samples2[max_ind] - increments[max_ind]
+    covered += max_ad
 sp_samples = sp_samples2
 
 # Sites where some species have not sufficient coverage are removed
@@ -414,6 +435,20 @@ newsamfile = open("PoMo10_root_only_sampling_preliminary_used.bf",
                   "w")
 samfile = open(path_bf + "PoMo10_root_only_sampling_preliminary.bf")
 line = "\n"
+while line != "/*Define global parameters*/\n":
+    line = samfile.readline()
+    linelist = line.split()
+    newsamfile.write(line)
+for i in range(23):
+    line = samfile.readline()
+for i in range(len(muts)):
+    newsamfile.write(muts[i])
+for i in range(len(sels)):
+    newsamfile.write(sels[i])
+for i in range(len(mutgamma)):
+    newsamfile.write(mutgamma[i])
+for i in range(len(selgamma)):
+    newsamfile.write(selgamma[i])
 while line != "/*Find Root*/\n":
     line = samfile.readline()
     linelist = line.split()
@@ -450,6 +485,20 @@ newsamfile.close()
 newsamfile = open("PoMo10_NNI_sampling_preliminary_used.bf", "w")
 samfile = open(path_bf + "PoMo10_NNI_sampling.bf")
 line = "\n"
+while line != "/*Define global parameters*/\n":
+    line = samfile.readline()
+    linelist = line.split()
+    newsamfile.write(line)
+for i in range(23):
+    line = samfile.readline()
+for i in range(len(muts)):
+    newsamfile.write(muts[i])
+for i in range(len(sels)):
+    newsamfile.write(sels[i])
+for i in range(len(mutgamma)):
+    newsamfile.write(mutgamma[i])
+for i in range(len(selgamma)):
+    newsamfile.write(selgamma[i])
 while line != "/*pre-ML*/\n":
     line = samfile.readline()
     linelist = line.split()
@@ -720,11 +769,26 @@ if n_species > 3 and noMC == 1:
 
 elif n_species <= 3 and noMC == 1:
     # If no PoMo NNI has been done, do a single ML run without looking
-    # for best topology Writing the HyPhy batch file for PoMo without
-    # NNI
+    # for best topology. 
+
+    # Write the HyPhy batch file for PoMo without NNI
     newsamfile = open("PoMo10_NoMolClock_preliminary.bf", "w")
     samfile = open(path_bf + "PoMo10_NoMolClock.bf")
     line = "\n"
+    while line != "/*Define global parameters*/\n":
+        line = samfile.readline()
+        linelist = line.split()
+        newsamfile.write(line)
+    for i in range(23):
+        line = samfile.readline()
+    for i in range(len(muts)):
+        newsamfile.write(muts[i])
+    for i in range(len(sels)):
+        newsamfile.write(sels[i])
+    for i in range(len(mutgamma)):
+        newsamfile.write(mutgamma[i])
+    for i in range(len(selgamma)):
+        newsamfile.write(selgamma[i])
     while line != "/*pre-ML*/\n":
         line = samfile.readline()
         linelist = line.split()
@@ -775,9 +839,9 @@ elif n_species <= 3 and noMC == 1:
     else:
         a_total = 0.0
         for i in range(n_species):
-            a_total += a(sp_samples[i])
+            a_total += pm.a(sp_samples[i])
         a_total = a_total/n_species
-        HPfile2.write("scale_Ppol:="+str(a(N)/a_total)+";\n")
+        HPfile2.write("scale_Ppol:="+str(pm.a(N)/a_total)+";\n")
     HPfile2.write("sample:=0;\n")
     NJtree2 = NucNJtree_cons
     NJtree2Samp = NJtree2
