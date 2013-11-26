@@ -1,8 +1,16 @@
-# This file contains functions that are used by PoMo.py
+#!/usr/bin/env python
+
+"""libPoMo.main
+----------------------------------------------------------------------
+
+This library contains functions that are used by PoMo.
+
+"""
+
 import argparse
 from scipy.misc import comb as choose
 
-# Define mutation models
+# Define mutation models.
 mutmod = {}
 mutmod["F81"] = ["global mu=0.01;\n", "mac:=mu;\n", "mag:=mu;\n",
                  "mat:=mu;\n", "mca:=mu;\n", "mct:=mu;\n",
@@ -29,7 +37,7 @@ mutmod["NONREV"] = ["global mac=0.01;\n", "global mag=0.01;\n",
                     "global mtc=0.01;\n", "global mtg=0.01;\n"]
 
 
-# define selection models
+# Define selection models.
 selmod = {}
 selmod["NoSel"] = ["sc := 0.0;\n", "sa := 0.0;\n", "st := 0.0;\n",
                    "sg := 0.0;\n"]
@@ -108,7 +116,9 @@ def is_number(s):
 
 
 def binom(s, p, n):
-    """Calculate the binomial sampling probability (not very efficient,
+    """Binomial Distribution
+
+    Calculate the binomial sampling probability (not very efficient,
     but not much effieciency is needed with small samples).
 
     """
@@ -178,7 +188,7 @@ def probability_matrix(n):
          str(o+1) + "\", Freqs, EXPLICIT_FORM_MATRIX_EXPONENTIAL);\n\n"
     return s
 
-
+# TODO
 def process_infile(infile):
     """ Process input file. Checks the input file format.
 

@@ -39,10 +39,9 @@ be placed in the folder that you run PoMo from.
 
 Command Line Arguments
 ====
-
 PoMo supports various command line arguments. Run `python PoMo.py
---help` or visit [PoMo-help.txt](PoMo-help.txt "PoMo-help") for a
-detailed help message about the different flags that are available.
+--help` or visit [PoMo-help](PoMo-help.txt "PoMo-help") for a detailed
+help message about the different flags that are available.
 
 Notes
 ====
