@@ -1,0 +1,66 @@
+usage: PoMo [-h] [-m {0,1}] [-u MM] [-s SM] [-g GM] [-f GS] [-d DS_RATIO] [-v]
+            [--version]
+            hyphy_bin file
+
+PoMo10 script version 1.0.2
+
+positional arguments:
+  hyphy_bin             Absolute path of the HYPHY binary used to maximize the
+                        likelihood.
+  file                  Name of the fasta file containing the alignment. Each
+                        individual's name must be species_n where "species" is
+                        the name of its species, without underscores, and "n"
+                        is a number identifying the individual among the other
+                        samples of the same population/species (it actually
+                        does not matter which number is given to which
+                        individual). As now, no gaps or Ns are allowed, which
+                        means, you have to remove columns where one of the
+                        individuals has missing characters or unknowns. It
+                        does not matter from which individual each base comes,
+                        so you can sub-sample and randomly assign to
+                        individuals within a species.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -m {0,1}, --molecular-clock {0,1}
+                        Determines if you want the molecular clock constraint
+                        (and therefore also look for a root) or not. Default
+                        is yes. Type `-m 0` to specify no molecular clock.
+  -u MM, --MM MM        Allows to choose a mutation model different from the
+                        HKY (default option). `GTR` corresponds to the general
+                        time reversible, `F81` to the Felsenstein 1981
+                        (reversible, equal mutation rates), and `NONREV` to
+                        the general nonreversible model (all substitution
+                        rates are independent). To change, type for example
+                        `--MM GTR`.
+  -s SM, --SM SM        Allows to choose fixation rates. `-s NoSel`: fixation
+                        rates are equal for all nucleotides; default. `-s
+                        GCvsAT`: one parameter describes fixation difference
+                        of GC versus AT, as is expected from biased gene
+                        conversion. `-s AllNuc`: each nucleotide has a
+                        different fitness (3 free parameters since only
+                        fitness differences matter). Warning: estimating
+                        fixation biases will be more time consuming.
+  -g GM, --GM GM        Allows to set a variable mutation rate over sites,
+                        gamma-distributed, approximated with a number of
+                        classes as specified by the user. Default: uniform
+                        mutation rate. For example, `--GM 6` specifies a gamma
+                        distribution of total mutation rate with 6 discrete
+                        cathegories.
+  -f GS, --GS GS        Allows to set a variable fixation bias over sites,
+                        gamma-distributed, approximated with a number of
+                        classes as specified by the user. Default: uniform
+                        fixation rate (`f 0`).
+  -d DS_RATIO, --ds-ratio DS_RATIO
+                        Determines which proportion of the data is kept after
+                        downsampling. Downsampling is done when sites do not
+                        have the same coverage along the genome. In such a
+                        case, all sites with coverage higher than a certain
+                        sample size are downsampled, those with lower coverage
+                        are discarded. The threshold sample size is chosen as
+                        the highest possible that leaves the kept number of
+                        sites above the specified threshold. By default,
+                        sample sizes are decreased until at least 2 thirds of
+                        the sites are included (`-d 0.66`).
+  -v, --verbose         turn on verbosity
+  --version             show program's version number and exit

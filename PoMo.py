@@ -7,9 +7,12 @@ import re
 # from libPoMo.main import probability_matrix, a, mutModel, selModel, dsRatio
 import libPoMo.main as pm
 
-# parse command line arguments
-parser = argparse.ArgumentParser(description="PoMo10 script")
+# PoMo version
+ver = '1.0.2'
 
+# parse command line arguments
+parser = argparse.ArgumentParser(prog='PoMo',
+                                 description="PoMo10 script version "+ver)
 parser.add_argument('hyphy_bin', help="""Absolute path of the
 HYPHY binary used to maximize the likelihood.""")
 parser.add_argument('file', help="""Name of the fasta file containing
@@ -69,7 +72,8 @@ parser.add_argument('-d', '--ds-ratio', type=pm.dsRatio, default=0.66,
                     sizes are decreased until at least 2 thirds of the
                     sites are included (`-d 0.66`).""")
 parser.add_argument('-v', '--verbose', action='count',
-                    help="""Turns on verbosity.""")
+                    help="""turn on verbosity""")
+parser.add_argument('--version', action='version', version='%(prog)s '+ver)
 args = parser.parse_args()
 
 print("""PoMo version 1.0 Created by Nicola De Maio. For a reference, please
