@@ -25,8 +25,9 @@ make MP2
 Running PoMo
 ====
 To run PoMo, execute
-
-`python path_to_PoMo/PoMo.py  path_to_HYPHY/HYPHYMP path_to_data/data.txt`
+```sh
+python path_to_PoMo/PoMo.py  path_to_HYPHY/HYPHYMP path_to_data/data.txt
+```
 
 The data file must either be in fasta format, or in allele count format (see
 example files in `./sample-data/`).

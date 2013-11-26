@@ -29,15 +29,6 @@ mutmod["NONREV"] = ["global mac=0.01;\n", "global mag=0.01;\n",
                     "global mtc=0.01;\n", "global mtg=0.01;\n"]
 
 
-# define mutModel type for argparse
-def mutModel(mm):
-    value = str(mm)
-    if not (mm in mutmod.keys()):
-        msg = "%r is not a valid mutation model" % mm
-        raise argparse.ArgumentTypeError(msg)
-    return value
-
-
 # define selection models
 selmod = {}
 selmod["NoSel"] = ["sc := 0.0;\n", "sa := 0.0;\n", "st := 0.0;\n",
@@ -48,8 +39,17 @@ selmod["AllNuc"] = ["global sc=0.0003;\n", "global sg=0.0003;\n",
                     "sa := 0.0;\n", "global st=0.0001;\n"]
 
 
-# define selModel type for argparse
+def mutModel(mm):
+    """Mutation model type for argparse."""
+    value = str(mm)
+    if not (mm in mutmod.keys()):
+        msg = "%r is not a valid mutation model" % mm
+        raise argparse.ArgumentTypeError(msg)
+    return value
+
+
 def selModel(sm):
+    """Selection model type for argparse."""
     value = str(sm)
     if not (sm in selmod.keys()):
         msg = "%r is not a valid selection model" % sm
@@ -57,13 +57,37 @@ def selModel(sm):
     return value
 
 
-# define downsampling ratio type for argparse
 def dsRatio(dsR):
+    """Downsampling ratio type for argparse."""
     value = float(dsR)
     if not (0 < value <= 1):
         msg = "%r is not a valid downsampling ratio" % dsR
         raise argparse.ArgumentTypeError(msg)
     return value
+
+
+def setGM(gm):
+    """If given, set variable mutation rate."""
+    if gm > 0:
+        mutgamma = ["global shape;\n",
+                    "category rateCatMut =(" + str(gm) +
+                    ", EQUAL, MEAN, GammaDist(_x_,shape,shape), "
+                    "CGammaDist(_x_,shape,shape),0,1e25);\n"]
+    else:
+        mutgamma = ["rateCatMut := 1.0;\n"]
+    return mutgamma
+
+
+def setGS(gs):
+    """If given, set fixation bias."""
+    if gs > 0:
+        selgamma = ["global shape2;\n",
+                    "category rateCatSel =(" + str(gs) +
+                    ", EQUAL, MEAN, GammaDist(_x_,shape2,shape2), "
+                    "CGammaDist(_x_,shape2,shape2),0,1e25);\n"]
+    else:
+        selgamma = ["rateCatSel := 1.0;\n"]
+    return selgamma
 
 
 def a(n):

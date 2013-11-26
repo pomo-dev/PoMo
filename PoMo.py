@@ -88,22 +88,10 @@ elif args.molecular_clock == 0:
 muts = pm.mutmod[args.MM]
 
 # variable mutation rate (+Gamma)
-if int(args.GM) > 0:
-    mutgamma = ["global shape;\n", "category rateCatMut =(" +
-                str(args.GM) +
-                ", EQUAL, MEAN, GammaDist(_x_,shape,shape), "
-                "CGammaDist(_x_,shape,shape),0,1e25);\n"]
-else:
-    mutgamma = ["rateCatMut := 1.0;\n"]
+mutgamma = pm.setGM(args.GM)
 
 # fixation bias
-if int(args.GS) > 0:
-    selgamma = ["global shape2;\n", "category rateCatSel =(" +
-                str(args.GS) +
-                ", EQUAL, MEAN, GammaDist(_x_,shape2,shape2), "
-                "CGammaDist(_x_,shape2,shape2),0,1e25);\n"]
-else:
-    selgamma = ["rateCatSel := 1.0;\n"]
+selgamma = pm.setGS(args.GS)
 
 # selection model
 sels = pm.selmod[args.SM]
@@ -174,10 +162,10 @@ sp_samples = []
 # list with actual data
 sp_data = []
 
+# TODO
 line = infile.readline()
 while line[0] != ">":
     line = infile.readline()
-    print(line)
     if line == "":
         break
 
@@ -224,7 +212,6 @@ if line == "":
         line = infile.readline()
     line = ""
     leng = len(sp_data[0])
-
 
 # In case of Fasta format:
 while line != "":
