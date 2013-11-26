@@ -3,7 +3,7 @@ PoMo 1.0.2
 Implementation of a polymorphism aware phylogenetic model using HYPHY.
 
 Created by: Nicola De Maio  
-Contributor: Dominik Schrempf
+Contributors: Carolin Kosiol and Dominik Schrempf
 
 For a reference, please see and cite: De Maio, Schlotterer, Kosiol
 (MBE, 2013), and/or: De Maio, Kosiol (in preparation).  You can use
