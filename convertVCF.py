@@ -19,11 +19,30 @@ parser = argparse.ArgumentParser(prog='convertVCF',
                                  description="convertVCF script version" + ver)
 parser.add_argument('reference',
                     help="path to reference genome in fasta format")
-parser.add_argument('vcf-file',
+parser.add_argument('vcfFile',
                     help="path to vcf file with SNP information")
 args = parser.parse_args()
 
-(seqNames, seqDescr, seqData) = fa.open_fa(args.reference)
-print(seqNames)
-print(seqDescr)
-print(seqData)
+seq = fa.open_fa(args.reference)
+seq.print_info()
+print(seq.get_base(seq.names[0], int(args.vcfFile)))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

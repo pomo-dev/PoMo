@@ -1,4 +1,11 @@
-# PoMo 10 script
+#!/usr/bin/env python
+
+"""Execute PoMo10.
+
+This script executes PoMo. Run this script with `--help` to print help
+information and exit.
+
+"""
 import sys
 import os
 import random
@@ -13,8 +20,8 @@ ver = '1.0.2'
 # parse command line arguments
 parser = argparse.ArgumentParser(prog='PoMo',
                                  description="PoMo10 script version "+ver)
-parser.add_argument('hyphy_bin', help="""Absolute path of the
-HYPHY binary used to maximize the likelihood.""")
+parser.add_argument('hyphy_bin', help="""Path of the HYPHY binary used
+to maximize the likelihood.""")
 parser.add_argument('file', help="""Name of the fasta file containing
 the alignment. Each individual's name must be species_n where
 \"species\" is the name of its species, without underscores, and \"n\"
