@@ -11,7 +11,9 @@ a complete sequence that contains SNPs as well as unchanged bases
 """
 
 import argparse
-import libPoMo.fasta as fa
+import import_libPoMo  # noqa
+import libPoMo.fasta as fa  # noqa
+import libPoMo.vcf as vcf  # noqa
 
 ver = "1.0"
 
@@ -23,26 +25,5 @@ parser.add_argument('vcfFile',
                     help="path to vcf file with SNP information")
 args = parser.parse_args()
 
-seq = fa.open_fa(args.reference)
+seq = vcf.open_vcf(args.vcfFile)
 seq.print_info()
-print(seq.get_base(seq.names[0], int(args.vcfFile)))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
