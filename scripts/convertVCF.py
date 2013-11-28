@@ -26,4 +26,5 @@ parser.add_argument('vcfFile',
 args = parser.parse_args()
 
 seq = vcf.open_vcf(args.vcfFile)
-seq.print_info()
+searched_base = seq.get_nuc_base('chr1', 824126)
+searched_base.print_info()

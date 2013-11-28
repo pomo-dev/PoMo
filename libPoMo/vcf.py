@@ -27,7 +27,9 @@ class NucBase():
     """Stores a nucleotide base.
 
     A class that stores a single nucleotide base and related
-    information retrieved from a VCF file.
+    information retrieved from a VCF file.  Please see
+    http://www.1000genomes.org/ for a detailed description of the vcf
+    format.
 
     self.chrom = chromosome name
     self.pos = position on chromosome
@@ -36,6 +38,9 @@ class NucBase():
     self.alt
     self.qual
     self.filter
+    self.info
+    self.format
+    self.dataIndividuals
 
     """
     def __init__(self):
@@ -46,28 +51,22 @@ class NucBase():
         self.alt = ''
         self.qual = ''
         self.filter = ''
-        # self.info = ''
-        # self.format = ''
-        # self.indivuals = ''
+        self.info = ''
+        self.format = ''
+        self.dataIndividuals = []
 
-    def print_header_line(self):
-        print(*hdList, sep='\t')
-        return
-
-    def print_info(self, printHeader=False):
+    def print_info(self):
         """Print nucleotide base information.
 
         Prints the stored single nucleotide base and related
-        information from the VCF file. If `printHeader=True` is
-        specified, the header line is printed before the nucleotide
-        base.
+        information from the VCF file.
 
         """
-        if printHeader is True:
-            self.print_header_line()
         print(self.chrom, self.pos, self.id, self.ref,
               self.alt, self.qual, self.filter,
-              sep='\t')
+              self.info, self.format,
+              sep='\t', end='\t')
+        print(self.dataIndividuals, sep='\t', end='')
         return
 
 
@@ -80,8 +79,14 @@ class VCFSeq():
     """
     def __init__(self):
         self.header = []
+        self.individuals = []
         self.bases = []
         self.nbases = 0
+
+    def print_header_line(self):
+        print(*hdList, sep='\t', end='\t')
+        print(*self.individuals, sep='\t', end='')
+        return
 
     def print_info(self, maxB=50, printHeader=False):
         """Print VCF sequence information.
@@ -93,8 +98,7 @@ class VCFSeq():
         """
         if printHeader is True:
             print(self.header)
-        if self.nbases > 0:
-            self.bases[0].print_header_line()
+        self.print_header_line()
         if self.nbases < maxB:
             maxB = self.nbases
         for i in range(0, maxB):
@@ -109,19 +113,14 @@ class VCFSeq():
 
     def get_nuc_base(self, chrom, pos):
         """Returns base at position `pos` of chromosome `chrom`."""
-        startIndex = 0
-        while True:
-            try:
-                i = self.pos[startIndex:].index(pos)
-            except:
-                raise sb.SequenceDataError("Base position not found.")
-            if self.chrom[i+startIndex] == chrom:
-                # Base has been found.
-                break
-            else:
-                # Start next search right after this pos
-                startIndex = startIndex + i + 1
-        return self.ref[i+startIndex]
+        for i in range(0, self.nbases):
+            print(self.bases[i].pos, self.bases[i].chrom)
+            if pos == self.bases[i].pos \
+               and chrom == self.bases[i].chrom:
+                return self.bases[i]
+        raise sb.SequenceDataError('Base at position ' + str(pos) +
+                                   ' on chromosome ' + str(chrom) +
+                                   ' not found.')
 
 
 def check_fixed_field_header(ln):
@@ -137,6 +136,22 @@ def check_fixed_field_header(ln):
     return
 
 
+def get_indiv_from_field_header(ln):
+    """Returns individuals from a fixed field header.
+
+    Sample header line:
+    #CHROM\t POS\t ID\t REF\t ALT\t QUAL\t FILTER\t INFO\t FORMAT\t Individuals
+
+    """
+    individuals = []
+    lnList = ln.split('\t', maxsplit=9)
+    if len(lnList) == 10:
+        individuals = lnList[9].split('\t')
+    else:
+        raise NotAVariantCallFormatFileError('No individuals in header line.')
+    return individuals
+
+
 def get_nuc_base_from_line(ln):
     """Retrieves base data from a VCF file line.
 
@@ -145,14 +160,17 @@ def get_nuc_base_from_line(ln):
     """
     base = NucBase()
     lnList = ln.split('\t', maxsplit=9)
-    if len(lnList) >= 7:
+    if len(lnList) >= 10:
         base.chrom = lnList[0]
-        base.pos = lnList[1]
+        base.pos = int(lnList[1])
         base.id = lnList[2]
         base.ref = lnList[3]
         base.alt = lnList[4]
         base.qual = lnList[5]
         base.filter = lnList[6]
+        base.info = lnList[7]
+        base.format = lnList[8]
+        base.dataIndividuals = lnList[9]
     else:
         raise NotANucBaseError('Line ' + ln + ' is not a NucBase.')
     return base
@@ -186,6 +204,7 @@ def open_vcf(VCFFileName, maxskip=100):
             if line[0:6] == '#CHROM':
                 # Here starts the data.
                 check_fixed_field_header(line)
+                seq.individuals = get_indiv_from_field_header(line)
                 flag = True
                 break
             if line == '':
