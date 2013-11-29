@@ -8,6 +8,7 @@ This module provides functions to read, write and access fasta files.
 """
 
 import libPoMo.seqbase as sb
+import libPoMo.vcf as vcf
 
 
 class NotAFastaFileError(sb.SequenceDataError):
@@ -21,18 +22,8 @@ class FaSeq(sb.Seq):
         super(FaSeq, self).__init__()
         self.descr = []
 
-    def print_info(self, maxB=50):
-        """Print fasta sequence information.
-
-        Print species names, description, the length of the sequence
-        and a maximum of `maxB` bases (defaults to 50).
-
-        """
-        for i in range(0, self.nSpecies):
-            print('>', self.names[i], self.descr[i])
-            print("Printing", maxB, "out of a total of",
-                  self.dataLen[i], "bases.")
-            print(self.data[i][0:maxB])
+    def print_seq_header(self, i):
+        print('>', self.names[i], ' ', self.descr[i], sep='')
         return
 
 
@@ -60,7 +51,7 @@ def test_sequence(seq):
     return
 
 
-def open_fa(faFileName, maxskip=50):
+def open_seq(faFileName, maxskip=50):
     """Opens a fasta file.
 
     This function tries to open the given fasta file, checks if it is
@@ -74,15 +65,16 @@ def open_fa(faFileName, maxskip=50):
 
     flag = False
     with open(faFileName) as faFile:
+        seq.name = sb.stripFName(faFileName)
         # Find the start of the first sequence.
         for i in range(0, maxskip):
             line = faFile.readline()
+            if line == '':
+                raise NotAFastaFileError("File contains no data.")
             if line[0] == '>':
                 # species name found in line
                 flag = True
                 break
-            if line == '':
-                raise NotAFastaFileError("File contains no data.")
         if flag is False:
             raise NotAFastaFileError("Didn't find a species header within " +
                                      maxskip + " lines.")
@@ -107,3 +99,55 @@ def open_fa(faFileName, maxskip=50):
     seq.nSpecies += 1
     test_sequence(seq)
     return seq
+
+
+def save_as_vcf(faSeq, faRef, VCFFileName):
+    """Saves the given FaSeq in VCF format.
+
+    This function saves the SNPs of `faSeq`, a given FaSeq (fasta
+    sequence) object in VCF format to the file `VCFFileName`.  The
+    reference genome `faRef` to which `faSeq` is compared to needs
+    also be passed as an FaSeq object.
+
+    The function compares all sequences in `faSeq` to the sequence
+    given in `faRef`.  The names of the individuals in the saved VCF
+    file will be the sequence names of the `faSeq` object.  The name
+    of the chromosome (#CHROM) will be the sequence name of the
+    reference.
+
+    """
+    if faRef.nSpecies != 1:
+        raise sb.SequenceDataError('Reference contains more than 1 sequence.')
+    for i in range(0, faSeq.nSpecies):
+        if faSeq.dataLen[i] != faRef.dataLen[0]:
+            raise sb.SequenceDataError(
+                'Sequence ' + faSeq.names[i] +
+                ' has different length than reference.')
+    # initialize VCFFile
+    with open(VCFFileName, 'w') as VCFFile:
+        vcf.file_init(VCFFile)
+        # loop over sequences in faSeq
+        for s in range(0, faSeq.nSpecies):
+            # loop over bases
+            for i in range(0, faRef.dataLen[0]):
+                pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

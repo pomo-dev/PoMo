@@ -25,6 +25,11 @@ parser.add_argument('vcfFile',
                     help="path to vcf file with SNP information")
 args = parser.parse_args()
 
-seq = vcf.open_vcf(args.vcfFile)
-searched_base = seq.get_nuc_base('chr1', 824126)
-searched_base.print_info()
+# seq = vcf.open_vcf(args.vcfFile)
+# searched_base = seq.get_nuc_base('chr1', 824126)
+# searched_base.print_info()
+
+#seq = fa.open_fa(args.reference)
+#seq.print_info()
+indiv = ['a', 'b', 'c']
+vcf.print_header_line(indiv)

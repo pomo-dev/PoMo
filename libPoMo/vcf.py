@@ -70,6 +70,22 @@ class NucBase():
         return
 
 
+def get_header_line_string(indiv):
+    """Returns a standard VCF File header string with individuals `indiv`."""
+    string = ''
+    for s in hdList:
+        string += s + '\t'
+    for i in indiv:
+        string += i + '\t'
+    # we added one tab at the end that we do not need
+    return string[:-1]
+
+
+def print_header_line(indiv):
+    """Prints a standard VCF File header with individuals `indiv`."""
+    print(get_header_line_string(indiv), end='')
+
+
 class VCFSeq():
     """A class that stores data retrieved from a VCF file.
 
@@ -83,11 +99,6 @@ class VCFSeq():
         self.bases = []
         self.nbases = 0
 
-    def print_header_line(self):
-        print(*hdList, sep='\t', end='\t')
-        print(*self.individuals, sep='\t', end='')
-        return
-
     def print_info(self, maxB=50, printHeader=False):
         """Print VCF sequence information.
 
@@ -98,7 +109,7 @@ class VCFSeq():
         """
         if printHeader is True:
             print(self.header)
-        self.print_header_line()
+        print_header_line(self.individuals)
         if self.nbases < maxB:
             maxB = self.nbases
         for i in range(0, maxB):
@@ -114,7 +125,6 @@ class VCFSeq():
     def get_nuc_base(self, chrom, pos):
         """Returns base at position `pos` of chromosome `chrom`."""
         for i in range(0, self.nbases):
-            print(self.bases[i].pos, self.bases[i].chrom)
             if pos == self.bases[i].pos \
                and chrom == self.bases[i].chrom:
                 return self.bases[i]
@@ -181,7 +191,7 @@ def test_sequence(seq):
     pass                        # TODO
 
 
-def open_vcf(VCFFileName, maxskip=100):
+def open_seq(VCFFileName, maxskip=100):
     """Opens a VCF4.2 file.
 
     This function tries to open the given VCF file, checks if it is in
@@ -218,6 +228,11 @@ def open_vcf(VCFFileName, maxskip=100):
 
         test_sequence(seq)
     return seq
+
+
+
+
+
 
 
 
