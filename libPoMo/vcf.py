@@ -228,26 +228,3 @@ def open_seq(VCFFileName, maxskip=100):
 
         test_sequence(seq)
     return seq
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
