@@ -21,15 +21,15 @@ class FaSeq():
     """A class that stores sequence data retrieved from a fasta file.
 
     self.id = fasta sequence identifier
-    self.seq = vector of sb.Seq objects (these store the actual sequence data)
+    self.seqL = list of sb.Seq objects (these store the actual sequence data)
     self.nSpecies = number of species (individuals, chromosomes) saved
                     in the object
 
     """
 
     def __init__(self):
-        self.id = ""
-        self.seq = []
+        self.name = ""
+        self.seqL = []
         self.nSpecies = 0
 
     def print_info(self, maxB=50):
@@ -39,36 +39,37 @@ class FaSeq():
         the sequence and a maximum of `maxB` bases (defaults to 50).
 
         """
-        print("Sequence identifier:", self.id)
+        print("Sequence identifier:", self.name)
         for i in range(0, self.nSpecies):
-            self.seq[i].print_seq_header()
+            self.seqL[i].print_seq_header()
             print("Printing", maxB, "out of a total of",
-                  self.seq[i].dataLen, "bases.")
-            print(self.seq[i].data[0:maxB])
+                  self.seqL[i].dataLen, "bases.")
+            print(self.seqL[i].data[0:maxB])
         return
 
     def get_seq_names(self):
         """Returns a list with sequence names."""
         names = []
         for i in range(0, self.nSpecies):
-            names.append(self.seq[i].name)
+            names.append(self.seqL[i].name)
         return names
 
     def get_seq_by_id(self, i):
         """Return sequence number `i` as Seq object."""
         seq = sb.Seq()
-        seq = self.seq[i]
+        seq = self.seqL[i]
         return seq
 
     def get_seq_base(self, seq, pos):
         """Returns base at position `pos` in sequence with name `seq`."""
+        names = self.get_seq_names()
         try:
-            i = self.names.index(seq)
+            i = names.index(seq)
         except:
             raise sb.SequenceDataError("Sequence name not found.")
         if pos > self.dataLen[i]:
             raise sb.SequenceDataError("Position out of range.")
-        return self.data[i][pos-1]
+        return self.seqL[i].get_base(pos)
 
 
 def get_sp_name_and_description(fa_header_line):
@@ -86,22 +87,27 @@ def test_sequence(faSequence):
     l = faSequence.nSpecies
     names = []
     for i in range(0, l):
-        names.append(faSequence.seq[i].name)
-        if faSequence.seq[i].name == '' or faSequence.seq[i].data[i] == '':
+        names.append(faSequence.seqL[i].name)
+        if faSequence.seqL[i].name == '' or faSequence.seqL[i].data[i] == '':
             raise sb.SequenceDataError("Sequence name or data is missing.")
     if l > len(set(names)):
         raise sb.SequenceDataError("Sequence names are not unique.")
     return
 
 
-def open_seq(faFileName, maxskip=50):
+def open_seq(faFileName, maxskip=50, name=None):
     """Opens a fasta file.
 
     This function tries to open the given fasta file, checks if it is
-    in fasta format and reads the sequence(s). It only looks `maxskip`
-    lines for the start of a sequence (defaults to 50). It returns an
-    FaSeq class object that contains a list of species names, a list
-    of the respective desriptions and a list with the sequences.
+    in fasta format and reads the sequence(s).  It returns an FaSeq
+    class object that contains a list of species names, a list of the
+    respective desriptions and a list with the sequences.
+
+    `maxskip`: Only look `maxskip` lines for the start of a sequence
+    (defaults to 50).
+
+    `name`: Set the name of the sequence to `name`, otherwise set it
+    to the stripped filename.
 
     """
     fastaSeq = FaSeq()
@@ -109,7 +115,10 @@ def open_seq(faFileName, maxskip=50):
 
     flag = False
     with open(faFileName) as faFile:
-        fastaSeq.name = sb.stripFName(faFileName)
+        if name is not None:
+            fastaSeq.name = name
+        else:
+            fastaSeq.name = sb.stripFName(faFileName)
         # Find the start of the first sequence.
         for i in range(0, maxskip):
             line = faFile.readline()
@@ -133,7 +142,7 @@ def open_seq(faFileName, maxskip=50):
                 sequence.data = data
                 sequence.dataLen = len(data)
                 # cp sequence to fastaSeq and purge sequence
-                fastaSeq.seq.append(copy.copy(sequence))
+                fastaSeq.seqL.append(copy.copy(sequence))
                 fastaSeq.nSpecies += 1
                 sequence.purge()
                 (name, desc) = get_sp_name_and_description(line)
@@ -145,7 +154,7 @@ def open_seq(faFileName, maxskip=50):
     sequence.data = data
     sequence.dataLen = len(data)
     # cp sequence to fastaSeq and purge sequence
-    fastaSeq.seq.append(copy.copy(sequence))
+    fastaSeq.seqL.append(copy.copy(sequence))
     fastaSeq.nSpecies += 1
     test_sequence(fastaSeq)
     return fastaSeq
@@ -156,8 +165,8 @@ def save_as_vcf(faSeq, ref, VCFFileName):
 
     This function saves the SNPs of `faSeq`, a given FaSeq (fasta
     sequence) object in VCF format to the file `VCFFileName`.  The
-    reference genome `ref` to which `faSeq` is compared to needs
-    to be passed as a Seq object.
+    reference genome `ref`, to which `faSeq` is compared to, needs to
+    be passed as a Seq object.
 
     The function compares all sequences in `faSeq` to the sequence
     given in `ref`.  The names of the individuals in the saved VCF
@@ -210,16 +219,26 @@ def save_as_vcf(faSeq, ref, VCFFileName):
             string = str(sAltBases.index(indivData[0]) + 1)
         if l > 1:
             for i in range(1, len(indivData)):
-                if not (indivData[0] in altBases):
+                if not (indivData[i] in altBases):
                     string += '\t' + '0'
                 else:
-                    string += '\t' + str(sAltBases.index(indivData[0]) + 1)
+                    string += '\t' + str(sAltBases.index(indivData[i]) + 1)
         return string
 
-    def print_vcf_line_to_file(chromName, pos,
-                               refBase, altBaseSring, indivString):
+    def get_vcf_line(chromName, pos,
+                     refBase, altBaseString, indivString):
         """Prints a VCF file line with given data to file `VCFFile`."""
-        print(altBaseString, indivString)
+        string = chromName + '\t'
+        string += str(pos) + '\t'
+        string += '.' + '\t'    # id
+        string += refBase + '\t'
+        string += altBaseString + '\t'
+        string += '.' + '\t'    # qual
+        string += '.' + '\t'    # filter
+        string += '.' + '\t'    # info
+        string += "GT" + '\t'   # format
+        string += indivString
+        return string
 
     if (not isinstance(faSeq, FaSeq)):
         raise sb.SequenceDataError("`faSeq` is not an FaSeq object.")
@@ -228,9 +247,9 @@ def save_as_vcf(faSeq, ref, VCFFileName):
     if faSeq.nSpecies == 0:
         raise sb.SequenceDataError("`faSeq` has no saved sequences.")
     for i in range(0, faSeq.nSpecies):
-        if faSeq.seq[i].dataLen != ref.dataLen:
+        if faSeq.seqL[i].dataLen != ref.dataLen:
             raise sb.SequenceDataError(
-                "Sequence " + faSeq.names[i] +
+                "Sequence " + faSeq.seqL[i].name +
                 " has different length than reference.")
     # initialize VCFFile
     with open(VCFFileName, 'w') as VCFFile:
@@ -243,13 +262,31 @@ def save_as_vcf(faSeq, ref, VCFFileName):
             indivData = []
             # loop over sequences in faSeq and check if there is a SNP
             for s in range(0, faSeq.nSpecies):
-                indivData.append(faSeq.seq[s].data[i])
-                if faSeq.seq[s].data[i] != refBase:
-                    altBases.add(faSeq.seq[s].data[i])
+                indivData.append(faSeq.seqL[s].data[i])
+                if faSeq.seqL[s].data[i] != refBase:
+                    altBases.add(faSeq.seqL[s].data[i])
             sAltBases = sorted(altBases)
             altBaseString = get_altBases_string(sAltBases)
             indivString = get_indiv_string(indivData, altBases, sAltBases)
-            # TODO TODO
-            print_vcf_line_to_file(
-                ref.name, i, refBase, altBaseString, indivString)
+            if altBases != set():
+                print(
+                    get_vcf_line(ref.name, i, refBase,
+                                 altBaseString, indivString),
+                    file=VCFFile)
     return
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

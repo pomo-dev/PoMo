@@ -40,7 +40,7 @@ class NucBase():
     self.filter
     self.info
     self.format
-    self.dataIndividuals
+    self.speciesData
 
     """
     def __init__(self):
@@ -53,7 +53,7 @@ class NucBase():
         self.filter = ''
         self.info = ''
         self.format = ''
-        self.dataIndividuals = []
+        self.speciesData = []
 
     def print_info(self):
         """Print nucleotide base information.
@@ -66,8 +66,21 @@ class NucBase():
               self.alt, self.qual, self.filter,
               self.info, self.format,
               sep='\t', end='\t')
-        print(self.dataIndividuals, sep='\t', end='')
+        print(self.speciesData, sep='\t', end='')
         return
+
+    def get_alt_base_list(self):
+        """Return alternative bases as list."""
+        return self.alt.split(',')
+
+    def get_speciesData(self):
+        """Returns species data as list."""
+        data = []
+        for i in range(0, len(self.speciesData)):
+            # TODO, for now, this only works for haploids
+            # data.append(int(self.speciesData[i].split(':')[0].split('/')[0]))
+            data.append(int(self.speciesData[i].split(':')[0]))
+        return data
 
 
 def get_header_line_string(indiv):
@@ -90,14 +103,18 @@ class VCFSeq():
     """A class that stores data retrieved from a VCF file.
 
     self.header = header information
-    self.bases = list with stored NucBase(s)
-    self.nbases = number of bases stored
+    self.species = list with species (individuals)
+    self.nSpecies = number of species (individuals)
+    self.base = list with stored NucBase(s)
+    self.nBases = number of bases stored
     """
     def __init__(self):
+        self.name = ''
         self.header = []
-        self.individuals = []
-        self.bases = []
-        self.nbases = 0
+        self.speciesL = []
+        self.nSpecies = 0
+        self.baseL = []
+        self.nBases = 0
 
     def print_info(self, maxB=50, printHeader=False):
         """Print VCF sequence information.
@@ -109,25 +126,33 @@ class VCFSeq():
         """
         if printHeader is True:
             print(self.header)
-        print_header_line(self.individuals)
-        if self.nbases < maxB:
-            maxB = self.nbases
+        print_header_line(self.speciesL)
+        if self.nBases < maxB:
+            maxB = self.nBases
         for i in range(0, maxB):
-            self.bases[i].print_info()
+            self.baseL[i].print_info()
         return
 
     def append_nuc_base(self, base):
         """Appends a given NucBase to the VCFSeq object."""
-        self.bases.append(base)
-        self.nbases += 1
+        self.baseL.append(base)
+        self.nBases += 1
         return
+
+    def has_base(self, chrom, pos):
+        """Returns True (False) if base is (not) found."""
+        for i in range(0, self.nBases):
+            if pos == self.baseL[i].pos \
+               and chrom == self.baseL[i].chrom:
+                return True
+        return False
 
     def get_nuc_base(self, chrom, pos):
         """Returns base at position `pos` of chromosome `chrom`."""
-        for i in range(0, self.nbases):
-            if pos == self.bases[i].pos \
-               and chrom == self.bases[i].chrom:
-                return self.bases[i]
+        for i in range(0, self.nBases):
+            if pos == self.baseL[i].pos \
+               and chrom == self.baseL[i].chrom:
+                return self.baseL[i]
         raise sb.SequenceDataError('Base at position ' + str(pos) +
                                    ' on chromosome ' + str(chrom) +
                                    ' not found.')
@@ -137,7 +162,7 @@ def check_fixed_field_header(ln):
     """Checks if the given line is the header of the fixed fields.
 
     Sample header line:
-    #CHROM\t POS\t ID\t REF\t ALT\t QUAL\t FILTER\t INFO\t FORMAT\t Individuals
+    #CHROM\t POS\t ID\t REF\t ALT\t QUAL\t FILTER\t INFO\t FORMAT\t SpeciesL
 
     """
     lnList = ln.split('\t', maxsplit=9)
@@ -147,19 +172,19 @@ def check_fixed_field_header(ln):
 
 
 def get_indiv_from_field_header(ln):
-    """Returns individuals from a fixed field header.
+    """Returns species from a fixed field header.
 
     Sample header line:
-    #CHROM\t POS\t ID\t REF\t ALT\t QUAL\t FILTER\t INFO\t FORMAT\t Individuals
+    #CHROM\t POS\t ID\t REF\t ALT\t QUAL\t FILTER\t INFO\t FORMAT\t SpeciesL
 
     """
-    individuals = []
+    speciesL = []
     lnList = ln.split('\t', maxsplit=9)
     if len(lnList) == 10:
-        individuals = lnList[9].split('\t')
+        speciesL = lnList[9].split('\t')
     else:
-        raise NotAVariantCallFormatFileError('No individuals in header line.')
-    return individuals
+        raise NotAVariantCallFormatFileError('No species in header line.')
+    return speciesL
 
 
 def get_nuc_base_from_line(ln):
@@ -180,7 +205,7 @@ def get_nuc_base_from_line(ln):
         base.filter = lnList[6]
         base.info = lnList[7]
         base.format = lnList[8]
-        base.dataIndividuals = lnList[9]
+        base.speciesData = lnList[9].split('\t')
     else:
         raise NotANucBaseError('Line ' + ln + ' is not a NucBase.')
     return base
@@ -191,14 +216,20 @@ def test_sequence(seq):
     pass                        # TODO
 
 
-def open_seq(VCFFileName, maxskip=100):
+def open_seq(VCFFileName, maxskip=100, name=None):
     """Opens a VCF4.2 file.
 
     This function tries to open the given VCF file, checks if it is in
-    VCF format and reads the bases(s). It only looks `maxskip` lines
-    for the start of the bases (defaults to 80). It returns an VCFSeq
-    class object that contains all the information. For help, refer to
+    VCF format and reads the bases(s).  It returns an VCFSeq class
+    object that contains all the information. For help, refer to
     `VCFSeq.__doc__`.
+
+
+    `maxskip`: Only look `maxskip` lines for the start of the bases
+    (defaults to 80).
+
+    `name`: Set the name of the sequence to `name`, otherwise set it
+    to the filename.
 
     """
     seq = VCFSeq()
@@ -206,6 +237,11 @@ def open_seq(VCFFileName, maxskip=100):
 
     flag = False
     with open(VCFFileName) as VCFFile:
+        # set the vcf sequence name
+        if name is not None:
+            seq.name = name
+        else:
+            seq.name = sb.stripFName(VCFFileName)
         # Find the start of the first base
         for i in range(0, maxskip):
             line = VCFFile.readline()
@@ -214,7 +250,8 @@ def open_seq(VCFFileName, maxskip=100):
             if line[0:6] == '#CHROM':
                 # Here starts the data.
                 check_fixed_field_header(line)
-                seq.individuals = get_indiv_from_field_header(line)
+                seq.speciesL = get_indiv_from_field_header(line)
+                seq.nSpecies = len(seq.speciesL)
                 flag = True
                 break
             if line == '':

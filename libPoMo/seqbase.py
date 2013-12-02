@@ -52,18 +52,3 @@ def stripFName(fn):
     """Convenience function to strip filename off the `.xyz` ending."""
     filename_without_path = os.path.split(fn)[-1]
     return filename_without_path.rsplit('.', maxsplit=1)[0]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
