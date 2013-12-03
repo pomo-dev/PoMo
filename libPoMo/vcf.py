@@ -95,17 +95,101 @@ def get_header_line_string(indiv):
 
 
 def print_header_line(indiv):
-    """Prints a standard VCF File header with individuals `indiv`."""
+    """Print a standard VCF File header with individuals `indiv`."""
     print(get_header_line_string(indiv), end='')
+
+
+def update_base(ln, base, info=True):
+    """Read line `ln` into base `base`.
+
+    Split a given VCF file line and returns a NucBase object. If
+    `info` is set to False, only #CHROM, REF, ALT and speciesData will
+    be read.
+
+    """
+    lnList = ln.split('\t', maxsplit=9)
+    if len(lnList) >= 10:
+        base.chrom = lnList[0]
+        base.pos = int(lnList[1])
+        base.ref = lnList[3]
+        base.alt = lnList[4]
+        base.speciesData = lnList[9].rstrip().split('\t')
+        if info is True:
+            base.id = lnList[2]
+            base.qual = lnList[5]
+            base.filter = lnList[6]
+            base.info = lnList[7]
+            base.format = lnList[8]
+    else:
+        raise NotANucBaseError('Line ' + ln + ' is not a NucBase.')
+    return base
+
+
+def get_nuc_base_from_line(ln, info=True):
+    """Retrieve base data from a VCF file line.
+
+    Split a given VCF file line and returns a NucBase object. If
+    `info` is set to False, only #CHROM, POS, REF, ALT and speciesData will
+    be read.
+
+    """
+    base = NucBase()
+    update_base(ln, base, info)
+    return base
+
+
+class VCFStream():
+    """Store base data from a VCF file line per line.
+
+    This class stores a single base retrieved from a VCF file and the
+    file itself.  It is used to parse through a VCF file line by line
+    processing the bases without having to read the whole file at one.
+
+    It can be initialized with init_seq().
+
+    self.name = sequence name
+    self.fo = stored vcf file object
+    self.species = list with species (individuals)
+    self.nSpecies = number of species (individuals)
+    self.base = list with stored NucBase(s)
+
+    """
+
+    def __init__(self, seqName, vcfFileObject, speciesList, firstBase):
+        self.name = seqName
+        self.fo = vcfFileObject
+        self.speciesL = speciesList
+        self.nSpecies = len(speciesList)
+        self.base = firstBase
+
+    def print_info(self):
+        """Prints VCFStream information."""
+        print("Name:", self.name)
+        print("File object:", self.fo)
+        print("List of species/individuals:", self.speciesL)
+        print("Number of species/individuals:", self.nSpecies)
+        print("Saved base:")
+        self.base.print_info()
+
+    def read_next_base(self):
+        """Reads the next base."""
+        line = self.fo.readline()
+        if line != '':
+            update_base(line, self.base, info=False)
+
+    def close_fo(self):
+        """Closes the linked file."""
+        self.fo.close()
 
 
 class VCFSeq():
     """A class that stores data retrieved from a VCF file.
 
+    self.name = sequence name
     self.header = header information
-    self.species = list with species (individuals)
+    self.speciesL = list with species (individuals)
     self.nSpecies = number of species (individuals)
-    self.base = list with stored NucBase(s)
+    self.baseL = list with stored NucBase(s)
     self.nBases = number of bases stored
     """
     def __init__(self):
@@ -187,33 +271,50 @@ def get_indiv_from_field_header(ln):
     return speciesL
 
 
-def get_nuc_base_from_line(ln):
-    """Retrieves base data from a VCF file line.
-
-    Splits a given VCF file line and returns a NucBase object.
-
-    """
-    base = NucBase()
-    lnList = ln.split('\t', maxsplit=9)
-    if len(lnList) >= 10:
-        base.chrom = lnList[0]
-        base.pos = int(lnList[1])
-        base.id = lnList[2]
-        base.ref = lnList[3]
-        base.alt = lnList[4]
-        base.qual = lnList[5]
-        base.filter = lnList[6]
-        base.info = lnList[7]
-        base.format = lnList[8]
-        base.speciesData = lnList[9].rstrip().split('\t')
-    else:
-        raise NotANucBaseError('Line ' + ln + ' is not a NucBase.')
-    return base
-
-
 def test_sequence(seq):
     """Tests a given VCF sequence."""
     pass                        # TODO
+
+
+def init_seq(VCFFileName, maxskip=100, name=None):
+    """Opens a VCF4.2 file.
+
+    This function tries to open the given VCF file, checks if it is in
+    VCF format.  It then initializes a VCFStream object that contains
+    the first base.  For help, refer to `VCFSeq.__doc__`.
+
+    `maxskip`: Only look `maxskip` lines for the start of the bases
+    (defaults to 80).
+
+    `name`: Set the name of the sequence to `name`, otherwise set it
+    to the filename.
+
+    """
+    #seq = VCFSeq()
+    #seq.header = ""
+
+    flag = False
+    VCFFile = open(VCFFileName)
+    # set the vcf sequence name
+    if name is None:
+        name = sb.stripFName(VCFFileName)
+    # Find the start of the first base
+    for i in range(0, maxskip):
+        line = VCFFile.readline()
+        if line == '':
+            raise NotAVariantCallFormatFileError("File contains no data.")
+        if line[0:6] == '#CHROM':
+            # Here starts the data.
+            check_fixed_field_header(line)
+            speciesL = get_indiv_from_field_header(line)
+            flag = True
+            break
+    if flag is False:
+        raise NotAVariantCallFormatFileError(
+            "Didn't find any data within " + str(maxskip) + " lines.")
+    line = VCFFile.readline()
+    base = get_nuc_base_from_line(line, info=False)
+    return VCFStream(name, VCFFile, speciesL, base)
 
 
 def open_seq(VCFFileName, maxskip=100, name=None):
@@ -245,6 +346,8 @@ def open_seq(VCFFileName, maxskip=100, name=None):
         # Find the start of the first base
         for i in range(0, maxskip):
             line = VCFFile.readline()
+            if line == '':
+                raise NotAVariantCallFormatFileError("File contains no data.")
             if line[0:2] == '##':
                 seq.header += line
             if line[0:6] == '#CHROM':
@@ -254,8 +357,6 @@ def open_seq(VCFFileName, maxskip=100, name=None):
                 seq.nSpecies = len(seq.speciesL)
                 flag = True
                 break
-            if line == '':
-                raise NotAVariantCallFormatFileError("File contains no data.")
         if flag is False:
             raise NotAVariantCallFormatFileError(
                 "Didn't find any data within " + str(maxskip) + " lines.")
