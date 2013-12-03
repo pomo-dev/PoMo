@@ -163,6 +163,13 @@ def open_seq(faFileName, maxskip=50, name=None):
 def save_as_vcf(faSeq, ref, VCFFileName):
     """Saves the given FaSeq in VCF format.
 
+    In general, we want to convert a fasta file with various
+    individuals with the help of a reference that contains one
+    sequence to a VCF file that contains all the SNPs.  This can be
+    done with this function.  Until now it is not possible to do this
+    conversion for several chromosomes for each individual in one run.
+    Still, the conversion can be done chromosome by chromosome.
+
     This function saves the SNPs of `faSeq`, a given FaSeq (fasta
     sequence) object in VCF format to the file `VCFFileName`.  The
     reference genome `ref`, to which `faSeq` is compared to, needs to
@@ -270,7 +277,7 @@ def save_as_vcf(faSeq, ref, VCFFileName):
             indivString = get_indiv_string(indivData, altBases, sAltBases)
             if altBases != set():
                 print(
-                    get_vcf_line(ref.name, i, refBase,
+                    get_vcf_line(ref.name, i+1, refBase,
                                  altBaseString, indivString),
                     file=VCFFile)
     return

@@ -17,7 +17,7 @@ import libPoMo.vcf as vcf  # noqa
 ver = "1.0"
 
 parser = argparse.ArgumentParser(prog="FtoV",
-                                 description="convert fast to VCF;" +
+                                 description="convert fasta to VCF;" +
                                  " script version" + ver)
 parser.add_argument("fastafile",
                     help="path to fasta file")

@@ -66,7 +66,7 @@ class NucBase():
               self.alt, self.qual, self.filter,
               self.info, self.format,
               sep='\t', end='\t')
-        print(self.speciesData, sep='\t', end='')
+        print('\t'.join(self.speciesData), end='')
         return
 
     def get_alt_base_list(self):
@@ -181,7 +181,7 @@ def get_indiv_from_field_header(ln):
     speciesL = []
     lnList = ln.split('\t', maxsplit=9)
     if len(lnList) == 10:
-        speciesL = lnList[9].split('\t')
+        speciesL = lnList[9].rstrip().split('\t')
     else:
         raise NotAVariantCallFormatFileError('No species in header line.')
     return speciesL
@@ -205,7 +205,7 @@ def get_nuc_base_from_line(ln):
         base.filter = lnList[6]
         base.info = lnList[7]
         base.format = lnList[8]
-        base.speciesData = lnList[9].split('\t')
+        base.speciesData = lnList[9].rstrip().split('\t')
     else:
         raise NotANucBaseError('Line ' + ln + ' is not a NucBase.')
     return base

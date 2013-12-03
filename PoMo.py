@@ -412,6 +412,7 @@ leng = len(sp_data[0])
 
 print("Number of species: ", str(n_species))
 print("Sample sizes effectively used: ", sp_samples)
+# print(sp_data)
 all_one = 1
 for i in range(n_species):
     if sp_samples[i] != 1:

@@ -1,5 +1,5 @@
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	Sheep_1	BlackSheep_1	RedSheep_18
-chrSheep	10	.	C	G	.	.	.	GT	0	1	1
-chrSheep	34	.	C	A	.	.	.	GT	0	0	1
-chrSheep	40	.	T	A	.	.	.	GT	0	1	1
-chrSheep	41	.	C	A	.	.	.	GT	0	0	1
+chrSheep	11	.	C	G	.	.	.	GT	0	1	1
+chrSheep	35	.	C	A	.	.	.	GT	0	0	1
+chrSheep	41	.	T	A	.	.	.	GT	0	1	1
+chrSheep	42	.	C	A	.	.	.	GT	0	0	1
