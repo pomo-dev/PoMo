@@ -8,6 +8,7 @@ This module provides functions to read, write and access vcf files.
 """
 
 import libPoMo.seqbase as sb
+import gzip
 
 
 class NotAVariantCallFormatFileError(sb.SequenceDataError):
@@ -66,7 +67,7 @@ class NucBase():
               self.alt, self.qual, self.filter,
               self.info, self.format,
               sep='\t', end='\t')
-        print('\t'.join(self.speciesData), end='')
+        print('\t'.join(self.speciesData))
         return
 
     def get_alt_base_list(self):
@@ -82,6 +83,9 @@ class NucBase():
             data.append(int(self.speciesData[i].split(':')[0]))
         return data
 
+    def purge(self):
+        self.__init__()
+
 
 def get_header_line_string(indiv):
     """Returns a standard VCF File header string with individuals `indiv`."""
@@ -96,7 +100,7 @@ def get_header_line_string(indiv):
 
 def print_header_line(indiv):
     """Print a standard VCF File header with individuals `indiv`."""
-    print(get_header_line_string(indiv), end='')
+    print(get_header_line_string(indiv))
 
 
 def update_base(ln, base, info=True):
@@ -149,7 +153,7 @@ class VCFStream():
 
     self.name = sequence name
     self.fo = stored vcf file object
-    self.species = list with species (individuals)
+    self.speciesL = list with species (individuals)
     self.nSpecies = number of species (individuals)
     self.base = list with stored NucBase(s)
 
@@ -176,6 +180,10 @@ class VCFStream():
         line = self.fo.readline()
         if line != '':
             update_base(line, self.base, info=False)
+            return self.base.pos
+        else:
+            self.base.purge()
+            return None
 
     def close_fo(self):
         """Closes the linked file."""
@@ -277,11 +285,14 @@ def test_sequence(seq):
 
 
 def init_seq(VCFFileName, maxskip=100, name=None):
-    """Opens a VCF4.2 file.
+    """Opens a (gzipped) VCF4.2 file.
 
     This function tries to open the given VCF file, checks if it is in
     VCF format.  It then initializes a VCFStream object that contains
     the first base.  For help, refer to `VCFSeq.__doc__`.
+
+    Please close the associated file object with
+    yourVCFStream.close_fo() when you don't need it anymore.
 
     `maxskip`: Only look `maxskip` lines for the start of the bases
     (defaults to 80).
@@ -290,11 +301,11 @@ def init_seq(VCFFileName, maxskip=100, name=None):
     to the filename.
 
     """
-    #seq = VCFSeq()
-    #seq.header = ""
-
     flag = False
-    VCFFile = open(VCFFileName)
+    if VCFFileName[-2:] == "gz":
+        VCFFile = gzip.open(VCFFileName, mode='rt')
+    else:
+        VCFFile = open(VCFFileName)
     # set the vcf sequence name
     if name is None:
         name = sb.stripFName(VCFFileName)

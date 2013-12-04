@@ -11,30 +11,49 @@ import libPoMo.fasta as fa
 
 print("Testing libPoMo/countsformat module.")
 ######################################################################
-vcf_sequence = "data/vcf-wolfs.dat"
-ref_sequence = "data/fasta-reference-wolf.dat"
-fn = "cf-test-tmp.dat"
-print("Try to save VCF file as counts format with a single chromosome.")
-vcfSeq = vcf.open_seq(vcf_sequence, name="wolfs")
-vcfSeq.print_info()
-faRef = fa.open_seq(ref_sequence, name="wolfs")
-cf.save_as_countsformat(vcfSeq, faRef, fn)
-print("\nOutput:")
-with open(fn) as file:
-    for line in file:
-        print(line, end='')
-os.remove(fn)
+# print("\n##################################################")
+# vcf_sequence = "data/vcf-wolfs.dat"
+# ref_sequence = "data/fasta-reference-wolf.dat"
+# fn = "cf-test-tmp.dat"
+# print("Try to save VCF file as counts format with a single chromosome.")
+# vcfSeq = vcf.open_seq(vcf_sequence, name="wolfs")
+# vcfSeq.print_info()
+# faRef = fa.open_seq(ref_sequence, name="wolfs")
+# cf.save_as_countsformat(vcfSeq, faRef, fn)
+# print("\nOutput:")
+# with open(fn) as file:
+#     for line in file:
+#         print(line, end='')
+# os.remove(fn)
 ######################################################################
-vcf_sequence = "data/vcf-chroms.dat"
+# print("\n##################################################")
+# vcf_sequence = "data/vcf-chroms.dat"
+# ref_sequence = "data/fasta-chroms-ref.dat"
+# fnStr = "cf-test-tmp.dat"
+# print("Try to save VCF file as counts format with a single chromosome.")
+# vcfStr = vcf.init_seq(vcf_sequence, name="homo")
+# refFaStr = fa.init_seq(ref_sequence, name="homo")
+# cf.save_as_countsformat(vcfStr, refFaStr, fnStr, add=True, name='homo')
+# print("\nOutput:")
+# with open(fnStr) as file:
+#     for line in file:
+#         print(line, end='')
+# vcfStr.close_fo()
+# refFaStr.close_fo()
+# os.remove(fnStr)
+######################################################################
+print("\n##################################################")
+vcf_sequence = "data/vcf-chroms.dat.gz"
 ref_sequence = "data/fasta-chroms-ref.dat"
-fn = "cf-test-tmp.dat"
-print("Try to save VCF file as counts format with a single chromosome.")
-vcfSeq = vcf.open_seq(vcf_sequence, name="homo")
-vcfSeq.print_info()
-faRef = fa.open_seq(ref_sequence, name="homo")
-cf.save_as_countsformat(vcfSeq, faRef, fn)
+fnStr = "cf-test-tmp.dat"
+print("Save gzipped VCF file as counts format with a single chromosome.")
+vcfStr = vcf.init_seq(vcf_sequence, name="homo")
+refFaStr = fa.init_seq(ref_sequence, name="homo")
+cf.save_as_countsformat(vcfStr, refFaStr, fnStr, add=True, name='homo')
 print("\nOutput:")
-with open(fn) as file:
+with open(fnStr) as file:
     for line in file:
         print(line, end='')
-os.remove(fn)
+vcfStr.close_fo()
+refFaStr.close_fo()
+os.remove(fnStr)

@@ -7,7 +7,7 @@ This module provides functions to read, write and access fasta files.
 
 """
 
-import copy
+import gzip
 import libPoMo.seqbase as sb
 import libPoMo.vcf as vcf
 
@@ -15,6 +15,68 @@ import libPoMo.vcf as vcf
 class NotAFastaFileError(sb.SequenceDataError):
     """Exception raised if given fasta file is not valid."""
     pass
+
+
+class FaStream(sb.Seq):
+    """A class that stores a fasta file sequence stream.
+
+    The sequence of one species/individual/chromosome is saved and
+    functions are provided to read in the next sequence in the file,
+    if there is any. This saves memory if files are huge and doesn't
+    increase runtime.
+
+    self.name
+    self.seq = saved sequence
+    self.nextHeaderLine
+    self.fo = file object pointing the the start of the data of the
+              next sequence
+
+    """
+
+    def __init__(self, name, firstSeq, nextHL, faFileObject):
+        self.name = name
+        self.seq = firstSeq
+        if nextHL is not None:
+            self.nextHeaderLine = nextHL.rstrip()
+        else:
+            self.nextHeaderLine = nextHL
+        self.fo = faFileObject
+
+    def print_info(self, maxB=50):
+        """Print sequence information.
+
+        Print information about this FaStream object, the fasta
+        sequence stored at the moment the length of the sequence and a
+        maximum of `maxB` bases (defaults to 50).
+
+        """
+        print("Associated file object:", self.fo)
+        print("Next header line:", self.nextHeaderLine)
+        print("Saved Sequence:")
+        self.seq.print_seq_header()
+        print("Printing", maxB, "out of a total of",
+              self.seq.dataLen, "bases.")
+        print(self.seq.data[0:maxB])
+        return
+
+    def read_next_seq(self):
+        """Read next fasta sequence in file.
+
+        The return value is the name of the next sequence or None if
+        no next sequence is found.
+
+        """
+        if self.nextHeaderLine is None:
+            return None
+        else:
+            self.seq.purge()
+            (nextHL, self.seq) = read_seq_from_fo(self.nextHeaderLine, self.fo)
+            self.nextHeaderLine = nextHL
+            return self.seq.name
+
+    def close_fo(self):
+        """Closes the linked file."""
+        self.fo.close()
 
 
 class FaSeq():
@@ -74,12 +136,59 @@ class FaSeq():
 
 def get_sp_name_and_description(fa_header_line):
     """Extracts species name and description from a fasta file header line."""
-    lineList = fa_header_line.split()
+    lineList = fa_header_line.rstrip().split()
     name = lineList[0].replace(">", "")
     description = ""
     if len(lineList) > 1:
         description = lineList[1]
     return (name, description)
+
+
+def fill_seq_from_fo(line, fo, seq):
+    """Read a single fasta sequence
+
+    Read a single fasta sequence from file object `fo` and save it to
+    `seq`. Returns the next header line. If no new sequence is found,
+    the next header line will be set to None.
+
+    `line` is the header line of the sequence.
+    `fo` is the file object of the fasta file.
+    `seq` is the sequence that will be filled.
+
+    """
+    (name, descr) = get_sp_name_and_description(line)
+    seq.name = name
+    seq.descr = descr
+    data = ""
+    for line in fo:
+        if line[0] == '>':
+            # new species found in line
+            break
+        else:
+            data += line.rstrip()
+    seq.data = data
+    seq.dataLen = len(data)
+    if line[0] != '>':
+        # we reached the end of file
+        line = None
+    return line
+
+
+def read_seq_from_fo(line, fo):
+    """Read a single fasta sequence.
+
+    Read a single fasta sequence from file object `fo` and save it to
+    a new sequence object. Returns the header line of the next fasta
+    sequence and the newly created sequence. If no new sequence is
+    found, the next header line will be set to None.
+
+    `line` is the header line of the sequence.
+    `fo` is the file object of the fasta file.
+
+    """
+    seq = sb.Seq()
+    newHeaderLine = fill_seq_from_fo(line, fo, seq)
+    return (newHeaderLine, seq)
 
 
 def test_sequence(faSequence):
@@ -95,8 +204,50 @@ def test_sequence(faSequence):
     return
 
 
+def init_seq(faFileName, maxskip=50, name=None):
+    """Opens a fasta file and initialize an FaStream.
+
+    This function tries to open the given fasta file, checks if it is
+    in fasta format and reads the first sequence.  It returns an
+    FaStream class object. This object can later be used to parse the
+    whole fasta file.
+
+    Please close the associated file object with
+    yourFaStream.close_fo() when you don't need it anymore.
+
+    `maxskip`: Only look `maxskip` lines for the start of a sequence
+    (defaults to 50).
+
+    `name`: Set the name of the sequence to `name`, otherwise set it
+    to the stripped filename.
+
+    """
+    flag = False
+    if faFileName[-2:] == "gz":
+        faFile = gzip.open(faFileName, mode='rt')
+    else:
+        faFile = open(faFileName)
+    if name is None:
+        name = sb.stripFName(faFileName)
+    # Find the start of the first sequence.
+    for i in range(0, maxskip):
+        line = faFile.readline()
+        if line == '':
+            raise NotAFastaFileError("File contains no data.")
+        if line[0] == '>':
+            # species name found in line
+            flag = True
+            break
+    if flag is False:
+        raise NotAFastaFileError("Didn't find a species header within " +
+                                 maxskip + " lines.")
+    (nextHL, seq) = read_seq_from_fo(line, faFile)
+    faStr = FaStream(name, seq, nextHL, faFile)
+    return faStr
+
+
 def open_seq(faFileName, maxskip=50, name=None):
-    """Opens a fasta file.
+    """Open and read a fasta file.
 
     This function tries to open the given fasta file, checks if it is
     in fasta format and reads the sequence(s).  It returns an FaSeq
@@ -111,7 +262,6 @@ def open_seq(faFileName, maxskip=50, name=None):
 
     """
     fastaSeq = FaSeq()
-    sequence = sb.Seq()
 
     flag = False
     with open(faFileName) as faFile:
@@ -131,31 +281,12 @@ def open_seq(faFileName, maxskip=50, name=None):
         if flag is False:
             raise NotAFastaFileError("Didn't find a species header within " +
                                      maxskip + " lines.")
-        (name, desc) = get_sp_name_and_description(line)
 
-        sequence.name = name
-        sequence.descr = desc
-        data = ""
-        for line in faFile:
-            if line[0] == '>':
-                # new species found in line
-                sequence.data = data
-                sequence.dataLen = len(data)
-                # cp sequence to fastaSeq and purge sequence
-                fastaSeq.seqL.append(copy.copy(sequence))
-                fastaSeq.nSpecies += 1
-                sequence.purge()
-                (name, desc) = get_sp_name_and_description(line)
-                sequence.name = name
-                sequence.descr = desc
-                data = ""
-                line = faFile.readline()
-            data += line.replace("\n", "")
-    sequence.data = data
-    sequence.dataLen = len(data)
-    # cp sequence to fastaSeq and purge sequence
-    fastaSeq.seqL.append(copy.copy(sequence))
-    fastaSeq.nSpecies += 1
+        while line is not None:
+            (nextLine, seq) = read_seq_from_fo(line, faFile)
+            line = nextLine
+            fastaSeq.seqL.append(seq)
+            fastaSeq.nSpecies += 1
     test_sequence(fastaSeq)
     return fastaSeq
 

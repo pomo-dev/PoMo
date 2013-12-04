@@ -30,43 +30,59 @@ def get_counts_format_headerline(species):
     return '\t'.join(species)
 
 
-def save_as_countsformat(VCFSeq, faRef, CFFileName, verb=None):
+def save_as_countsformat(vcfStr, refFaStr, CFFileName, verb=False,
+                         add=False, name=None):
     """Saves the given sequence in counts format.
 
-    This function saves the SNPs of `VCFSeq`, a given VCFSeq (variant
-    call format sequence) object in counts format to the file
-    `CFFileName`.  The reference genome `ref`, to which `faSeq` is
-    compared to, needs to be passed as an FaSeq object.
+    This function saves the SNPs of `vcfStr`, a given VCFStream
+    (variant call format sequence stream) object in counts format to
+    the file `CFFileName`.  The reference genome `refFaStr`, to which
+    `VCFSeqStr` is compared to, needs to be passed as an FaStream
+    object.
 
-    The name of VCFSeq should be the same as the name of faRef.  The
-    names of the sequences in the reference should be the names of the
-    chromosomes found in the VCFSeq object, otherwise we do not know
-    where to compare the sequences to.  They must also be in the same
-    order!
+    The name of `vcfStr` should be the same as the name of `faRef`.
+    The names of the sequences in the reference should be the names of
+    the chromosomes found in the `vcfStr` object, otherwise we do not
+    know where to compare the sequences to.  They must also be in the
+    same order!
 
     Individuals with the same name and suffix "_n", where n is a
     number, will be saved in one column without the suffix.
 
-    If verb is unset from None, additional information is printed to
-    the output file.
+    If `verb` is True, additional information is printed to the output
+    file.
+
+    If `add` is True, all individuals are treated as one species
+    independent of their name and counts are summed up.  If `name` is
+    given, the name of the summed sequence will be `name`. If not,
+    the name of the first individual will be used.
 
     """
 
     dna = {'a': 0, 'c': 1, 'g': 2, 't': 3}
 
-    def collapse(speciesL):
+    def collapse(speciesL, add, name):
         """Collapse the species names.
 
         Collapse the species names using the naming rules given in
         save_as_countsformat. Returns a dictionary with collapsed
         species names as keys and an assignment list.
 
+        `add`: if set to true, all species/individuals will be
+        collapsed to a single one with name `name` (if `name` is
+        given).
+
         """
         l = len(speciesL)
-        assList = []
-        for i in range(0, l):
-            assList.append(speciesL[i].rsplit('_', maxsplit=1)[0])
-        collapsedSp = sorted(set(assList))
+        if add is True:
+            if name is None:
+                name = speciesL[0].rsplit('_', maxsplit=1)[0]
+            assList = [name for i in range(l)]
+            collapsedSp = [name]
+        else:
+            assList = [speciesL[i].rsplit('_', maxsplit=1)[0]
+                       for i in range(l)]
+            collapsedSp = sorted(set(assList))
         return (collapsedSp, assList)
 
     def fill_species_dict(spDi, assList, refBase, altBases=None, spData=None):
@@ -94,7 +110,7 @@ def save_as_countsformat(VCFSeq, faRef, CFFileName, verb=None):
         return
 
     def get_counts_line(spDi, speciesL):
-        """Returns line in counts format."""
+        """Returns line string in counts format."""
         string = ','.join(map(str, spDi[speciesL[0]]))
         l = len(speciesL)
         if l > 1:
@@ -102,60 +118,58 @@ def save_as_countsformat(VCFSeq, faRef, CFFileName, verb=None):
                 string += '\t' + ','.join(map(str, spDi[speciesL[i]]))
         return string
 
-    if (not isinstance(VCFSeq, vcf.VCFSeq)):
-        raise sb.SequenceDataError("`VCFSeq` is not a VCFSeq object.")
-    if (not isinstance(faRef, fa.FaSeq)):
+    if (not isinstance(vcfStr, vcf.VCFStream)):
+        raise sb.SequenceDataError("`vcfStr` is not a VCFStream object.")
+    if (not isinstance(refFaStr, fa.FaStream)):
         raise sb.SequenceDataError("`faRef` is not an FaSeq object.")
-    if VCFSeq.name != faRef.name:
-        raise sb.SequenceDataError("VCF sequence name " + VCFSeq.name +
-                                   " and reference name " + faRef.name +
+    if vcfStr.name != refFaStr.name:
+        raise sb.SequenceDataError("VCF sequence name " + vcfStr.name +
+                                   " and reference name " + refFaStr.name +
                                    " do not match.")
-    if VCFSeq.nBases == 0:
-        raise sb.SequenceDataError("`VCFSeq` has no saved bases.")
+    if vcfStr.nSpecies == 0:
+        raise sb.SequenceDataError("`VCFSeq` has no saved data.")
 
-    allSpeciesL = VCFSeq.speciesL
+    allSpeciesL = vcfStr.speciesL
     # speciesL = sorted list of unique species names
     # assList = assignment list; allSpeciesL[i]=Wolf_n => assList[i]=Wolf
     # spDi = dictionary with speciesL as keys and list of counts
     # hence, spDi[assList[i]] is the list of counts for Wolf
-    (speciesL, assList) = collapse(allSpeciesL)
-    spDi = dict.fromkeys(speciesL, None)
+    (collSpeciesL, assList) = collapse(allSpeciesL, add, name)
+    spDi = dict.fromkeys(collSpeciesL, None)
     # The following
-    n = 0                       # count chromosomes in faRef
-    i = 0                       # count SNPs in VCFSeq
     j = 0                       # count position in ref
 
     with open(CFFileName, 'w') as fo:
-        if verb is not None:
-            print("#Sequence name =", faRef.name, file=fo)
-        print(get_counts_format_headerline(speciesL), file=fo)
-        # Loop over chromosomes in faRef.
-        for n in range(0, faRef.nSpecies):
-            pos = -1                    # save SNP position
-            oldPos = 0                  # save previous SNP position
-            ref = faRef.get_seq_by_id(n)
-            if verb is not None:
+        if verb is True:
+            print("#Sequence name =", refFaStr.name, file=fo)
+        print(get_counts_format_headerline(collSpeciesL), file=fo)
+        # Loop over chromosomes in refFaStr.
+        while True:
+            pos = -1                    # initialize current SNP position
+            oldPos = 0                  # initialize previous SNP position
+            ref = refFaStr.seq
+            if verb is True:
                 print("#Chromosome name =", ref.name, file=fo)
             # Loop over SNPs.
-            while ref.name == VCFSeq.baseL[i].chrom:
+            while ref.name == vcfStr.base.chrom:
                 oldPos = pos + 1
-                pos = VCFSeq.baseL[i].pos - 1
+                pos = vcfStr.base.pos - 1
                 # Loop from previous SNP to one position before this one.
                 for j in range(oldPos, pos):
                     fill_species_dict(spDi, assList, ref.data[j])
-                    print(get_counts_line(spDi, speciesL), file=fo)
+                    print(get_counts_line(spDi, collSpeciesL), file=fo)
                 # Process the SNP at position pos on chromosome ref.
-                altBases = VCFSeq.baseL[i].get_alt_base_list()
-                spData = VCFSeq.baseL[i].get_speciesData()
+                altBases = vcfStr.base.get_alt_base_list()
+                spData = vcfStr.base.get_speciesData()
                 fill_species_dict(spDi, assList,
                                   ref.data[pos], altBases, spData)
-                print(get_counts_line(spDi, speciesL), file=fo)
-                i += 1
-                # Break while loop if index out of range.
-                if i >= VCFSeq.nBases:
+                print(get_counts_line(spDi, collSpeciesL), file=fo)
+                if vcfStr.read_next_base() is None:
                     break
             # Finish until the end of the chromosome.
             if ref.dataLen > pos+1:
                 for j in range(pos+1, ref.dataLen):
                     fill_species_dict(spDi, assList, ref.data[j])
-                    print(get_counts_line(spDi, speciesL), file=fo)
+                    print(get_counts_line(spDi, collSpeciesL), file=fo)
+            if refFaStr.read_next_seq() is None:
+                break

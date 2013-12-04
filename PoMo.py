@@ -781,7 +781,7 @@ if n_species > 3 and noMC == 1:
 
 elif n_species <= 3 and noMC == 1:
     # If no PoMo NNI has been done, do a single ML run without looking
-    # for best topology. 
+    # for best topology.
 
     # Write the HyPhy batch file for PoMo without NNI
     newsamfile = open("PoMo10_NoMolClock_preliminary.bf", "w")
