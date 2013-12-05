@@ -74,13 +74,33 @@ class NucBase():
         """Return alternative bases as list."""
         return self.alt.split(',')
 
-    def get_speciesData(self):
-        """Returns species data as list."""
+    def get_speciesData(self, diploid=None):
+        """Returns species data as list.
+        
+        data[0][0] = data of first species/individual on chromatide A
+        data[0][1] = only set for diploids; data of first
+        species/individual on chromatide B
+
+        Return None if bases saved are not valid ("./."). This means,
+        that the information from all other individuals or species is
+        lost too. Maybe this should be changed in the future.
+
+        """
         data = []
         for i in range(0, len(self.speciesData)):
-            # TODO, for now, this only works for haploids
-            # data.append(int(self.speciesData[i].split(':')[0].split('/')[0]))
-            data.append(int(self.speciesData[i].split(':')[0]))
+            if diploid is None:
+                try:
+                    data.append([int(self.speciesData[i].split(':')[0])])
+                except ValueError:
+                    # Base is not valid.
+                    return None
+            else:
+                try:
+                    data.append([int(d) for d in
+                                 self.speciesData[i].split(':')[0].split('/')])
+                except ValueError:
+                    # Base is not valid.
+                    return None
         return data
 
     def purge(self):
@@ -118,12 +138,35 @@ def update_base(ln, base, info=True):
         base.ref = lnList[3]
         base.alt = lnList[4]
         base.speciesData = lnList[9].rstrip().split('\t')
+        # base.speciesData = [s.split(':', maxsplit=1)[0]
+        #                    for s in lnList[9].rstrip().split('\t')]
         if info is True:
             base.id = lnList[2]
             base.qual = lnList[5]
             base.filter = lnList[6]
             base.info = lnList[7]
             base.format = lnList[8]
+    else:
+        raise NotANucBaseError('Line ' + ln + ' is not a NucBase.')
+    return base
+
+
+def update_base_no_info(ln, base):
+    """Read line `ln` into base `base`.
+
+    Split a given VCF file line and returns a NucBase object.
+
+    """
+    lnList = ln.split('\t', maxsplit=9)
+    if len(lnList) >= 10:
+        base.chrom = lnList[0]
+        base.pos = int(lnList[1])
+        base.ref = lnList[3]
+        base.alt = lnList[4]
+        base.speciesData = lnList[9].rstrip().split('\t')
+        # this is slow but would save me from doing it later
+        # base.speciesData = [s.split(':', maxsplit=1)[0]
+        #                     for s in lnList[9].rstrip().split('\t')]
     else:
         raise NotANucBaseError('Line ' + ln + ' is not a NucBase.')
     return base
@@ -179,7 +222,7 @@ class VCFStream():
         """Reads the next base."""
         line = self.fo.readline()
         if line != '':
-            update_base(line, self.base, info=False)
+            update_base_no_info(line, self.base)
             return self.base.pos
         else:
             self.base.purge()
