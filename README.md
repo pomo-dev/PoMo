@@ -43,6 +43,11 @@ PoMo supports various command line arguments. Run `python PoMo.py
 --help` or visit [PoMo-help](PoMo-help.txt "PoMo-help") for a detailed
 help message about the different flags that are available.
 
+File Conversion
+====
+Various scripts for file conversion are provided in the folder
+`./scripts/`. TODO
+
 Notes
 ====
 PoMo works best if data about within-population variation is
