@@ -151,27 +151,6 @@ def update_base(ln, base, info=True):
     return base
 
 
-def update_base_no_info(ln, base):
-    """Read line `ln` into base `base`.
-
-    Split a given VCF file line and returns a NucBase object.
-
-    """
-    lnList = ln.split('\t', maxsplit=9)
-    if len(lnList) >= 10:
-        base.chrom = lnList[0]
-        base.pos = int(lnList[1])
-        base.ref = lnList[3]
-        base.alt = lnList[4]
-        base.speciesData = lnList[9].rstrip().split('\t')
-        # this is slow but would save me from doing it later
-        # base.speciesData = [s.split(':', maxsplit=1)[0]
-        #                     for s in lnList[9].rstrip().split('\t')]
-    else:
-        raise NotANucBaseError('Line ' + ln + ' is not a NucBase.')
-    return base
-
-
 def get_nuc_base_from_line(ln, info=True):
     """Retrieve base data from a VCF file line.
 
@@ -222,7 +201,7 @@ class VCFStream():
         """Reads the next base."""
         line = self.fo.readline()
         if line != '':
-            update_base_no_info(line, self.base)
+            update_base(line, self.base)
             return self.base.pos
         else:
             self.base.purge()
