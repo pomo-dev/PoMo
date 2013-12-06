@@ -113,10 +113,11 @@ def save_as_cf(vcfStr, refFaStr, CFFileName, verb=False,
             # loop over species
             l = len(spData[0])
             for i in range(0, len(spData)):
-                # loop over diploid
+                # loop over chromatides (e.g. diploid)
                 for d in range(0, l):
-                    bI = dna[bases[spData[i][d]]]
-                    spDi[assList[i]][bI] += 1
+                    if spData[i][d] is not None:
+                        bI = dna[bases[spData[i][d]]]
+                        spDi[assList[i]][bI] += 1
             return True
         # raise sb.SequenceDataError("Could not fill species dictionary.")
         return None
@@ -133,7 +134,7 @@ def save_as_cf(vcfStr, refFaStr, CFFileName, verb=False,
     if (not isinstance(vcfStr, vcf.VCFStream)):
         raise sb.SequenceDataError("`vcfStr` is not a VCFStream object.")
     if (not isinstance(refFaStr, fa.FaStream)):
-        raise sb.SequenceDataError("`faRef` is not an FaSeq object.")
+        raise sb.SequenceDataError("`faRef` is not an FaStream object.")
     if vcfStr.name != refFaStr.name:
         raise sb.SequenceDataError("VCF sequence name " + vcfStr.name +
                                    " and reference name " + refFaStr.name +
@@ -186,5 +187,6 @@ def save_as_cf(vcfStr, refFaStr, CFFileName, verb=False,
                     if fill_species_dict(spDi, assList,
                                          ref.data[j]) is True:
                         print(get_counts_line(spDi, collSpeciesL), file=fo)
+            # Read next sequence in reference and break if none is found.
             if refFaStr.read_next_seq() is None:
                 break

@@ -88,19 +88,25 @@ class NucBase():
         """
         data = []
         for i in range(0, len(self.speciesData)):
+            baseInfo = self.speciesData[i].split(':')[0]
             if diploid is None:
+                # Haploid.
                 try:
-                    data.append([int(self.speciesData[i].split(':')[0])])
+                    baseInfo = int(baseInfo)
                 except ValueError:
-                    # Base is not valid.
-                    return None
+                    # Invalid Base.
+                    baseInfo = None
+                data.append(baseInfo)
             else:
-                try:
-                    data.append([int(d) for d in
-                                 self.speciesData[i].split(':')[0].split('/')])
-                except ValueError:
-                    # Base is not valid.
-                    return None
+                # Diploid or even more
+                baseInfoL = baseInfo.split('/')
+                for j in range(len(baseInfoL)):
+                    try:
+                        baseInfoL[j] = int(baseInfoL[j])
+                    except ValueError:
+                        # Invalid Base.
+                        baseInfoL[j] = None
+                data.append(baseInfoL)
         return data
 
     def purge(self):
