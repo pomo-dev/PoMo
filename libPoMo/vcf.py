@@ -25,6 +25,7 @@ hdList = ['#CHROM', 'POS', 'ID', 'REF', 'ALT',
 
 
 class NucBase():
+    # TODO SPECIES DATA WITH / and |
     """Stores a nucleotide base.
 
     A class that stores a single nucleotide base and related
@@ -42,6 +43,8 @@ class NucBase():
     self.info
     self.format
     self.speciesData
+    self.haploid: True if self.speciesData contains haploid data. Can
+    be set with self.set_haploid()
 
     """
     def __init__(self):
@@ -55,6 +58,7 @@ class NucBase():
         self.info = ''
         self.format = ''
         self.speciesData = []
+        self.haploid = None
 
     def print_info(self):
         """Print nucleotide base information.
@@ -74,11 +78,20 @@ class NucBase():
         """Return alternative bases as list."""
         return self.alt.split(',')
 
-    def get_speciesData(self, diploid=None):
-        """Returns species data as list.
+    def set_haploid(self):
+        """Sets self.haploid."""
+        baseInfo = self.speciesData[0].split(':')[0]
+        if len(baseInfo.split('/')) == 1:
+            self.haploid = True
+        else:
+            self.haploid = False
+        return
+
+    def get_speciesData(self):
+        """Returns species data as a list.
         
         data[0][0] = data of first species/individual on chromatide A
-        data[0][1] = only set for diploids; data of first
+        data[0][1] = only set for non-haploids; data of first
         species/individual on chromatide B
 
         Return None if bases saved are not valid ("./."). This means,
@@ -88,17 +101,18 @@ class NucBase():
         """
         data = []
         for i in range(0, len(self.speciesData)):
-            baseInfo = self.speciesData[i].split(':')[0]
-            if diploid is None:
+            if self.haploid is True:
                 # Haploid.
+                baseInfo = self.speciesData[i].split(':')[0]
                 try:
                     baseInfo = int(baseInfo)
                 except ValueError:
                     # Invalid Base.
                     baseInfo = None
-                data.append(baseInfo)
-            else:
+                data.append([baseInfo])
+            elif self.haploid is False:
                 # Diploid or even more
+                baseInfo = self.speciesData[i].split(':')[0]
                 baseInfoL = baseInfo.split('/')
                 for j in range(len(baseInfoL)):
                     try:
@@ -107,6 +121,11 @@ class NucBase():
                         # Invalid Base.
                         baseInfoL[j] = None
                 data.append(baseInfoL)
+            else:
+                # Haploid is not set yet.
+                self.set_haploid()
+                data = self.get_speciesData()
+                break
         return data
 
     def purge(self):
@@ -204,13 +223,18 @@ class VCFStream():
         self.base.print_info()
 
     def read_next_base(self):
-        """Reads the next base."""
+        """Reads the next base.
+
+        Returns position of next base.
+        Raises a ValueError if no next base is found.
+
+        """
         line = self.fo.readline()
         if line != '':
             update_base(line, self.base)
             return self.base.pos
         else:
-            self.base.purge()
+            raise ValueError("End of VCFStream.")
             return None
 
     def close_fo(self):

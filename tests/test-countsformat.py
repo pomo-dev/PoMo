@@ -11,8 +11,8 @@ import libPoMo.fasta as fa
 
 saveAsCfSingleChrom = False
 saveAsCfMultChrom = False
-vcfWithError = True
-gzipped = False
+vcfWithError = False
+gzipped = True
 largeFile = False
 
 print("Testing libPoMo/countsformat module.")
@@ -26,7 +26,7 @@ if saveAsCfSingleChrom is True:
     vcfStr = vcf.init_seq(vcf_sequence, name="wolfs")
     vcfStr.print_info()
     refFaStr = fa.init_seq(ref_sequence, name="wolfs")
-    cf.save_as_cf(vcfStr, refFaStr, fn)
+    cf.save_as_cf([vcfStr], refFaStr, fn)
     print("\nOutput:")
     with open(fn) as file:
         for line in file:
@@ -39,10 +39,10 @@ if saveAsCfMultChrom is True:
     vcf_sequence = "data/vcf-chroms.dat"
     ref_sequence = "data/fasta-chroms-ref.dat"
     fnStr = "cf-test-tmp.dat"
-    print("Try to save VCF file as counts format with a single chromosome.")
+    print("Try to save VCF file as counts format with multiple chromosomes.")
     vcfStr = vcf.init_seq(vcf_sequence, name="homo")
     refFaStr = fa.init_seq(ref_sequence, name="homo")
-    cf.save_as_cf(vcfStr, refFaStr, fnStr, add=True, name='homo')
+    cf.save_as_cf([vcfStr], refFaStr, fnStr, addL=[True], nameL=['homo'])
     print("\nOutput:")
     with open(fnStr) as file:
         for line in file:
@@ -59,7 +59,7 @@ if vcfWithError is True:
     print("Try to save VCF file as counts format with a single chromosome.")
     vcfStr = vcf.init_seq(vcf_sequence, name="homo")
     refFaStr = fa.init_seq(ref_sequence, name="homo")
-    cf.save_as_cf(vcfStr, refFaStr, fnStr, add=True, name='homo')
+    cf.save_as_cf([vcfStr], refFaStr, fnStr, addL=[True], nameL=['homo'])
     print("\nOutput:")
     with open(fnStr) as file:
         for line in file:
@@ -76,7 +76,7 @@ if gzipped is True:
     print("Save gzipped VCF file as counts format with a single chromosome.")
     vcfStr = vcf.init_seq(vcf_sequence, name="homo")
     refFaStr = fa.init_seq(ref_sequence, name="homo")
-    cf.save_as_cf(vcfStr, refFaStr, fnStr, add=True, name='homo')
+    cf.save_as_cf([vcfStr], refFaStr, fnStr, addL=[True], nameL=['homo'])
     print("\nOutput:")
     with open(fnStr) as file:
         for line in file:
@@ -93,6 +93,6 @@ if largeFile is True:
     print("Test save_as_cf on real data.")
     vcfStr = vcf.init_seq(vcf_sequence, name="homoChr1")
     refFaStr = fa.init_seq(ref_sequence, name="homoChr1")
-    cf.save_as_cf(vcfStr, refFaStr, fnStr, add=True, name='homoChr1', diploid=True)
+    cf.save_as_cf([vcfStr], refFaStr, fnStr, addL=[True], nameL=['homoChr1'])
     vcfStr.close_fo()
     refFaStr.close_fo()
