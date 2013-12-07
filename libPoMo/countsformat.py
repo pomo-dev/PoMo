@@ -64,7 +64,7 @@ def save_as_cf(vcfStrL, refFaStr, CFFileName, verb=False,
 
     def get_cf_headerline(species):
         """Returns a string containing the headerline in counts format."""
-        return '\t'.join(species)
+        return '\t'.join([e for lst in species for e in lst])
 
     def collapse(speciesL, add=False, name=None):
         """Collapse the species names.
@@ -93,10 +93,10 @@ def save_as_cf(vcfStrL, refFaStr, CFFileName, verb=False,
     def find_next_SNP_pos(nSNPChromL, nSNPPosL, ref):
         """Find the position of next SNP.
 
-        Return the position of the next SNP in `ref` and the index of
-        this very SNP in `nSNPChromL` and `nSNPPosL`. If no next SNP
-        is found on this sequence (this might happen if all next SNPs
-        are on the next chromosome) a ValueError is raised.
+        Return the position of the next SNP in `ref` and a list of
+        indices of these SNPs in `nSNPChromL` and `nSNPPosL`. If no
+        next SNP is found on this sequence (this might happen if all
+        next SNPs are on the next chromosome) a ValueError is raised.
         
         `nSNPChromL` - list with chromosome names of the next SNPs of
                        the vcfStrL
@@ -114,30 +114,36 @@ def save_as_cf(vcfStrL, refFaStr, CFFileName, verb=False,
                 posL.append(nSNPPosL[i])
                 indL.append(ind)
         if len(posL) > 0:
-            minInd = np.argmin(posL)
-            return (posL[minInd], indL[minInd])
+            npPosL = np.array(posL)
+            minIndL = np.where(npPosL == npPosL.min())[0].tolist()
+            fIndL = [indL[i] for i in minIndL]
+            return (posL[minIndL[0]], fIndL)
         else:
             raise ValueError("No next SNP found in `ref`.")
 
-    # TODO EIGENE FUNKTION FALLS KEIN SNP
-    def fill_species_dict(spDi, assL, refBase, altBases=None, spData=None):
-        """Fills the species dictionary.
+    def fill_species_dict_ref(spDi, assL, refBase):
+        """Fills the species dictionary if no SNP is present."""
+        # reset species dictionary to 0 counts per base
+        for key in spDi.keys():
+            spDi[key] = [0, 0, 0, 0]
+        # if no altBase is given, count species
+        try:
+            r = dna[refBase.lower()]
+        except KeyError:
+            # Base is not valid (reference is masked on this position).
+            return None
+        for sp in assL:
+            spDi[sp][r] += 1
+        return
+
+    def fill_species_dict_alt(spDi, assL, refBase, altBases, spData):
+        """Fills the species dictionary when a SNP is present.
 
         Raise SequenceDataError, if spDi could not be filled.
         """
         # reset species dictionary to 0 counts per base
         for key in spDi.keys():
             spDi[key] = [0, 0, 0, 0]
-        # if no altBase is given, count species
-        if altBases is None:
-            try:
-                r = dna[refBase.lower()]
-            except KeyError:
-                # Base is not valid (reference is masked on this position).
-                return None
-            for sp in assL:
-                spDi[sp][r] += 1
-            return
         if (altBases is not None) \
            and (spData is not None):
             bases = [refBase.lower()]
@@ -156,12 +162,15 @@ def save_as_cf(vcfStrL, refFaStr, CFFileName, verb=False,
 
     def get_counts_line(spDi, speciesL):
         """Returns line string in counts format."""
-        string = ','.join(map(str, spDi[speciesL[0]]))
-        l = len(speciesL)
-        if l > 1:
-            for i in range(1, l):
-                string += '\t' + ','.join(map(str, spDi[speciesL[i]]))
-        return string
+        stringL = []
+        for i in range(len(spDi)):
+            stringL.append(','.join(map(str, spDi[i][speciesL[i][0]])))
+            l = len(speciesL[i])
+            if l > 1:
+                for j in range(1, l):
+                    stringL[i] += '\t' + \
+                                  ','.join(map(str, spDi[i][speciesL[i][j]]))
+        return '\t'.join(stringL)
 
     lVcfStrL = len(vcfStrL)
     if (not isinstance(refFaStr, fa.FaStream)):
@@ -188,7 +197,6 @@ def save_as_cf(vcfStrL, refFaStr, CFFileName, verb=False,
             nameL.append(None)
 
     # allSpeciesL = list of vcfStr species
-    # speciesL = sorted list of unique species names
     # assL = assignment list; allSpeciesL[i]=Wolf_n => assL[i]=Wolf
     # collSpeciesL = collapsed species list (_n removed)
     # spDi = dictionary with speciesL as keys and list of counts
@@ -196,15 +204,13 @@ def save_as_cf(vcfStrL, refFaStr, CFFileName, verb=False,
     allSpeciesL = []
     collSpeciesL = []
     assL = []
+    spDi = []
     for i in range(lVcfStrL):
         allSpeciesL.extend(vcfStrL[i].speciesL)
         (collSpecies, ass) = collapse(vcfStrL[i].speciesL, addL[i], nameL[i])
-        collSpeciesL.extend(collSpecies)
-        assL.extend(ass)
-    # Check uniqueness of species names.
-    if len(collSpeciesL) != len(set(collSpeciesL)):
-        raise sb.SequenceDataError("Species/Individual names are not unique.")
-    spDi = dict.fromkeys(collSpeciesL, None)
+        collSpeciesL.append(collSpecies)
+        assL.append(ass)
+        spDi.append(dict.fromkeys(collSpecies, None))
 
     with open(CFFileName, 'w') as fo:
         if verb is True:
@@ -224,48 +230,56 @@ def save_as_cf(vcfStrL, refFaStr, CFFileName, verb=False,
             ref = refFaStr.seq
             if verb is True:
                 print("#Chromosome name =", ref.name, file=fo)
-            # Find next SNP position
+            # Find next SNP position and the corresponding indices
             try:
-                (nSNPPos, nSNPInd) = find_next_SNP_pos(nSNPChromL,
-                                                       nSNPPosL, ref)
+                (nSNPPos, nSNPIndL) = find_next_SNP_pos(nSNPChromL,
+                                                        nSNPPosL, ref)
             except ValueError:
                 nSNPPos = ref.dataLen
-                nSNPInd = None
+                nSNPIndL = None
             # Loop over positions in sequence `ref` of the reference genome.
             while True:
                 # Loop from previous SNP to one position before this one.
                 for pos in range(oldPos, nSNPPos):
-                    # TODO
-                    fill_species_dict(spDi, assL,
-                                      ref.data[pos])
+                    for i in range(lVcfStrL):
+                        fill_species_dict_ref(spDi[i], assL[i],
+                                              ref.data[pos])
                     print(get_counts_line(spDi, collSpeciesL), file=fo)
                 # Process the SNP at position pos on chromosome ref.
-                if nSNPInd is None:
+                if nSNPIndL is None:
                     # There is no more SNP on this chromosome.
                     break
-                altBases = vcfStrL[nSNPInd].base.get_alt_base_list()
-                spData = vcfStrL[nSNPInd].base.get_speciesData()
-                fill_species_dict(spDi, assL,
-                                  ref.data[nSNPPos], altBases,
-                                  spData)
-                print(get_counts_line(spDi, collSpeciesL), file=fo)
-                # Save old SNP position and read next SNP.
+                # Set spDi to reference
+                for i in range(lVcfStrL):
+                    fill_species_dict_ref(spDi[i], assL[i],
+                                          ref.data[nSNPPos])
+                # Loop over SNPs at position nSNPPos.
+                for s in range(len(nSNPIndL)):
+                    altBases = vcfStrL[nSNPIndL[s]].base.get_alt_base_list()
+                    spData = vcfStrL[nSNPIndL[s]].base.get_speciesData()
+                    fill_species_dict_alt(spDi[nSNPIndL[s]], assL[nSNPIndL[s]],
+                                          ref.data[nSNPPos], altBases,
+                                          spData)
+                    # Read next SNP.
+                    try:
+                        vcfStrL[nSNPIndL[s]].read_next_base()
+                        nSNPChromL[nSNPIndL[s]]\
+                            = vcfStrL[nSNPIndL[s]].base.chrom
+                        nSNPPosL[nSNPIndL[s]] = vcfStrL[nSNPIndL[s]].base.pos-1
+                    except ValueError:
+                        # VCFStream ends here.
+                        nSNPChromL[nSNPIndL[s]] = None
+                        nSNPPosL[nSNPIndL[s]] = None
+                # Save old SNP position.
                 oldPos = nSNPPos + 1
+                print(get_counts_line(spDi, collSpeciesL), file=fo)
+                # Find next SNP position and the corresponding indices
                 try:
-                    vcfStrL[nSNPInd].read_next_base()
-                    nSNPChromL[nSNPInd] = vcfStrL[nSNPInd].base.chrom
-                    nSNPPosL[nSNPInd] = vcfStrL[nSNPInd].base.pos - 1
-                except ValueError:
-                    # VCFStream ends here.
-                    nSNPChromL[nSNPInd] = None
-                    nSNPPosL[nSNPInd] = None
-                # Find next SNP position
-                try:
-                    (nSNPPos, nSNPInd) = find_next_SNP_pos(nSNPChromL,
-                                                           nSNPPosL, ref)
+                    (nSNPPos, nSNPIndL) = find_next_SNP_pos(nSNPChromL,
+                                                            nSNPPosL, ref)
                 except ValueError:
                     nSNPPos = ref.dataLen
-                    nSNPInd = None
+                    nSNPIndL = None
             # Read next sequence in reference and break if none is found.
             if refFaStr.read_next_seq() is None:
                 break

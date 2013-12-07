@@ -12,7 +12,9 @@ import libPoMo.fasta as fa
 saveAsCfSingleChrom = False
 saveAsCfMultChrom = False
 vcfWithError = False
-gzipped = True
+gzipped = False
+multiVCF = True
+unrelated = True
 largeFile = False
 
 print("Testing libPoMo/countsformat module.")
@@ -82,6 +84,47 @@ if gzipped is True:
         for line in file:
             print(line, end='')
     vcfStr.close_fo()
+    refFaStr.close_fo()
+    os.remove(fnStr)
+######################################################################
+if multiVCF is True:
+    print("\n##################################################")
+    vcf_sequence1 = "data/vcf-wolfs.dat"
+    vcf_sequence2 = "data/vcf-wolfs2.dat"
+    ref_sequence = "data/fasta-reference-wolf.dat"
+    fnStr = "cf-test-tmp.dat"
+    print("Save 2 VCF files as counts format with a single chromosome.")
+    vcfStr1 = vcf.init_seq(vcf_sequence1, name="wolf")
+    vcfStr2 = vcf.init_seq(vcf_sequence2, name="wolf")
+    refFaStr = fa.init_seq(ref_sequence, name="wolf")
+    cf.save_as_cf([vcfStr1, vcfStr2], refFaStr, fnStr)
+    print("\nOutput:")
+    with open(fnStr) as file:
+        for line in file:
+            print(line, end='')
+    vcfStr1.close_fo()
+    vcfStr2.close_fo()
+    refFaStr.close_fo()
+    os.remove(fnStr)
+######################################################################
+if unrelated is True:
+    print("\n##################################################")
+    vcf_sequence1 = "data/vcf-wolfs-unrelated.dat"
+    vcf_sequence2 = "data/vcf-wolfs2-unrelated.dat"
+    ref_sequence = "data/fasta-reference-wolf.dat"
+    fnStr = "cf-test-tmp.dat"
+    print("Save 2 VCF files with unrelated individuals",
+          "as counts format with a single chromosome.")
+    vcfStr1 = vcf.init_seq(vcf_sequence1, name="wolf")
+    vcfStr2 = vcf.init_seq(vcf_sequence2, name="wolf")
+    refFaStr = fa.init_seq(ref_sequence, name="wolf")
+    cf.save_as_cf([vcfStr1, vcfStr2], refFaStr, fnStr)
+    print("\nOutput:")
+    with open(fnStr) as file:
+        for line in file:
+            print(line, end='')
+    vcfStr1.close_fo()
+    vcfStr2.close_fo()
     refFaStr.close_fo()
     os.remove(fnStr)
 ######################################################################

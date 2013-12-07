@@ -1,0 +1,5 @@
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	Wolf1.1	Wolf1.2	Wolf1.3
+chrWolf	3	.	C	G	.	.	.	GT	0	1	1
+chrWolf	10	.	C	A	.	.	.	GT	0	0	1
+chrWolf	38	.	G	T	.	.	.	GT	0	0	1
+chrWolf	41	.	A	G	.	.	.	GT	0	0	1
