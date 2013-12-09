@@ -185,8 +185,7 @@ def save_as_cf(vcfStrL, refFaStr, CFFileName, verb=False,
             l = len(speciesL[i])
             if l > 1:
                 for j in range(1, l):
-                    stringL[i] += '\t' + \
-                                  ','.join(map(str, spDi[i][speciesL[i][j]]))
+                    stringL.append(','.join(map(str, spDi[i][speciesL[i][j]])))
         return '\t'.join(stringL)
 
     lVcfStrL = len(vcfStrL)

@@ -255,7 +255,7 @@ class VCFSeq():
         self.nBases = 0
         """Number of `NucBase` objects stored."""
 
-    def get_header_line_string(indiv):
+    def get_header_line_string(self, indiv):
         """Return a standard VCF File header string with individuals `indiv`.
 
         """
@@ -281,7 +281,7 @@ class VCFSeq():
         """
         if printHeader is True:
             print(self.header)
-        self.print_header_line(self, self.speciesL)
+        self.print_header_line(self.speciesL)
         if self.nBases < maxB:
             maxB = self.nBases
         for i in range(0, maxB):

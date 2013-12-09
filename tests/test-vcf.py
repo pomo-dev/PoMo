@@ -4,7 +4,7 @@
 
 import import_libPoMo  # noqa
 import libPoMo.vcf as vcf  # noqa
-import time
+# import time
 
 test_sequence = 'data/vcf-homo.dat'
 print("Testing libPoMo/vcf module.")
@@ -23,7 +23,7 @@ seq.print_info()
 
 print("Print header line.")
 indiv = ['testA', 'testB', 'testC']
-vcf.print_header_line(indiv)
+seq.print_header_line(indiv)
 
 ######################################################################
 print("\n##################################################")

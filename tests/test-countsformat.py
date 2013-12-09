@@ -10,7 +10,7 @@ import libPoMo.fasta as fa
 
 
 saveAsCfSingleChrom = False
-saveAsCfMultChrom = False
+saveAsCfMultChrom = True
 vcfWithError = False
 gzipped = False
 multiVCF = True
@@ -44,7 +44,7 @@ if saveAsCfMultChrom is True:
     print("Try to save VCF file as counts format with multiple chromosomes.")
     vcfStr = vcf.init_seq(vcf_sequence, name="homo")
     refFaStr = fa.init_seq(ref_sequence, name="homo")
-    cf.save_as_cf([vcfStr], refFaStr, fnStr, addL=[True], nameL=['homo'])
+    cf.save_as_cf([vcfStr], refFaStr, fnStr, mergeL=[True], nameL=['homo'])
     print("\nOutput:")
     with open(fnStr) as file:
         for line in file:

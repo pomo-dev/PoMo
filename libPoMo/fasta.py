@@ -116,7 +116,7 @@ class FaStream():
         """Stream name."""
         self.seq = firstSeq
         """Saved sequence."""
-        self.nextHeaderLine = nextHL.rstrip()
+        self.nextHeaderLine = nextHL
         """String with next header line."""
         self.fo = faFileObject
         """File object that points to the start of the data of the next
