@@ -6,31 +6,41 @@
 This module provides basic functions and classes needed to work with
 sequence data.
 
+Classes:
+- `Seq`, stores a single sequence
+
+Exception Classes:
+- SequenceDataError`
+
+Functions:
+- `stripFName()`: strip filename off its ending
+
 """
+
+__docformat__ = 'restructuredtext'
 
 import os
 
 
 class SequenceDataError(Exception):
+    """General sequence data error exception."""
     pass
 
 
 class Seq:
-    """A class that stores sequence data.
-
-    self.name = name of the sequence (e.g. species or individual name)
-    self.description = description of the sequence
-    self.data = sequence data
-    self.dataLen = number of saved bases
-
-    """
+    """A class that stores sequence data."""
     def __init__(self):
         self.name = ''
+        """Name of the sequence (e.g. species or individual name)."""
         self.descr = ''
+        """Description of the sequence."""
         self.data = ''
+        """String with sequence data."""
         self.dataLen = 0
+        """Number of saved bases."""
 
     def print_seq_header(self):
+        """Print the sequence header line in fasta format."""
         print('>', self.name, ' ', self.descr, sep='')
         return
 
@@ -49,6 +59,6 @@ class Seq:
 
 
 def stripFName(fn):
-    """Convenience function to strip filename off the `.xyz` ending."""
+    """Convenience function to strip filename off the ".xyz" ending."""
     filename_without_path = os.path.split(fn)[-1]
     return filename_without_path.rsplit('.', maxsplit=1)[0]
