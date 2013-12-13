@@ -12,6 +12,7 @@ acknowledge the authors.
 
 Feel free to post any suggestions, doubts and bugs.
 
+
 Installation
 ====
 PoMo heavily relies on HYPHY. To build HYPHY, extract the
@@ -28,6 +29,7 @@ PoMo uses the following libraries:
 - [pysam](http://code.google.com/p/pysam/)
 They need to be installed separately.
 
+
 Running PoMo
 ====
 To run PoMo, execute
@@ -43,16 +45,19 @@ called "data_PoMo_output.txt", and contains the log-likelihood, the
 parameters estimated, and the species tree estimated. The output will
 be placed in the folder that you run PoMo from.
 
+
 Command Line Arguments
 ====
 PoMo supports various command line arguments. Run `python PoMo.py
 --help` or visit [PoMo-help](PoMo-help.txt "PoMo-help") for a detailed
 help message about the different flags that are available.
 
+
 File Conversion
 ====
 Various scripts for file conversion are provided in the folder
 `./scripts/`. TODO
+
 
 Notes
 ====
@@ -86,3 +91,13 @@ HyPhy's authors (e.g. Sergei L kosakovsky-Pond) if you use PoMo.
 In the fasta format all individuals must be named as "species_n" where
 "species" is the name of the species and "n" is a number, it does not
 matter which number.
+
+
+libPoMo
+====
+PoMo comes with a small python package `libPoMo`. It contains several
+modules that ease the handling of data files in fasta or variant call
+format (vcf).
+
+Detailed and comprehensive documentation can be found in the pacakage
+directory `./libPoMo`.
