@@ -1,0 +1,542 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>libPoMo.fasta &mdash; libPoMo 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="libPoMo 1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">libPoMo 1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for libPoMo.fasta</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+
+<span class="sd">&quot;&quot;&quot;libPomo.fasta</span>
+<span class="sd">----------------------------------------------------------------------</span>
+
+<span class="sd">This module provides functions to read, write and access fasta files.</span>
+
+<span class="sd">Classes:</span>
+<span class="sd">- `FaStream`, fasta file sequence stream object</span>
+<span class="sd">- `FaSeq`, fasta file sequence object</span>
+
+<span class="sd">Exception Classes:</span>
+<span class="sd">- `NotAFastaFileError`</span>
+
+<span class="sd">Functions:</span>
+<span class="sd">- `read_seq_from_fo()`: Read a single fasta sequence.</span>
+<span class="sd">- `init_seq()`: Initialize fasta sequence stream from file.</span>
+<span class="sd">- `open_seq()`: Open fasta file.</span>
+<span class="sd">- `save_as_vcf()`: Save a given `FaSeq` in variant call format (VCF).</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c"># TODO MFaStream</span>
+<span class="n">__docformat__</span> <span class="o">=</span> <span class="s">&#39;restructuredtext&#39;</span>
+
+<span class="kn">import</span> <span class="nn">gzip</span>
+<span class="kn">import</span> <span class="nn">libPoMo.seqbase</span> <span class="kn">as</span> <span class="nn">sb</span>
+<span class="kn">import</span> <span class="nn">libPoMo.vcf</span> <span class="kn">as</span> <span class="nn">vcf</span>
+
+
+<div class="viewcode-block" id="NotAFastaFileError"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.NotAFastaFileError">[docs]</a><span class="k">class</span> <span class="nc">NotAFastaFileError</span><span class="p">(</span><span class="n">sb</span><span class="o">.</span><span class="n">SequenceDataError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Exception raised if given fasta file is not valid.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="read_seq_from_fo"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.read_seq_from_fo">[docs]</a><span class="k">def</span> <span class="nf">read_seq_from_fo</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">fo</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read a single fasta sequence.</span>
+
+<span class="sd">    Read a single fasta sequence from file object `fo` and save it to</span>
+<span class="sd">    a new `Seq` sequence object. Returns the header line of the next</span>
+<span class="sd">    fasta sequence and the newly created sequence. If no new sequence</span>
+<span class="sd">    is found, the next header line will be set to None.</span>
+
+<span class="sd">    - `line`: the header line of the sequence.</span>
+<span class="sd">    - `fo`: the file object of the fasta file.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">get_sp_name_and_description</span><span class="p">(</span><span class="n">fa_header_line</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Extract species name and description.</span>
+
+<span class="sd">        Extract species name and description from a fasta file header</span>
+<span class="sd">        line `fa_header_line`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">lineList</span> <span class="o">=</span> <span class="n">fa_header_line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">lineList</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="n">description</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lineList</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">description</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lineList</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">description</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">fill_seq_from_fo</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">fo</span><span class="p">,</span> <span class="n">seq</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read a single fasta sequence</span>
+
+<span class="sd">        Read a single fasta sequence from file object `fo` and save it</span>
+<span class="sd">        to `seq`. Returns the next header line. If no new sequence is</span>
+<span class="sd">        found, the next header line will be set to None.</span>
+
+<span class="sd">        - `line`: the header line of the sequence.</span>
+<span class="sd">        - `fo`: the file object of the fasta file.</span>
+<span class="sd">        - `seq`: the sequence that will be filled.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">descr</span><span class="p">)</span> <span class="o">=</span> <span class="n">get_sp_name_and_description</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="n">seq</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="n">seq</span><span class="o">.</span><span class="n">descr</span> <span class="o">=</span> <span class="n">descr</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">fo</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;&gt;&#39;</span><span class="p">:</span>
+                <span class="c"># new species found in line</span>
+                <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">+=</span> <span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+        <span class="n">seq</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="n">seq</span><span class="o">.</span><span class="n">dataLen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&#39;&gt;&#39;</span><span class="p">:</span>
+            <span class="c"># we reached the end of file</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">return</span> <span class="n">line</span>
+
+    <span class="n">seq</span> <span class="o">=</span> <span class="n">sb</span><span class="o">.</span><span class="n">Seq</span><span class="p">()</span>
+    <span class="n">newHeaderLine</span> <span class="o">=</span> <span class="n">fill_seq_from_fo</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">fo</span><span class="p">,</span> <span class="n">seq</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">newHeaderLine</span><span class="p">,</span> <span class="n">seq</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="FaStream"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.FaStream">[docs]</a><span class="k">class</span> <span class="nc">FaStream</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;A class that stores a fasta file sequence stream.</span>
+
+<span class="sd">    The sequence of one species/individual/chromosome is saved and</span>
+<span class="sd">    functions are provided to read in the next sequence in the file,</span>
+<span class="sd">    if there is any. This saves memory if files are huge and doesn&#39;t</span>
+<span class="sd">    increase runtime.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">firstSeq</span><span class="p">,</span> <span class="n">nextHL</span><span class="p">,</span> <span class="n">faFileObject</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize an `FaStream` object; add state objects.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        - `name`: Name of the stream.</span>
+<span class="sd">        - `firstSeq`: First sequence to be saved.</span>
+<span class="sd">        - `nextHL`: String with next header line.</span>
+<span class="sd">        - `faFileObject`: File object associated with the stream.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="sd">&quot;&quot;&quot;Stream name.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seq</span> <span class="o">=</span> <span class="n">firstSeq</span>
+        <span class="sd">&quot;&quot;&quot;Saved sequence.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nextHeaderLine</span> <span class="o">=</span> <span class="n">nextHL</span>
+        <span class="sd">&quot;&quot;&quot;String with next header line.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fo</span> <span class="o">=</span> <span class="n">faFileObject</span>
+        <span class="sd">&quot;&quot;&quot;File object that points to the start of the data of the next</span>
+<span class="sd">        sequence.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="FaStream.print_info"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.FaStream.print_info">[docs]</a>    <span class="k">def</span> <span class="nf">print_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxB</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Print sequence information.</span>
+
+<span class="sd">        Print information about this FaStream object, the fasta</span>
+<span class="sd">        sequence stored at the moment the length of the sequence and a</span>
+<span class="sd">        maximum of `maxB` bases (defaults to 50).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Associated file object:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fo</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Next header line:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nextHeaderLine</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Saved Sequence:&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">print_seq_header</span><span class="p">()</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Printing&quot;</span><span class="p">,</span> <span class="n">maxB</span><span class="p">,</span> <span class="s">&quot;out of a total of&quot;</span><span class="p">,</span>
+              <span class="bp">self</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">dataLen</span><span class="p">,</span> <span class="s">&quot;bases.&quot;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">maxB</span><span class="p">])</span>
+        <span class="k">return</span>
+</div>
+<div class="viewcode-block" id="FaStream.read_next_seq"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.FaStream.read_next_seq">[docs]</a>    <span class="k">def</span> <span class="nf">read_next_seq</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read next fasta sequence in file.</span>
+
+<span class="sd">        The return value is the name of the next sequence or None if</span>
+<span class="sd">        no next sequence is found.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nextHeaderLine</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">purge</span><span class="p">()</span>
+            <span class="p">(</span><span class="n">nextHL</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span> <span class="o">=</span> <span class="n">read_seq_from_fo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nextHeaderLine</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fo</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nextHeaderLine</span> <span class="o">=</span> <span class="n">nextHL</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">name</span>
+</div>
+<div class="viewcode-block" id="FaStream.close_fo"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.FaStream.close_fo">[docs]</a>    <span class="k">def</span> <span class="nf">close_fo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Close the linked file.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fo</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="FaSeq"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.FaSeq">[docs]</a><span class="k">class</span> <span class="nc">FaSeq</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Store sequence data retrieved from a fasta file.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Name of the `FaSeq` object.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seqL</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="sd">&quot;&quot;&quot;List of `Seq` objects that store the actual sequence data.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nSpecies</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="sd">&quot;&quot;&quot;Number of saved species/individuals/chromosomes.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="FaSeq.print_info"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.FaSeq.print_info">[docs]</a>    <span class="k">def</span> <span class="nf">print_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxB</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Print sequence information.</span>
+
+<span class="sd">        Print fasta sequence identifier, species names, the length of</span>
+<span class="sd">        the sequence and a maximum of `maxB` bases (defaults to 50).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Sequence identifier:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nSpecies</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">print_seq_header</span><span class="p">()</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Printing&quot;</span><span class="p">,</span> <span class="n">maxB</span><span class="p">,</span> <span class="s">&quot;out of a total of&quot;</span><span class="p">,</span>
+                  <span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">dataLen</span><span class="p">,</span> <span class="s">&quot;bases.&quot;</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">maxB</span><span class="p">])</span>
+        <span class="k">return</span>
+</div>
+<div class="viewcode-block" id="FaSeq.get_seq_names"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.FaSeq.get_seq_names">[docs]</a>    <span class="k">def</span> <span class="nf">get_seq_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a list with sequence names.&quot;&quot;&quot;</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nSpecies</span><span class="p">):</span>
+            <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">names</span>
+</div>
+<div class="viewcode-block" id="FaSeq.get_seq_by_id"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.FaSeq.get_seq_by_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_seq_by_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return sequence number `i` as `Seq` object.&quot;&quot;&quot;</span>
+        <span class="n">seq</span> <span class="o">=</span> <span class="n">sb</span><span class="o">.</span><span class="n">Seq</span><span class="p">()</span>
+        <span class="n">seq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">seq</span>
+</div>
+<div class="viewcode-block" id="FaSeq.get_seq_base"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.FaSeq.get_seq_base">[docs]</a>    <span class="k">def</span> <span class="nf">get_seq_base</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return base at position `pos` in sequence with name `seq`.&quot;&quot;&quot;</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_seq_names</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">sb</span><span class="o">.</span><span class="n">SequenceDataError</span><span class="p">(</span><span class="s">&quot;Sequence name not found.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">pos</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataLen</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">sb</span><span class="o">.</span><span class="n">SequenceDataError</span><span class="p">(</span><span class="s">&quot;Position out of range.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_base</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="init_seq"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.init_seq">[docs]</a><span class="k">def</span> <span class="nf">init_seq</span><span class="p">(</span><span class="n">faFileName</span><span class="p">,</span> <span class="n">maxskip</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Open a fasta file and initialize an FaStream.</span>
+
+<span class="sd">    This function tries to open the given fasta file, checks if it is</span>
+<span class="sd">    in fasta format and reads the first sequence.  It returns an</span>
+<span class="sd">    `FaStream` object. This object can later be used to parse the</span>
+<span class="sd">    whole fasta file.</span>
+
+<span class="sd">    Please close the associated file object with</span>
+<span class="sd">    yourFaStream.close_fo() when you don&#39;t need it anymore.</span>
+
+<span class="sd">    - `maxskip`: Only look `maxskip` lines for the start of a sequence</span>
+<span class="sd">    (defaults to 50).</span>
+
+<span class="sd">    - `name`: Set the name of the sequence to `name`, otherwise set it</span>
+<span class="sd">    to the stripped filename.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">flag</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="n">faFileName</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="s">&quot;gz&quot;</span><span class="p">:</span>
+        <span class="n">faFile</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">faFileName</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;rt&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">faFile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">faFileName</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">sb</span><span class="o">.</span><span class="n">stripFName</span><span class="p">(</span><span class="n">faFileName</span><span class="p">)</span>
+    <span class="c"># Find the start of the first sequence.</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxskip</span><span class="p">):</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">faFile</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">line</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotAFastaFileError</span><span class="p">(</span><span class="s">&quot;File contains no data.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;&gt;&#39;</span><span class="p">:</span>
+            <span class="c"># species name found in line</span>
+            <span class="n">flag</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">break</span>
+    <span class="k">if</span> <span class="n">flag</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">NotAFastaFileError</span><span class="p">(</span><span class="s">&quot;Didn&#39;t find a species header within &quot;</span> <span class="o">+</span>
+                                 <span class="n">maxskip</span> <span class="o">+</span> <span class="s">&quot; lines.&quot;</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">nextHL</span><span class="p">,</span> <span class="n">seq</span><span class="p">)</span> <span class="o">=</span> <span class="n">read_seq_from_fo</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">faFile</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">nextHL</span> <span class="o">=</span> <span class="n">nextHL</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="n">faStr</span> <span class="o">=</span> <span class="n">FaStream</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">nextHL</span><span class="p">,</span> <span class="n">faFile</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">faStr</span>
+
+</div>
+<div class="viewcode-block" id="open_seq"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.open_seq">[docs]</a><span class="k">def</span> <span class="nf">open_seq</span><span class="p">(</span><span class="n">faFileName</span><span class="p">,</span> <span class="n">maxskip</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Open and read a fasta file.</span>
+
+<span class="sd">    This function tries to open the given fasta file, checks if it is</span>
+<span class="sd">    in fasta format and reads the sequence(s).  It returns an `FaSeq`</span>
+<span class="sd">    object that contains a list of species names, a list of the</span>
+<span class="sd">    respective desriptions and a list with the sequences.</span>
+
+<span class="sd">    - `maxskip`: Only look `maxskip` lines for the start of a sequence</span>
+<span class="sd">    (defaults to 50).</span>
+
+<span class="sd">    - `name`: Set the name of the sequence to `name`, otherwise set it</span>
+<span class="sd">    to the stripped filename.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">test_sequence</span><span class="p">(</span><span class="n">faSequence</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests if sequences contain data.&quot;&quot;&quot;</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="n">faSequence</span><span class="o">.</span><span class="n">nSpecies</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+            <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">faSequence</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">faSequence</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s">&#39;&#39;</span> <span class="ow">or</span> <span class="n">faSequence</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">data</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">sb</span><span class="o">.</span><span class="n">SequenceDataError</span><span class="p">(</span><span class="s">&quot;Sequence name or data is missing.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">l</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">sb</span><span class="o">.</span><span class="n">SequenceDataError</span><span class="p">(</span><span class="s">&quot;Sequence names are not unique.&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="n">fastaSeq</span> <span class="o">=</span> <span class="n">FaSeq</span><span class="p">()</span>
+
+    <span class="n">flag</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="n">faFileName</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="s">&quot;gz&quot;</span><span class="p">:</span>
+        <span class="n">faFile</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">faFileName</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;rt&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">faFile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">faFileName</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">fastaSeq</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fastaSeq</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">sb</span><span class="o">.</span><span class="n">stripFName</span><span class="p">(</span><span class="n">faFileName</span><span class="p">)</span>
+    <span class="c"># Find the start of the first sequence.</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxskip</span><span class="p">):</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">faFile</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">line</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotAFastaFileError</span><span class="p">(</span><span class="s">&quot;File contains no data.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;&gt;&#39;</span><span class="p">:</span>
+            <span class="c"># species name found in line</span>
+            <span class="n">flag</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">break</span>
+    <span class="k">if</span> <span class="n">flag</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">NotAFastaFileError</span><span class="p">(</span><span class="s">&quot;Didn&#39;t find a species header within &quot;</span> <span class="o">+</span>
+                                 <span class="n">maxskip</span> <span class="o">+</span> <span class="s">&quot; lines.&quot;</span><span class="p">)</span>
+    <span class="k">while</span> <span class="n">line</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">nextLine</span><span class="p">,</span> <span class="n">seq</span><span class="p">)</span> <span class="o">=</span> <span class="n">read_seq_from_fo</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">faFile</span><span class="p">)</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">nextLine</span>
+        <span class="n">fastaSeq</span><span class="o">.</span><span class="n">seqL</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+        <span class="n">fastaSeq</span><span class="o">.</span><span class="n">nSpecies</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">faFile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">test_sequence</span><span class="p">(</span><span class="n">fastaSeq</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fastaSeq</span>
+
+</div>
+<div class="viewcode-block" id="save_as_vcf"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.save_as_vcf">[docs]</a><span class="k">def</span> <span class="nf">save_as_vcf</span><span class="p">(</span><span class="n">faSeq</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">VCFFileName</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Save the given `FaSeq` in VCF format.</span>
+
+<span class="sd">    In general, we want to convert a fasta file with various</span>
+<span class="sd">    individuals with the help of a reference that contains one</span>
+<span class="sd">    sequence to a VCF file that contains all the SNPs.  This can be</span>
+<span class="sd">    done with this function.  Until now it is not possible to do this</span>
+<span class="sd">    conversion for several chromosomes for each individual in one run.</span>
+<span class="sd">    Still, the conversion can be done chromosome by chromosome.</span>
+
+<span class="sd">    This function saves the SNPs of `faSeq`, a given `FaSeq` (fasta</span>
+<span class="sd">    sequence) object in VCF format to the file `VCFFileName`.  The</span>
+<span class="sd">    reference genome `ref`, to which `faSeq` is compared to, needs to</span>
+<span class="sd">    be passed as a `Seq` object.</span>
+
+<span class="sd">    The function compares all sequences in `faSeq` to the sequence</span>
+<span class="sd">    given in `ref`.  The names of the individuals in the saved VCF</span>
+<span class="sd">    file will be the sequence names of the `faSeq` object.</span>
+
+<span class="sd">    #CHROM = sequence name of the reference</span>
+<span class="sd">    POS    = position relative to reference</span>
+<span class="sd">    ID     = .</span>
+<span class="sd">    REF    = base of reference</span>
+<span class="sd">    ALT    = SNP (e.g. &#39;C&#39; or &#39;G,T&#39; if 2 different SNPs are present)</span>
+<span class="sd">    QUAL   = .</span>
+<span class="sd">    FILTER = .</span>
+<span class="sd">    INFO   = .</span>
+<span class="sd">    FORMAT = GT</span>
+
+<span class="sd">    - `faSeq`: `FaSeq` object to be converted.</span>
+<span class="sd">    - `ref`: `Seq` object of the reference sequence.</span>
+<span class="sd">    - `VCFFileName`: Name of the VCF output file.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">get_altBases_string</span><span class="p">(</span><span class="n">sAltBases</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return ALT bases string from given `sAltBases`.&quot;&quot;&quot;</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sAltBases</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">l</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s">&#39;&#39;</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sAltBases</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">l</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">l</span><span class="p">):</span>
+                <span class="n">string</span> <span class="o">+=</span> <span class="s">&#39;,&#39;</span> <span class="o">+</span> <span class="n">sAltBases</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">string</span>
+
+    <span class="k">def</span> <span class="nf">get_indiv_string</span><span class="p">(</span><span class="n">indivData</span><span class="p">,</span> <span class="n">altBases</span><span class="p">,</span> <span class="n">sAltBases</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the string of the individual data.</span>
+
+<span class="sd">        Return the string extracted from the indivudal data</span>
+<span class="sd">        `indivData` with SNPs `altBases`. `sAltBases` is the string</span>
+<span class="sd">        with the alternative bases.</span>
+
+<span class="sd">        E.g.:</span>
+<span class="sd">        REF = A</span>
+<span class="sd">        ALT = C,G</span>
+<span class="sd">        individual i1 has A</span>
+<span class="sd">        individual i2 has C</span>
+<span class="sd">        individual i3 has G</span>
+
+<span class="sd">        Then the string should look like:</span>
+<span class="sd">        &#39;0\t1\t2&#39;</span>
+<span class="sd">        -&gt; 0 for REF, 1 for first ALT and 2 for second ALT</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">indivData</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">indivData</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">altBases</span><span class="p">):</span>
+            <span class="n">string</span> <span class="o">=</span> <span class="s">&#39;0&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">string</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sAltBases</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">indivData</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">l</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">indivData</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">indivData</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">in</span> <span class="n">altBases</span><span class="p">):</span>
+                    <span class="n">string</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span> <span class="o">+</span> <span class="s">&#39;0&#39;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">string</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">sAltBases</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">indivData</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">string</span>
+
+    <span class="k">def</span> <span class="nf">get_vcf_line</span><span class="p">(</span><span class="n">chromName</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span>
+                     <span class="n">refBase</span><span class="p">,</span> <span class="n">altBaseString</span><span class="p">,</span> <span class="n">indivString</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Print a VCF file line with given data to file `VCFFile`.&quot;&quot;&quot;</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">chromName</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span>
+        <span class="n">string</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span>
+        <span class="n">string</span> <span class="o">+=</span> <span class="s">&#39;.&#39;</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span>    <span class="c"># id</span>
+        <span class="n">string</span> <span class="o">+=</span> <span class="n">refBase</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span>
+        <span class="n">string</span> <span class="o">+=</span> <span class="n">altBaseString</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span>
+        <span class="n">string</span> <span class="o">+=</span> <span class="s">&#39;.&#39;</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span>    <span class="c"># qual</span>
+        <span class="n">string</span> <span class="o">+=</span> <span class="s">&#39;.&#39;</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span>    <span class="c"># filter</span>
+        <span class="n">string</span> <span class="o">+=</span> <span class="s">&#39;.&#39;</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span>    <span class="c"># info</span>
+        <span class="n">string</span> <span class="o">+=</span> <span class="s">&quot;GT&quot;</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span>   <span class="c"># format</span>
+        <span class="n">string</span> <span class="o">+=</span> <span class="n">indivString</span>
+        <span class="k">return</span> <span class="n">string</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">faSeq</span><span class="p">,</span> <span class="n">FaSeq</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="n">sb</span><span class="o">.</span><span class="n">SequenceDataError</span><span class="p">(</span><span class="s">&quot;`faSeq` is not an FaSeq object.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="n">sb</span><span class="o">.</span><span class="n">Seq</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="n">sb</span><span class="o">.</span><span class="n">SequenceDataError</span><span class="p">(</span><span class="s">&quot;`ref` is not a Seq object.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">faSeq</span><span class="o">.</span><span class="n">nSpecies</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">sb</span><span class="o">.</span><span class="n">SequenceDataError</span><span class="p">(</span><span class="s">&quot;`faSeq` has no saved sequences.&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">faSeq</span><span class="o">.</span><span class="n">nSpecies</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">faSeq</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">dataLen</span> <span class="o">!=</span> <span class="n">ref</span><span class="o">.</span><span class="n">dataLen</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">sb</span><span class="o">.</span><span class="n">SequenceDataError</span><span class="p">(</span>
+                <span class="s">&quot;Sequence &quot;</span> <span class="o">+</span> <span class="n">faSeq</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span>
+                <span class="s">&quot; has different length than reference.&quot;</span><span class="p">)</span>
+    <span class="c"># initialize VCFFile</span>
+    <span class="k">if</span> <span class="n">VCFFileName</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="s">&quot;gz&quot;</span><span class="p">:</span>
+        <span class="n">VCFFile</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">VCFFileName</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;wt&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">VCFFile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">VCFFileName</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">vcf</span><span class="o">.</span><span class="n">get_header_line_string</span><span class="p">(</span><span class="n">faSeq</span><span class="o">.</span><span class="n">get_seq_names</span><span class="p">()),</span> <span class="nb">file</span><span class="o">=</span><span class="n">VCFFile</span><span class="p">)</span>
+    <span class="c"># loop over bases</span>
+    <span class="n">refBase</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ref</span><span class="o">.</span><span class="n">dataLen</span><span class="p">):</span>
+        <span class="n">refBase</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">altBases</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">indivData</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c"># loop over sequences in faSeq and check if there is a SNP</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">faSeq</span><span class="o">.</span><span class="n">nSpecies</span><span class="p">):</span>
+            <span class="n">indivData</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">faSeq</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">faSeq</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="n">refBase</span><span class="p">:</span>
+                <span class="n">altBases</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">faSeq</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">sAltBases</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">altBases</span><span class="p">)</span>
+        <span class="n">altBaseString</span> <span class="o">=</span> <span class="n">get_altBases_string</span><span class="p">(</span><span class="n">sAltBases</span><span class="p">)</span>
+        <span class="n">indivString</span> <span class="o">=</span> <span class="n">get_indiv_string</span><span class="p">(</span><span class="n">indivData</span><span class="p">,</span> <span class="n">altBases</span><span class="p">,</span> <span class="n">sAltBases</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">altBases</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">():</span>
+            <span class="k">print</span><span class="p">(</span>
+                <span class="n">get_vcf_line</span><span class="p">(</span><span class="n">ref</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">refBase</span><span class="p">,</span>
+                             <span class="n">altBaseString</span><span class="p">,</span> <span class="n">indivString</span><span class="p">),</span>
+                <span class="nb">file</span><span class="o">=</span><span class="n">VCFFile</span><span class="p">)</span>
+    <span class="n">VCFFile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">libPoMo 1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Dominik Schrempf.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

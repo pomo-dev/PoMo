@@ -188,24 +188,24 @@ def probability_matrix(n):
          str(o+1) + "\", Freqs, EXPLICIT_FORM_MATRIX_EXPONENTIAL);\n\n"
     return s
 
-# TODO
+
 def process_infile(infile):
-    """ Process input file. Checks the input file format.
+    """ TODO. Process input file. Checks the input file format.
 
-    Fasta format:
-    ----------------------------------------------------------------------
-    HEADER
-    >species_nameA_N1
-    ACGTACGT
-    >species_nameA_N2
-    ACGTACGA
-    >species_nameB_N1
-    ACGTTGCA
+    Fasta format::
 
-    Counts format:
-    ----------------------------------------------------------------------
-    #Comments
-    species_nameA_N1    species_nameA_N2    species_nameB_N1
-    
+      HEADER
+      >species_nameA_N1
+      ACGTACGT
+      >species_nameA_N2
+      ACGTACGA
+      >species_nameB_N1
+      ACGTTGCA
+
+    Counts format::
+
+      #Comments
+      CHROM \t POS \t species_nameA_N1 \t species_nameA_N2 \t species_nameB_N1
+
     """
     pass

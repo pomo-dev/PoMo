@@ -1,0 +1,3 @@
+.. automodule:: libPoMo.main
+   :members:
+

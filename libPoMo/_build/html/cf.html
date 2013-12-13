@@ -1,0 +1,313 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>libPomo.countsformat &mdash; libPoMo 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="libPoMo 1.0 documentation" href="index.html" />
+    <link rel="prev" title="libPomo.vcf" href="vcf.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="vcf.html" title="libPomo.vcf"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">libPoMo 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="module-libPoMo.cf"></span><div class="section" id="libpomo-countsformat">
+<h1>libPomo.countsformat<a class="headerlink" href="#libpomo-countsformat" title="Permalink to this headline">¶</a></h1>
+<p>This model provides functions to read, write and access files that are
+in counts format.</p>
+<div class="section" id="the-counts-format">
+<h2>The Counts Format<a class="headerlink" href="#the-counts-format" title="Permalink to this headline">¶</a></h2>
+<p>This file format is used by PoMo and lists the base
+counts for every position. It contains:</p>
+<p>1 headerline with tab separated sequence names
+N lines with counts of A, C, G and T bases at position n</p>
+<p>CHROM    Pos     Sheep           BlackSheep      RedSheep        Wolf            RedWolf
+chrA     s       0,0,1,0         0,0,1,0         0,0,1,0         0,0,5,0         0,0,0,1
+chrA     s + 1   0,0,0,1         0,0,0,1         0,0,0,1         0,0,0,5         0,0,0,1
+.
+.
+.
+chrF     8373    0,0,0,1         1,0,0,0         0,1,0,0         0,1,4,0         0,0,1,0
+.
+.
+.
+chrE     end     0,0,0,1         0,1,0,0         0,1,0,0         0,5,0,0         0,0,1,0</p>
+</div>
+<div class="section" id="objects">
+<h2>Objects<a class="headerlink" href="#objects" title="Permalink to this headline">¶</a></h2>
+<p>Classes:
+- <cite>CFWriter</cite>, write a counts format file</p>
+<p>Exception Classes:
+- <cite>CountsFormatWriterError</cite></p>
+<p>Functions:
+- <cite>save_as_vc()</cite>: Deprecated. Save given sequences to a counts format</p>
+<blockquote>
+<div>file.</div></blockquote>
+<dl class="class">
+<dt id="libPoMo.cf.CFWriter">
+<em class="property">class </em><tt class="descclassname">libPoMo.cf.</tt><tt class="descname">CFWriter</tt><big>(</big><em>refFileName</em>, <em>vcfFileNameL</em>, <em>outFileName</em>, <em>verb=None</em>, <em>mergeL=None</em>, <em>nameL=None</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a counts format file.</p>
+<p>Save information that is needed to write a CF file and use this
+information to write a CF file.</p>
+<p>Initialize with a reference fasta file name, a list of vcf file
+names and an output file name (cf. <cite>self.__init__</cite>):
+.. code:: python</p>
+<blockquote>
+<div>CFWriter(&#8220;refFasta&#8221;, [vcfFileNames], &#8220;output&#8221;)</div></blockquote>
+<p>Write a header line to output:
+.. code:: python</p>
+<blockquote>
+<div>self.write_HLn()</div></blockquote>
+<p>Write lines in counts format from position start to end on
+chromosome chrom to output:
+.. code:: python</p>
+<blockquote>
+<div>rg = sb.Region(&#8220;chrom&#8221;, start, end)
+self.write_Rn(rg)</div></blockquote>
+<p>Remember to close the attached file objectsL
+.. code:: python</p>
+<blockquote>
+<div>self.close()</div></blockquote>
+<dl class="method">
+<dt id="libPoMo.cf.CFWriter.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close fileobjects.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="libPoMo.cf.CFWriter.write_HLn">
+<tt class="descname">write_HLn</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter.write_HLn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter.write_HLn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the counts format header line to <cite>self.outFN</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="libPoMo.cf.CFWriter.write_Rn">
+<tt class="descname">write_Rn</tt><big>(</big><em>rg</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter.write_Rn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter.write_Rn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write lines in counts format to <cite>self.outFN</cite>.</p>
+<ul class="simple">
+<li><cite>rg</cite>: <cite>Region</cite> object that determines the region that is
+covered.</li>
+</ul>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="libPoMo.cf.CountsFormatWriterError">
+<em class="property">exception </em><tt class="descclassname">libPoMo.cf.</tt><tt class="descname">CountsFormatWriterError</tt><a class="reference internal" href="_modules/libPoMo/cf.html#CountsFormatWriterError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CountsFormatWriterError" title="Permalink to this definition">¶</a></dt>
+<dd><p>General <cite>CFWriter</cite> object error.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.cf.collapse">
+<tt class="descclassname">libPoMo.cf.</tt><tt class="descname">collapse</tt><big>(</big><em>speciesL</em>, <em>merge=False</em>, <em>name=None</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#collapse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.collapse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Collapse the species names.</p>
+<p>Collapse the species names using the naming rules given in
+save_as_countsformat. Returns a dictionary with collapsed
+species names as keys and an assignment list.</p>
+<ul class="simple">
+<li><cite>merge</cite>: if set to True, all species/individuals will be</li>
+</ul>
+<p>collapsed to a single one with name <cite>name</cite> (if <cite>name</cite> is
+given).</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.cf.fill_species_dict_alt">
+<tt class="descclassname">libPoMo.cf.</tt><tt class="descname">fill_species_dict_alt</tt><big>(</big><em>spDi</em>, <em>assL</em>, <em>refBase</em>, <em>altBases</em>, <em>spData</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#fill_species_dict_alt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.fill_species_dict_alt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fill the species dictionary when a SNP is present.</p>
+<p>Raise <cite>SequenceDataError</cite>, if <cite>spDi</cite> could not be filled.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.cf.fill_species_dict_ref">
+<tt class="descclassname">libPoMo.cf.</tt><tt class="descname">fill_species_dict_ref</tt><big>(</big><em>spDi</em>, <em>assL</em>, <em>refBase</em>, <em>ploidy</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#fill_species_dict_ref"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.fill_species_dict_ref" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fills the species dictionary if no SNP is present.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.cf.find_next_SNP_pos">
+<tt class="descclassname">libPoMo.cf.</tt><tt class="descname">find_next_SNP_pos</tt><big>(</big><em>nSNPChromL</em>, <em>nSNPPosL</em>, <em>ref</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#find_next_SNP_pos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.find_next_SNP_pos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the position of next SNP.</p>
+<p>Return the position of the next SNP in <cite>ref</cite> and a list of
+indices of these SNPs in <cite>nSNPChromL</cite> and <cite>nSNPPosL</cite>. If no
+next SNP is found on this sequence (this might happen if all
+next SNPs are on the next chromosome) a ValueError is raised.</p>
+<ul>
+<li><dl class="first docutils">
+<dt><cite>nSNPChromL</cite>: List with chromosome names of the next SNPs of</dt>
+<dd><p class="first last">the <cite>vcfStrL</cite>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><cite>nSNPPosL</cite>: List with positions of the next SNPs of the</dt>
+<dd><p class="first last"><cite>vcfStrL</cite>.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first"><cite>ref</cite>: Seq object of the sequence of the reference.</p>
+</li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.cf.get_cf_headerline">
+<tt class="descclassname">libPoMo.cf.</tt><tt class="descname">get_cf_headerline</tt><big>(</big><em>species</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#get_cf_headerline"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.get_cf_headerline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a string containing the headerline in counts format.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.cf.get_counts_line">
+<tt class="descclassname">libPoMo.cf.</tt><tt class="descname">get_counts_line</tt><big>(</big><em>chrom</em>, <em>pos</em>, <em>spDi</em>, <em>speciesL</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#get_counts_line"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.get_counts_line" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return line string in counts format.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.cf.save_as_cf">
+<tt class="descclassname">libPoMo.cf.</tt><tt class="descname">save_as_cf</tt><big>(</big><em>vcfStrL</em>, <em>refFaStr</em>, <em>CFFileName</em>, <em>verb=False</em>, <em>mergeL=None</em>, <em>nameL=None</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#save_as_cf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.save_as_cf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the given sequence in counts format.</p>
+<p>This function saves the SNPs from <cite>vcfStrL</cite>, a given list of
+<cite>VCFStream</cite> (variant call format sequence stream) objects in
+counts format to the file <cite>CFFileName</cite>.  The reference genome
+<cite>refFaStr</cite>, to which <cite>VCFSeqStr</cite> is compared to, needs to be
+passed as an <cite>FaStream</cite> object.</p>
+<p>The name of all streams in <cite>vcfStrL</cite> should be the same as the
+name of <cite>faRef</cite>.  The names of the sequences in the reference
+should be the names of the chromosomes found in the <cite>vcfStr</cite>
+object, otherwise we do not know where to compare the sequences
+to.  They must also be in the same order!</p>
+<p>Individuals with the same name and suffix &#8220;_n&#8221;, where n is a
+number, will be saved in one column without the suffix.</p>
+<ul>
+<li><p class="first"><cite>vcfStrL</cite>: List with VCF Streams containing SNPs.</p>
+</li>
+<li><p class="first"><cite>refFaStr</cite>: Reference fasta sequence stream object.</p>
+</li>
+<li><p class="first"><cite>CFFileName</cite>: Name of output file (counts format).</p>
+</li>
+<li><dl class="first docutils">
+<dt><cite>verb</cite>: If <cite>verb</cite> is set to True, additional information is</dt>
+<dd><p class="first last">printed to the output file.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><cite>mergeL</cite>: A list of truth values. If <cite>mergeL[i]</cite> is True, all</dt>
+<dd><p class="first last">individuals of <cite>vcfStrL[i]</cite> are treated as one species
+independent of their name. The respective counts are
+summed up.  If <cite>nameL[i]</cite> is given, the name of the
+summed sequence will be <cite>nameL[i]</cite>. If not, the name of
+the first individual in <cite>vcfStrL[i]</cite> will be used.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first"><cite>nameL</cite>: A list of names. Cf. <cite>mergeL</cite>.</p>
+</li>
+</ul>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">libPomo.countsformat</a><ul>
+<li><a class="reference internal" href="#the-counts-format">The Counts Format</a></li>
+<li><a class="reference internal" href="#objects">Objects</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="vcf.html"
+                        title="previous chapter">libPomo.vcf</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/cf.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="vcf.html" title="libPomo.vcf"
+             >previous</a> |</li>
+        <li><a href="index.html">libPoMo 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Dominik Schrempf.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

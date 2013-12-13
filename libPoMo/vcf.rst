@@ -1,0 +1,2 @@
+.. automodule:: libPoMo.vcf
+   :members:
