@@ -72,27 +72,27 @@
 <dt id="libPoMo.fasta.FaSeq">
 <em class="property">class </em><tt class="descclassname">libPoMo.fasta.</tt><tt class="descname">FaSeq</tt><a class="reference internal" href="_modules/libPoMo/fasta.html#FaSeq"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.FaSeq" title="Permalink to this definition">¶</a></dt>
 <dd><p>Store sequence data retrieved from a fasta file.</p>
-<dl class="method">
+<dl class="function">
 <dt id="libPoMo.fasta.FaSeq.get_seq_base">
-<tt class="descname">get_seq_base</tt><big>(</big><em>seq</em>, <em>pos</em><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#FaSeq.get_seq_base"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.FaSeq.get_seq_base" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_seq_base</tt><big>(</big><em>self</em>, <em>seq</em>, <em>pos</em><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#FaSeq.get_seq_base"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.FaSeq.get_seq_base" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return base at position <cite>pos</cite> in sequence with name <cite>seq</cite>.</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="function">
 <dt id="libPoMo.fasta.FaSeq.get_seq_by_id">
-<tt class="descname">get_seq_by_id</tt><big>(</big><em>i</em><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#FaSeq.get_seq_by_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.FaSeq.get_seq_by_id" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_seq_by_id</tt><big>(</big><em>self</em>, <em>i</em><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#FaSeq.get_seq_by_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.FaSeq.get_seq_by_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return sequence number <cite>i</cite> as <cite>Seq</cite> object.</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="function">
 <dt id="libPoMo.fasta.FaSeq.get_seq_names">
-<tt class="descname">get_seq_names</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#FaSeq.get_seq_names"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.FaSeq.get_seq_names" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_seq_names</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#FaSeq.get_seq_names"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.FaSeq.get_seq_names" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a list with sequence names.</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="function">
 <dt id="libPoMo.fasta.FaSeq.print_info">
-<tt class="descname">print_info</tt><big>(</big><em>maxB=50</em><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#FaSeq.print_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.FaSeq.print_info" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">print_info</tt><big>(</big><em>self</em>, <em>maxB=50</em><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#FaSeq.print_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.FaSeq.print_info" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print sequence information.</p>
 <p>Print fasta sequence identifier, species names, the length of
 the sequence and a maximum of <cite>maxB</cite> bases (defaults to 50).</p>
@@ -108,24 +108,24 @@ the sequence and a maximum of <cite>maxB</cite> bases (defaults to 50).</p>
 functions are provided to read in the next sequence in the file,
 if there is any. This saves memory if files are huge and doesn&#8217;t
 increase runtime.</p>
-<dl class="method">
+<dl class="function">
 <dt id="libPoMo.fasta.FaStream.close_fo">
-<tt class="descname">close_fo</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#FaStream.close_fo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.FaStream.close_fo" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">close_fo</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#FaStream.close_fo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.FaStream.close_fo" title="Permalink to this definition">¶</a></dt>
 <dd><p>Close the linked file.</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="function">
 <dt id="libPoMo.fasta.FaStream.print_info">
-<tt class="descname">print_info</tt><big>(</big><em>maxB=50</em><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#FaStream.print_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.FaStream.print_info" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">print_info</tt><big>(</big><em>self</em>, <em>maxB=50</em><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#FaStream.print_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.FaStream.print_info" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print sequence information.</p>
 <p>Print information about this FaStream object, the fasta
 sequence stored at the moment the length of the sequence and a
 maximum of <cite>maxB</cite> bases (defaults to 50).</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="function">
 <dt id="libPoMo.fasta.FaStream.read_next_seq">
-<tt class="descname">read_next_seq</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#FaStream.read_next_seq"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.FaStream.read_next_seq" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">read_next_seq</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#FaStream.read_next_seq"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.FaStream.read_next_seq" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read next fasta sequence in file.</p>
 <p>The return value is the name of the next sequence or None if
 no next sequence is found.</p>

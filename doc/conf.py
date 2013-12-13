@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # PoMo documentation build configuration file, created by
-# sphinx-quickstart on Fri Dec 13 14:44:57 2013.
+# sphinx-quickstart on Fri Dec 13 15:06:09 2013.
 #
 # This file is execfile()d with the current directory set to its containing dir.
 #
@@ -65,7 +65,7 @@ release = '1.0.2'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = []
+exclude_patterns = ['_build']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
