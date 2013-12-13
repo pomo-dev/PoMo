@@ -100,4 +100,4 @@ modules that ease the handling of data files in fasta or variant call
 format (vcf).
 
 For a detailed and comprehensive documentation visit
-[libPoMo documentation](libPoMo/_build/html/index.html).
+[libPoMo documentation](pomo.readthedocs.org).
