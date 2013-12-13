@@ -14,7 +14,7 @@ import argparse
 import import_libPoMo  # noqa
 import libPoMo.fasta as fa  # noqa
 import libPoMo.vcf as vcf  # noqa
-import libPoMo.countsformat as cf  # noqa
+import libPoMo.cf as cf  # noqa
 
 descr = """convertVCF script version 1.0
 

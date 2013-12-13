@@ -19,7 +19,7 @@ Functions:
 - `save_as_vcf()`: Save a given `FaSeq` in variant call format (VCF).
 
 """
-
+# TODO MFaStream
 __docformat__ = 'restructuredtext'
 
 import gzip
@@ -36,14 +36,28 @@ def read_seq_from_fo(line, fo):
     """Read a single fasta sequence.
 
     Read a single fasta sequence from file object `fo` and save it to
-    a new sequence object. Returns the header line of the next fasta
-    sequence and the newly created sequence. If no new sequence is
-    found, the next header line will be set to None.
+    a new `Seq` sequence object. Returns the header line of the next
+    fasta sequence and the newly created sequence. If no new sequence
+    is found, the next header line will be set to None.
 
     - `line`: the header line of the sequence.
     - `fo`: the file object of the fasta file.
 
     """
+    def get_sp_name_and_description(fa_header_line):
+        """Extract species name and description.
+
+        Extract species name and description from a fasta file header
+        line `fa_header_line`.
+
+        """
+        lineList = fa_header_line.rstrip().split()
+        name = lineList[0][1:]
+        description = ""
+        if len(lineList) > 1:
+            description = '\t'.join(lineList[1:])
+        return (name, description)
+
     def fill_seq_from_fo(line, fo, seq):
         """Read a single fasta sequence
 
@@ -56,20 +70,6 @@ def read_seq_from_fo(line, fo):
         - `seq`: the sequence that will be filled.
 
         """
-        def get_sp_name_and_description(fa_header_line):
-            """Extract species name and description.
-
-            Extract species name and description from a fasta file header
-            line `fa_header_line`.
-
-            """
-            lineList = fa_header_line.rstrip().split()
-            name = lineList[0].replace(">", "")
-            description = ""
-            if len(lineList) > 1:
-                description = '\t'.join(lineList[1:])
-            return (name, description)
-
         (name, descr) = get_sp_name_and_description(line)
         seq.name = name
         seq.descr = descr

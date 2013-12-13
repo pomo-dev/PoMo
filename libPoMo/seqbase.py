@@ -8,9 +8,11 @@ sequence data.
 
 Classes:
 - `Seq`, stores a single sequence
+- `Region`, region in a genome
 
 Exception Classes:
-- SequenceDataError`
+- `SequenceDataError`
+- `NotAValidRefBase`
 
 Functions:
 - `stripFName()`: strip filename off its ending
@@ -25,6 +27,32 @@ import os
 class SequenceDataError(Exception):
     """General sequence data error exception."""
     pass
+
+
+class NotAValidRefBase(SequenceDataError):
+    """Reference base is not valid."""
+    pass
+
+
+class Region():
+    """Region in a genome."""
+    def __init__(self, chrom, start, end):
+        """Initializes the `Region`.
+
+        - `chrom`: Chromosome name.
+        - `start`: 1-based start position.
+        - `end`: 1-based start position.
+
+        The start and end points are converted to 0-based positions
+        that are used internally to save all positional data.
+
+        """
+        self.chrom = chrom
+        """String of chromosome name."""
+        self.start = start - 1
+        """Integer with start position on `self.chrom`."""
+        self.end = end - 1
+        """Integer with end position on `self.chrom`."""
 
 
 class Seq:

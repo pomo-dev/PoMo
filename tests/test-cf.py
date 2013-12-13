@@ -4,7 +4,7 @@
 
 import os
 import import_libPoMo  # noqa
-import libPoMo.countsformat as cf  # noqa
+import libPoMo.cf as cf  # noqa
 import libPoMo.vcf as vcf
 import libPoMo.fasta as fa
 

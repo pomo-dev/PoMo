@@ -69,16 +69,21 @@ def update_base(ln, base, info=True):
     return base
 
 
-def get_nuc_base_from_line(ln, info=True):
+def get_nuc_base_from_line(ln, info=False, ploidy=None):
     """Retrieve base data from a VCF file line `ln`.
 
     Split a given VCF file line and returns a NucBase object. If
     `info` is set to False, only #CHROM, POS, REF, ALT and speciesData will
     be read.
+    
+    - `info`: Boolean; determines if info is retrieved from `ln`.
+    - `ploidy`: If ploidy is known and given, it is set.
 
     """
     base = NucBase()
     update_base(ln, base, info)
+    if ploidy is not None:
+        base.ploidy = ploidy
     return base
 
 
@@ -127,7 +132,8 @@ class NucBase():
 
     def get_alt_base_list(self):
         """Return alternative bases as a list."""
-        return self.alt.split(',')
+        altBases = [b.lower() for b in self.alt.split(',')]
+        return altBases
 
     def set_ploidy(self):
         """Set self.ploidy."""

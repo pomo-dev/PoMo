@@ -10,4 +10,4 @@ Contains modules used by PoMo.
 import libPoMo.seqbase
 import libPoMo.fasta
 import libPoMo.vcf
-import libPoMo.countsformat  # noqa
+import libPoMo.cf  # noqa
