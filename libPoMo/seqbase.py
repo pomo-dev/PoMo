@@ -6,16 +6,16 @@
 This module provides basic functions and classes needed to work with
 sequence data.
 
-Classes:
-- `Seq`, stores a single sequence
-- `Region`, region in a genome
+Classes::
+  - `Seq`, stores a single sequence
+  - `Region`, region in a genome
 
-Exception Classes:
-- `SequenceDataError`
-- `NotAValidRefBase`
+Exception Classes::
+  - `SequenceDataError`
+  - `NotAValidRefBase`
 
-Functions:
-- `stripFName()`: strip filename off its ending
+Functions::
+  - `stripFName()`: strip filename off its ending
 
 """
 
@@ -35,18 +35,18 @@ class NotAValidRefBase(SequenceDataError):
 
 
 class Region():
-    """Region in a genome."""
+    """Region in a genome.
+
+    Parameters::
+      - `chrom`: Chromosome name.
+      - `start`: 1-based start position.
+      - `end`: 1-based start position.
+
+    The start and end points are converted to 0-based positions
+    that are used internally to save all positional data.
+
+    """
     def __init__(self, chrom, start, end):
-        """Initializes the `Region`.
-
-        - `chrom`: Chromosome name.
-        - `start`: 1-based start position.
-        - `end`: 1-based start position.
-
-        The start and end points are converted to 0-based positions
-        that are used internally to save all positional data.
-
-        """
         self.chrom = chrom
         """String of chromosome name."""
         self.start = start - 1
