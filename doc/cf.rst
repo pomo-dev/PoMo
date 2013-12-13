@@ -1,2 +1,2 @@
-.. automodule:: cf
+.. automodule:: libPoMo.cf
    :members:
