@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # PoMo documentation build configuration file, created by
-# sphinx-quickstart on Fri Dec 13 15:06:09 2013.
+# sphinx-quickstart on Fri Dec 13 15:16:03 2013.
 #
 # This file is execfile()d with the current directory set to its containing dir.
 #
