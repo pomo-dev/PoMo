@@ -2,7 +2,7 @@ This library contains several modules that ease the handling of data
 files in fasta or variant call format (vcf).
 
 
-Contents:
+libPoMo
 =========
 .. toctree::
    :maxdepth: 2

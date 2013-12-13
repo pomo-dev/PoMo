@@ -7,8 +7,11 @@ Welcome to PoMo's documentation!
 ================================
 Implementation of a polymorphism aware phylogenetic model using HYPHY.
 
-Created by: Nicola De Maio
-Contributors: Carolin Kosiol and Dominik Schrempf
+Created by:
+  - Nicola De Maio
+Contributors:
+  - Carolin Kosiol 
+  - Dominik Schrempf
 
 For a reference, please see and cite: De Maio, Schlotterer, Kosiol
 (MBE, 2013), and/or: De Maio, Kosiol (in preparation). You can use
@@ -20,7 +23,7 @@ Feel free to post any suggestions, doubts and bugs.
 libPoMo
 =======
 PoMo comes with a small python package :doc:`libPoMo
-<libPoMo.rst>`. It contains several modules that ease the handling of
+</libPoMo.rst>`. It contains several modules that ease the handling of
 data files in fasta or variant call format (vcf).
 
 This documentation mainly focusses on this library. For a general
