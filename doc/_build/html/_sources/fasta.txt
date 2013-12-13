@@ -1,0 +1,2 @@
+.. automodule:: libPoMo.fasta
+   :members:

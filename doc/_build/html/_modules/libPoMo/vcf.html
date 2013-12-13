@@ -1,0 +1,548 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>libPoMo.vcf &mdash; PoMo 1.0.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PoMo 1.0.2 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">PoMo 1.0.2 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for libPoMo.vcf</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+
+<span class="sd">&quot;&quot;&quot;libPomo.vcf</span>
+<span class="sd">----------------------------------------------------------------------</span>
+
+<span class="sd">This module provides functions to read, write and access vcf files.</span>
+
+<span class="sd">Classes:</span>
+<span class="sd">- `NucBase`, store a nucleotide base</span>
+<span class="sd">- `VCFStream`, a variant call format (VCF) stream object</span>
+<span class="sd">- `VCFSeq`, a VCF file sequence object</span>
+
+<span class="sd">Exception Classes:</span>
+<span class="sd">- `NotAVariantCallFormatFileError`</span>
+<span class="sd">- `NotANucBaseError`</span>
+
+<span class="sd">Functions:</span>
+<span class="sd">- `update_base()`: Read a line into a base.</span>
+<span class="sd">- `get_nuc_base_from_line()`: Create a new `NucBase` from a line.</span>
+<span class="sd">- `check_fixed_field_header()`: Check a VCF fixed field header string.</span>
+<span class="sd">- `get_indiv_from_field_header()`: Extract list of individuals from header.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">__docformat__</span> <span class="o">=</span> <span class="s">&#39;restructuredtext&#39;</span>
+
+<span class="kn">import</span> <span class="nn">libPoMo.seqbase</span> <span class="kn">as</span> <span class="nn">sb</span>
+<span class="kn">import</span> <span class="nn">gzip</span>
+
+
+<div class="viewcode-block" id="NotAVariantCallFormatFileError"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.NotAVariantCallFormatFileError">[docs]</a><span class="k">class</span> <span class="nc">NotAVariantCallFormatFileError</span><span class="p">(</span><span class="n">sb</span><span class="o">.</span><span class="n">SequenceDataError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Exception raised if given VCF file is not valid.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="NotANucBaseError"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.NotANucBaseError">[docs]</a><span class="k">class</span> <span class="nc">NotANucBaseError</span><span class="p">(</span><span class="n">sb</span><span class="o">.</span><span class="n">SequenceDataError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Exception raised if given nucleotide base is not valid.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+</div>
+<span class="n">hdList</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;#CHROM&#39;</span><span class="p">,</span> <span class="s">&#39;POS&#39;</span><span class="p">,</span> <span class="s">&#39;ID&#39;</span><span class="p">,</span> <span class="s">&#39;REF&#39;</span><span class="p">,</span> <span class="s">&#39;ALT&#39;</span><span class="p">,</span>
+          <span class="s">&#39;QUAL&#39;</span><span class="p">,</span> <span class="s">&#39;FILTER&#39;</span><span class="p">,</span> <span class="s">&#39;INFO&#39;</span><span class="p">,</span> <span class="s">&#39;FORMAT&#39;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="update_base"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.update_base">[docs]</a><span class="k">def</span> <span class="nf">update_base</span><span class="p">(</span><span class="n">ln</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read line `ln` into base `base`.</span>
+
+<span class="sd">    Split a given VCF file line and returns a NucBase object. If</span>
+<span class="sd">    `info` is set to False, only #CHROM, REF, ALT and speciesData will</span>
+<span class="sd">    be read.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lnList</span> <span class="o">=</span> <span class="n">ln</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lnList</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">10</span><span class="p">:</span>
+        <span class="n">base</span><span class="o">.</span><span class="n">chrom</span> <span class="o">=</span> <span class="n">lnList</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">base</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">lnList</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">base</span><span class="o">.</span><span class="n">ref</span> <span class="o">=</span> <span class="n">lnList</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">base</span><span class="o">.</span><span class="n">alt</span> <span class="o">=</span> <span class="n">lnList</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+        <span class="n">base</span><span class="o">.</span><span class="n">speciesData</span> <span class="o">=</span> <span class="n">lnList</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="c"># base.speciesData = [s.split(&#39;:&#39;, maxsplit=1)[0]</span>
+        <span class="c">#                    for s in lnList[9].rstrip().split(&#39;\t&#39;)]</span>
+        <span class="k">if</span> <span class="n">info</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">base</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">lnList</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">base</span><span class="o">.</span><span class="n">qual</span> <span class="o">=</span> <span class="n">lnList</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+            <span class="n">base</span><span class="o">.</span><span class="n">filter</span> <span class="o">=</span> <span class="n">lnList</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span>
+            <span class="n">base</span><span class="o">.</span><span class="n">info</span> <span class="o">=</span> <span class="n">lnList</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span>
+            <span class="n">base</span><span class="o">.</span><span class="n">format</span> <span class="o">=</span> <span class="n">lnList</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">NotANucBaseError</span><span class="p">(</span><span class="s">&#39;Line &#39;</span> <span class="o">+</span> <span class="n">ln</span> <span class="o">+</span> <span class="s">&#39; is not a NucBase.&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">base</span>
+
+</div>
+<div class="viewcode-block" id="get_nuc_base_from_line"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.get_nuc_base_from_line">[docs]</a><span class="k">def</span> <span class="nf">get_nuc_base_from_line</span><span class="p">(</span><span class="n">ln</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">ploidy</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Retrieve base data from a VCF file line `ln`.</span>
+
+<span class="sd">    Split a given VCF file line and returns a NucBase object. If</span>
+<span class="sd">    `info` is set to False, only #CHROM, POS, REF, ALT and speciesData will</span>
+<span class="sd">    be read.</span>
+<span class="sd">    </span>
+<span class="sd">    - `info`: Boolean; determines if info is retrieved from `ln`.</span>
+<span class="sd">    - `ploidy`: If ploidy is known and given, it is set.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">base</span> <span class="o">=</span> <span class="n">NucBase</span><span class="p">()</span>
+    <span class="n">update_base</span><span class="p">(</span><span class="n">ln</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ploidy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">base</span><span class="o">.</span><span class="n">ploidy</span> <span class="o">=</span> <span class="n">ploidy</span>
+    <span class="k">return</span> <span class="n">base</span>
+
+</div>
+<div class="viewcode-block" id="NucBase"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.NucBase">[docs]</a><span class="k">class</span> <span class="nc">NucBase</span><span class="p">():</span>
+    <span class="c"># TODO SPECIES DATA WITH / and |</span>
+    <span class="sd">&quot;&quot;&quot;Stores a nucleotide base.</span>
+
+<span class="sd">    A class that stores a single nucleotide base and related</span>
+<span class="sd">    information retrieved from a VCF file.  Please see</span>
+<span class="sd">    http://www.1000genomes.org/ for a detailed description of the vcf</span>
+<span class="sd">    format.</span>
+
+<span class="sd">    self.haploid: True if self.speciesData contains haploid data. Can</span>
+<span class="sd">    be set with self.set_haploid()</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chrom</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="sd">&quot;&quot;&quot;Chromosome name.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="sd">&quot;&quot;&quot;Position on the chromosome.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ref</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alt</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qual</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filter</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">info</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">format</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speciesData</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ploidy</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="sd">&quot;&quot;&quot;Number of sets of chromosomes. Set by `self.set_ploidy()`.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="NucBase.print_info"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.NucBase.print_info">[docs]</a>    <span class="k">def</span> <span class="nf">print_info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Print nucleotide base information.</span>
+
+<span class="sd">        Print the stored single nucleotide base and related</span>
+<span class="sd">        information from the VCF file.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chrom</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span>
+              <span class="bp">self</span><span class="o">.</span><span class="n">alt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">qual</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">,</span>
+              <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">,</span>
+              <span class="n">sep</span><span class="o">=</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">speciesData</span><span class="p">))</span>
+        <span class="k">return</span>
+</div>
+<div class="viewcode-block" id="NucBase.get_alt_base_list"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.NucBase.get_alt_base_list">[docs]</a>    <span class="k">def</span> <span class="nf">get_alt_base_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return alternative bases as a list.&quot;&quot;&quot;</span>
+        <span class="n">altBases</span> <span class="o">=</span> <span class="p">[</span><span class="n">b</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">alt</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;,&#39;</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="n">altBases</span>
+</div>
+<div class="viewcode-block" id="NucBase.set_ploidy"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.NucBase.set_ploidy">[docs]</a>    <span class="k">def</span> <span class="nf">set_ploidy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set self.ploidy.&quot;&quot;&quot;</span>
+        <span class="n">baseInfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">speciesData</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ploidy</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">baseInfo</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ploidy</span>
+</div>
+<div class="viewcode-block" id="NucBase.get_speciesData"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.NucBase.get_speciesData">[docs]</a>    <span class="k">def</span> <span class="nf">get_speciesData</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return species data as a list.</span>
+<span class="sd">        </span>
+<span class="sd">        data[0][0] = data of first species/individual on chromatide A</span>
+<span class="sd">        data[0][1] = only set for non-haploids; data of first</span>
+<span class="sd">        species/individual on chromatide B</span>
+
+<span class="sd">        Return None if bases saved are not valid (&quot;./.&quot;). This means,</span>
+<span class="sd">        that the information from all other individuals or species is</span>
+<span class="sd">        lost too. Maybe this should be changed in the future.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">speciesData</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ploidy</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="c"># Haploid.</span>
+                <span class="n">baseInfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">speciesData</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">baseInfo</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">baseInfo</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="c"># Invalid Base.</span>
+                    <span class="n">baseInfo</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">baseInfo</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># Diploid or even more</span>
+                <span class="n">baseInfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">speciesData</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">baseInfoL</span> <span class="o">=</span> <span class="n">baseInfo</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">baseInfoL</span><span class="p">)):</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">baseInfoL</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">baseInfoL</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+                    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                        <span class="c"># Invalid Base.</span>
+                        <span class="n">baseInfoL</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">baseInfoL</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span>
+</div>
+<div class="viewcode-block" id="NucBase.purge"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.NucBase.purge">[docs]</a>    <span class="k">def</span> <span class="nf">purge</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Purge the data associated with this `NucBase`.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="VCFStream"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.VCFStream">[docs]</a><span class="k">class</span> <span class="nc">VCFStream</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Store base data from a VCF file line per line.</span>
+
+<span class="sd">    This class stores a single base retrieved from a VCF file and the</span>
+<span class="sd">    file itself.  It is used to parse through a VCF file line by line</span>
+<span class="sd">    processing the bases without having to read the whole file at one.</span>
+
+<span class="sd">    It can be initialized with init_seq().</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seqName</span><span class="p">,</span> <span class="n">vcfFileObject</span><span class="p">,</span> <span class="n">speciesList</span><span class="p">,</span> <span class="n">firstBase</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize a `VCFStream` object; add state objects.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        - `seqName`: Name of the stream.</span>
+<span class="sd">        - `vcfFileObject`: File object associated with the stream.</span>
+<span class="sd">        - `speciesList`: List with species/individuals.</span>
+<span class="sd">        - `firstBase`: First base to be saved.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">seqName</span>
+        <span class="sd">&quot;&quot;&quot;Sequence name.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fo</span> <span class="o">=</span> <span class="n">vcfFileObject</span>
+        <span class="sd">&quot;&quot;&quot;Stored VCF file object.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speciesL</span> <span class="o">=</span> <span class="n">speciesList</span>
+        <span class="sd">&quot;&quot;&quot;List with species/individuals.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nSpecies</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">speciesList</span><span class="p">)</span>
+        <span class="sd">&quot;&quot;&quot;Number of species/individuals.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">base</span> <span class="o">=</span> <span class="n">firstBase</span>
+        <span class="sd">&quot;&quot;&quot;Stored `NucBase`.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="VCFStream.print_info"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.VCFStream.print_info">[docs]</a>    <span class="k">def</span> <span class="nf">print_info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Prints VCFStream information.&quot;&quot;&quot;</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Name:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;File object:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fo</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;List of species/individuals:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">speciesL</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Number of species/individuals:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nSpecies</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Saved base:&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">print_info</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="VCFStream.read_next_base"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.VCFStream.read_next_base">[docs]</a>    <span class="k">def</span> <span class="nf">read_next_base</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read the next base.</span>
+
+<span class="sd">        Return position of next base.</span>
+<span class="sd">        Raise a `ValueError` if no next base is found.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fo</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">line</span> <span class="o">!=</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+            <span class="n">update_base</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">pos</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;End of VCFStream.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">None</span>
+</div>
+<div class="viewcode-block" id="VCFStream.close_fo"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.VCFStream.close_fo">[docs]</a>    <span class="k">def</span> <span class="nf">close_fo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Closes the linked file.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fo</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="VCFSeq"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.VCFSeq">[docs]</a><span class="k">class</span> <span class="nc">VCFSeq</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Store data retrieved from a VCF file.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize a `VCFSeq` object; add state objects.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="sd">&quot;&quot;&quot;Sequence name.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">header</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="sd">&quot;&quot;&quot;Header information.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">speciesL</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="sd">&quot;&quot;&quot;List with species/individuals.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nSpecies</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="sd">&quot;&quot;&quot;Number of species/individuals.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">baseL</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="sd">&quot;&quot;&quot;List with stored `NucBase` objects.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nBases</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="sd">&quot;&quot;&quot;Number of `NucBase` objects stored.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="VCFSeq.get_header_line_string"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.VCFSeq.get_header_line_string">[docs]</a>    <span class="k">def</span> <span class="nf">get_header_line_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indiv</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a standard VCF File header string with individuals `indiv`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">hdList</span><span class="p">:</span>
+            <span class="n">string</span> <span class="o">+=</span> <span class="n">s</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indiv</span><span class="p">:</span>
+            <span class="n">string</span> <span class="o">+=</span> <span class="n">i</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span>
+        <span class="c"># we added one tab at the end that we do not need</span>
+        <span class="k">return</span> <span class="n">string</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="VCFSeq.print_header_line"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.VCFSeq.print_header_line">[docs]</a>    <span class="k">def</span> <span class="nf">print_header_line</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indiv</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Print a standard VCF File header with individuals `indiv`.&quot;&quot;&quot;</span>
+        <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_header_line_string</span><span class="p">(</span><span class="n">indiv</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="VCFSeq.print_info"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.VCFSeq.print_info">[docs]</a>    <span class="k">def</span> <span class="nf">print_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxB</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">printHeader</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Print VCF sequence information.</span>
+
+<span class="sd">        Print vcf header, the total number of nucleotides and a</span>
+<span class="sd">        maximum of `maxB` bases (defaults to 50). Only prints header</span>
+<span class="sd">        if `printHeader=True` is given.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">printHeader</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">print_header_line</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">speciesL</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nBases</span> <span class="o">&lt;</span> <span class="n">maxB</span><span class="p">:</span>
+            <span class="n">maxB</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nBases</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxB</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">baseL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">print_info</span><span class="p">()</span>
+        <span class="k">return</span>
+</div>
+<div class="viewcode-block" id="VCFSeq.append_nuc_base"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.VCFSeq.append_nuc_base">[docs]</a>    <span class="k">def</span> <span class="nf">append_nuc_base</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Append `base`, a given `NucBase`, to the VCFSeq object.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">baseL</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">base</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nBases</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span>
+</div>
+<div class="viewcode-block" id="VCFSeq.has_base"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.VCFSeq.has_base">[docs]</a>    <span class="k">def</span> <span class="nf">has_base</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chrom</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True (False) if base is (not) found.</span>
+
+<span class="sd">        - `chrom`: Chromosome name.</span>
+<span class="sd">        - `pos`: Position on `chrom`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nBases</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">pos</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">baseL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">pos</span> \
+               <span class="ow">and</span> <span class="n">chrom</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">baseL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">chrom</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="bp">False</span>
+</div>
+<div class="viewcode-block" id="VCFSeq.get_nuc_base"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.VCFSeq.get_nuc_base">[docs]</a>    <span class="k">def</span> <span class="nf">get_nuc_base</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chrom</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return base at position `pos` of chromosome `chrom`.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nBases</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">pos</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">baseL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">pos</span> \
+               <span class="ow">and</span> <span class="n">chrom</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">baseL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">chrom</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">baseL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">raise</span> <span class="n">sb</span><span class="o">.</span><span class="n">SequenceDataError</span><span class="p">(</span><span class="s">&#39;Base at position &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="o">+</span>
+                                   <span class="s">&#39; on chromosome &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">chrom</span><span class="p">)</span> <span class="o">+</span>
+                                   <span class="s">&#39; not found.&#39;</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="check_fixed_field_header"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.check_fixed_field_header">[docs]</a><span class="k">def</span> <span class="nf">check_fixed_field_header</span><span class="p">(</span><span class="n">ln</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Check if the given line `ln` is the header of the fixed fields.</span>
+
+<span class="sd">    Sample header line:</span>
+<span class="sd">    #CHROM\t POS\t ID\t REF\t ALT\t QUAL\t FILTER\t INFO\t FORMAT\t SpeciesL</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lnList</span> <span class="o">=</span> <span class="n">ln</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">lnList</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">9</span><span class="p">]</span> <span class="o">!=</span> <span class="n">hdList</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">NotAVariantCallFormatFileError</span><span class="p">(</span><span class="s">&#39;Header line is invalid.&#39;</span><span class="p">)</span>
+    <span class="k">return</span>
+
+</div>
+<div class="viewcode-block" id="get_indiv_from_field_header"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.get_indiv_from_field_header">[docs]</a><span class="k">def</span> <span class="nf">get_indiv_from_field_header</span><span class="p">(</span><span class="n">ln</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return species from a fixed field header line `ln`.</span>
+
+<span class="sd">    Sample header line:</span>
+<span class="sd">    #CHROM\t POS\t ID\t REF\t ALT\t QUAL\t FILTER\t INFO\t FORMAT\t SpeciesL</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">speciesL</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">lnList</span> <span class="o">=</span> <span class="n">ln</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lnList</span><span class="p">)</span> <span class="o">==</span> <span class="mi">10</span><span class="p">:</span>
+        <span class="n">speciesL</span> <span class="o">=</span> <span class="n">lnList</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">NotAVariantCallFormatFileError</span><span class="p">(</span><span class="s">&#39;No species in header line.&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">speciesL</span>
+
+</div>
+<div class="viewcode-block" id="init_seq"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.init_seq">[docs]</a><span class="k">def</span> <span class="nf">init_seq</span><span class="p">(</span><span class="n">VCFFileName</span><span class="p">,</span> <span class="n">maxskip</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Open a (gzipped) VCF4.2 file.</span>
+
+<span class="sd">    Try to open the given VCF file, checks if it is in VCF format.</span>
+<span class="sd">    Initialize a `VCFStream` object that contains the first base.  For</span>
+<span class="sd">    help, refer to `VCFSeq.__doc__`.</span>
+
+<span class="sd">    Please close the associated file object with</span>
+<span class="sd">    yourVCFStream.close_fo() when you don&#39;t need it anymore.</span>
+
+<span class="sd">    - `maxskip`: Only look `maxskip` lines for the start of the bases</span>
+<span class="sd">    (defaults to 80).</span>
+
+<span class="sd">    - `name`: Set the name of the sequence to `name`, otherwise set it</span>
+<span class="sd">    to the filename.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">flag</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="n">VCFFileName</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="s">&quot;gz&quot;</span><span class="p">:</span>
+        <span class="n">VCFFile</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">VCFFileName</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;rt&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">VCFFile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">VCFFileName</span><span class="p">)</span>
+    <span class="c"># set the vcf sequence name</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">sb</span><span class="o">.</span><span class="n">stripFName</span><span class="p">(</span><span class="n">VCFFileName</span><span class="p">)</span>
+    <span class="c"># Find the start of the first base</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxskip</span><span class="p">):</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">VCFFile</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">line</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotAVariantCallFormatFileError</span><span class="p">(</span><span class="s">&quot;File contains no data.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;#CHROM&#39;</span><span class="p">:</span>
+            <span class="c"># Here starts the data.</span>
+            <span class="n">check_fixed_field_header</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+            <span class="n">speciesL</span> <span class="o">=</span> <span class="n">get_indiv_from_field_header</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+            <span class="n">flag</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">break</span>
+    <span class="k">if</span> <span class="n">flag</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">NotAVariantCallFormatFileError</span><span class="p">(</span>
+            <span class="s">&quot;Didn&#39;t find any data within &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">maxskip</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; lines.&quot;</span><span class="p">)</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="n">VCFFile</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+    <span class="n">base</span> <span class="o">=</span> <span class="n">get_nuc_base_from_line</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">base</span><span class="o">.</span><span class="n">set_ploidy</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">VCFStream</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">VCFFile</span><span class="p">,</span> <span class="n">speciesL</span><span class="p">,</span> <span class="n">base</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="open_seq"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.open_seq">[docs]</a><span class="k">def</span> <span class="nf">open_seq</span><span class="p">(</span><span class="n">VCFFileName</span><span class="p">,</span> <span class="n">maxskip</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Open a VCF4.2 file.</span>
+
+<span class="sd">    Try to open the given VCF file, checks if it is in VCF format and</span>
+<span class="sd">    reads the bases(s).  It returns an `VCFSeq` object that contains</span>
+<span class="sd">    all the information. For help, refer to `VCFSeq.__doc__`.</span>
+
+<span class="sd">    - `maxskip`: Only look `maxskip` lines for the start of the bases</span>
+<span class="sd">    (defaults to 80).</span>
+
+<span class="sd">    - `name`: Set the name of the sequence to `name`, otherwise set it</span>
+<span class="sd">    to the filename.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">test_sequence</span><span class="p">(</span><span class="n">seq</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Test a given VCF sequence. TODO.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="n">seq</span> <span class="o">=</span> <span class="n">VCFSeq</span><span class="p">()</span>
+    <span class="n">seq</span><span class="o">.</span><span class="n">header</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+
+    <span class="n">flag</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="n">VCFFileName</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="s">&quot;gz&quot;</span><span class="p">:</span>
+        <span class="n">VCFFile</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">VCFFileName</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;rt&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">VCFFile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">VCFFileName</span><span class="p">)</span>
+    <span class="c"># set the vcf sequence name</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">seq</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">seq</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">sb</span><span class="o">.</span><span class="n">stripFName</span><span class="p">(</span><span class="n">VCFFileName</span><span class="p">)</span>
+    <span class="c"># Find the start of the first base</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxskip</span><span class="p">):</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">VCFFile</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">line</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotAVariantCallFormatFileError</span><span class="p">(</span><span class="s">&quot;File contains no data.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;##&#39;</span><span class="p">:</span>
+            <span class="n">seq</span><span class="o">.</span><span class="n">header</span> <span class="o">+=</span> <span class="n">line</span>
+        <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;#CHROM&#39;</span><span class="p">:</span>
+            <span class="c"># Here starts the data.</span>
+            <span class="n">check_fixed_field_header</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+            <span class="n">seq</span><span class="o">.</span><span class="n">speciesL</span> <span class="o">=</span> <span class="n">get_indiv_from_field_header</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+            <span class="n">seq</span><span class="o">.</span><span class="n">nSpecies</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">speciesL</span><span class="p">)</span>
+            <span class="n">flag</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">break</span>
+    <span class="k">if</span> <span class="n">flag</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">NotAVariantCallFormatFileError</span><span class="p">(</span>
+            <span class="s">&quot;Didn&#39;t find any data within &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">maxskip</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; lines.&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">VCFFile</span><span class="p">:</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="n">get_nuc_base_from_line</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="n">seq</span><span class="o">.</span><span class="n">append_nuc_base</span><span class="p">(</span><span class="n">base</span><span class="p">)</span>
+
+    <span class="n">VCFFile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">test_sequence</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">seq</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">PoMo 1.0.2 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Dominik Schrempf.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.
+    </div>
+  </body>
+</html>
