@@ -48,7 +48,7 @@ selmod["AllNuc"] = ["global sc=0.0003;\n", "global sg=0.0003;\n",
 
 
 def mutModel(mm):
-    """Mutation model type for argparse."""
+    """Mutation model **type** for argparse."""
     value = str(mm)
     if not (mm in mutmod.keys()):
         msg = "%r is not a valid mutation model" % mm
@@ -57,7 +57,7 @@ def mutModel(mm):
 
 
 def selModel(sm):
-    """Selection model type for argparse."""
+    """Selection model **type** for argparse."""
     value = str(sm)
     if not (sm in selmod.keys()):
         msg = "%r is not a valid selection model" % sm
@@ -66,7 +66,7 @@ def selModel(sm):
 
 
 def dsRatio(dsR):
-    """Downsampling ratio type for argparse."""
+    """Downsampling ratio **type** for argparse."""
     value = float(dsR)
     if not (0 < value <= 1):
         msg = "%r is not a valid downsampling ratio" % dsR
@@ -75,7 +75,7 @@ def dsRatio(dsR):
 
 
 def setGM(gm):
-    """If given, set variable mutation rate."""
+    """Set variable mutation rate, if `gm` is given."""
     if gm > 0:
         mutgamma = ["global shape;\n",
                     "category rateCatMut =(" + str(gm) +
@@ -87,7 +87,7 @@ def setGM(gm):
 
 
 def setGS(gs):
-    """If given, set fixation bias."""
+    """Set fixation bias, if `gs` is given."""
     if gs > 0:
         selgamma = ["global shape2;\n",
                     "category rateCatSel =(" + str(gs) +
