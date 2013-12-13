@@ -6,15 +6,15 @@
 This module provides basic functions and classes needed to work with
 sequence data.
 
-Classes::
+Classes:
   - `Seq`, stores a single sequence
   - `Region`, region in a genome
 
-Exception Classes::
+Exception Classes:
   - `SequenceDataError`
   - `NotAValidRefBase`
 
-Functions::
+Functions:
   - `stripFName()`: strip filename off its ending
 
 """
@@ -37,7 +37,7 @@ class NotAValidRefBase(SequenceDataError):
 class Region():
     """Region in a genome.
 
-    Parameters::
+    Parameters:
       - `chrom`: Chromosome name.
       - `start`: 1-based start position.
       - `end`: 1-based start position.
