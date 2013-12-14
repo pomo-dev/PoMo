@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-"""libPomo.countsformat
-----------------------------------------------------------------------
+"""libPomo.cf
 
 This model provides functions to read, write and access files that are
 in counts format.

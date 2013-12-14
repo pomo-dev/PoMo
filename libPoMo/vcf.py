@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 """libPomo.vcf
-----------------------------------------------------------------------
 
 This module provides functions to read, write and access vcf files.
 
