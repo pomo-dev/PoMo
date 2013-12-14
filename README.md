@@ -13,6 +13,16 @@ acknowledge the authors.
 Feel free to post any suggestions, doubts and bugs.
 
 
+libPoMo
+====
+PoMo comes with a small python package `libPoMo`. It contains several
+modules that ease the handling of data files in fasta or variant call
+format (vcf).
+
+For a detailed and comprehensive documentation visit
+[libPoMo documentation](http://pomo.readthedocs.org).
+
+
 Installation
 ====
 PoMo heavily relies on HYPHY. To build HYPHY, extract the
@@ -91,13 +101,3 @@ HyPhy's authors (e.g. Sergei L kosakovsky-Pond) if you use PoMo.
 In the fasta format all individuals must be named as "species_n" where
 "species" is the name of the species and "n" is a number, it does not
 matter which number.
-
-
-libPoMo
-====
-PoMo comes with a small python package `libPoMo`. It contains several
-modules that ease the handling of data files in fasta or variant call
-format (vcf).
-
-For a detailed and comprehensive documentation visit
-[libPoMo documentation](pomo.readthedocs.org).
