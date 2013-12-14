@@ -22,7 +22,7 @@ Feel free to post any suggestions, doubts and bugs.
 
 libPoMo
 =======
-PoMo comes with a small python package :ref:`libPoMo`. It contains
+PoMo comes with a small python package :doc:`libPoMo`. It contains
 several modules that ease the handling of data files in fasta or
 variant call format (vcf).
 
