@@ -77,19 +77,13 @@
 </ul>
 </dd>
 <dt>Functions:</dt>
-<dd><ul class="first last">
-<li><p class="first"><a class="reference internal" href="#libPoMo.vcf.update_base" title="libPoMo.vcf.update_base"><tt class="xref py py-func docutils literal"><span class="pre">update_base()</span></tt></a>: Read a line into a base.</p>
-</li>
-<li><p class="first"><a class="reference internal" href="#libPoMo.vcf.get_nuc_base_from_line" title="libPoMo.vcf.get_nuc_base_from_line"><tt class="xref py py-func docutils literal"><span class="pre">get_nuc_base_from_line()</span></tt></a>: Create a new <cite>NucBase</cite> from a line.</p>
-</li>
-<li><p class="first"><a class="reference internal" href="#libPoMo.vcf.check_fixed_field_header" title="libPoMo.vcf.check_fixed_field_header"><tt class="xref py py-func docutils literal"><span class="pre">check_fixed_field_header()</span></tt></a>: Check a VCF fixed field header string.</p>
-</li>
-<li><dl class="first docutils">
-<dt><a class="reference internal" href="#libPoMo.vcf.get_indiv_from_field_header" title="libPoMo.vcf.get_indiv_from_field_header"><tt class="xref py py-func docutils literal"><span class="pre">get_indiv_from_field_header()</span></tt></a>: Extract list of individuals</dt>
-<dd><p class="first last">from header.</p>
-</dd>
-</dl>
-</li>
+<dd><ul class="first last simple">
+<li><a class="reference internal" href="#libPoMo.vcf.update_base" title="libPoMo.vcf.update_base"><tt class="xref py py-func docutils literal"><span class="pre">update_base()</span></tt></a>, read a line into a base</li>
+<li><a class="reference internal" href="#libPoMo.vcf.get_nuc_base_from_line" title="libPoMo.vcf.get_nuc_base_from_line"><tt class="xref py py-func docutils literal"><span class="pre">get_nuc_base_from_line()</span></tt></a>, create a new <cite>NucBase</cite> from a line</li>
+<li><a class="reference internal" href="#libPoMo.vcf.check_fixed_field_header" title="libPoMo.vcf.check_fixed_field_header"><tt class="xref py py-func docutils literal"><span class="pre">check_fixed_field_header()</span></tt></a>, check a VCF fixed field header
+string</li>
+<li><a class="reference internal" href="#libPoMo.vcf.get_indiv_from_field_header" title="libPoMo.vcf.get_indiv_from_field_header"><tt class="xref py py-func docutils literal"><span class="pre">get_indiv_from_field_header()</span></tt></a>, extract list of individuals
+from header</li>
 </ul>
 </dd>
 </dl>
@@ -138,15 +132,15 @@ sequenced individuals. Can be set with
 </tr>
 </tbody>
 </table>
-<dl class="function">
+<dl class="method">
 <dt id="libPoMo.vcf.NucBase.get_alt_base_list">
-<tt class="descname">get_alt_base_list</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#NucBase.get_alt_base_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.NucBase.get_alt_base_list" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_alt_base_list</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#NucBase.get_alt_base_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.NucBase.get_alt_base_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return alternative bases as a list.</p>
 </dd></dl>
 
-<dl class="function">
+<dl class="method">
 <dt id="libPoMo.vcf.NucBase.get_speciesData">
-<tt class="descname">get_speciesData</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#NucBase.get_speciesData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.NucBase.get_speciesData" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_speciesData</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#NucBase.get_speciesData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.NucBase.get_speciesData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return species data as a list.</p>
 <ul>
 <li><p class="first">data[0][0] = data of first species/individual on chromatide A</p>
@@ -170,23 +164,23 @@ chromosome <em>j</em> could not be read (e.g. it is not valid).</p>
 </table>
 </dd></dl>
 
-<dl class="function">
+<dl class="method">
 <dt id="libPoMo.vcf.NucBase.print_info">
-<tt class="descname">print_info</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#NucBase.print_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.NucBase.print_info" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">print_info</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#NucBase.print_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.NucBase.print_info" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print nucleotide base information.</p>
 <p>Print the stored single nucleotide base and related
 information from the VCF file.</p>
 </dd></dl>
 
-<dl class="function">
+<dl class="method">
 <dt id="libPoMo.vcf.NucBase.purge">
-<tt class="descname">purge</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#NucBase.purge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.NucBase.purge" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">purge</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#NucBase.purge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.NucBase.purge" title="Permalink to this definition">¶</a></dt>
 <dd><p>Purge the data associated with this <a class="reference internal" href="#libPoMo.vcf.NucBase" title="libPoMo.vcf.NucBase"><tt class="xref py py-class docutils literal"><span class="pre">NucBase</span></tt></a>.</p>
 </dd></dl>
 
-<dl class="function">
+<dl class="method">
 <dt id="libPoMo.vcf.NucBase.set_ploidy">
-<tt class="descname">set_ploidy</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#NucBase.set_ploidy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.NucBase.set_ploidy" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">set_ploidy</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#NucBase.set_ploidy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.NucBase.set_ploidy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set self.ploidy.</p>
 </dd></dl>
 
@@ -213,27 +207,27 @@ information from the VCF file.</p>
 </tr>
 </tbody>
 </table>
-<dl class="function">
+<dl class="method">
 <dt id="libPoMo.vcf.VCFSeq.append_nuc_base">
-<tt class="descname">append_nuc_base</tt><big>(</big><em>self</em>, <em>base</em><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#VCFSeq.append_nuc_base"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.VCFSeq.append_nuc_base" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">append_nuc_base</tt><big>(</big><em>base</em><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#VCFSeq.append_nuc_base"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.VCFSeq.append_nuc_base" title="Permalink to this definition">¶</a></dt>
 <dd><p>Append <em>base</em>, a given <a class="reference internal" href="#libPoMo.vcf.NucBase" title="libPoMo.vcf.NucBase"><tt class="xref py py-class docutils literal"><span class="pre">NucBase</span></tt></a>, to the VCFSeq object.</p>
 </dd></dl>
 
-<dl class="function">
+<dl class="method">
 <dt id="libPoMo.vcf.VCFSeq.get_header_line_string">
-<tt class="descname">get_header_line_string</tt><big>(</big><em>self</em>, <em>indiv</em><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#VCFSeq.get_header_line_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.VCFSeq.get_header_line_string" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_header_line_string</tt><big>(</big><em>indiv</em><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#VCFSeq.get_header_line_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.VCFSeq.get_header_line_string" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a standard VCF File header string with individuals <em>indiv</em>.</p>
 </dd></dl>
 
-<dl class="function">
+<dl class="method">
 <dt id="libPoMo.vcf.VCFSeq.get_nuc_base">
-<tt class="descname">get_nuc_base</tt><big>(</big><em>self</em>, <em>chrom</em>, <em>pos</em><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#VCFSeq.get_nuc_base"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.VCFSeq.get_nuc_base" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_nuc_base</tt><big>(</big><em>chrom</em>, <em>pos</em><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#VCFSeq.get_nuc_base"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.VCFSeq.get_nuc_base" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return base at position <em>pos</em> of chromosome <em>chrom</em>.</p>
 </dd></dl>
 
-<dl class="function">
+<dl class="method">
 <dt id="libPoMo.vcf.VCFSeq.has_base">
-<tt class="descname">has_base</tt><big>(</big><em>self</em>, <em>chrom</em>, <em>pos</em><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#VCFSeq.has_base"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.VCFSeq.has_base" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">has_base</tt><big>(</big><em>chrom</em>, <em>pos</em><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#VCFSeq.has_base"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.VCFSeq.has_base" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return True (False) if base is (not) found.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -249,15 +243,15 @@ information from the VCF file.</p>
 </table>
 </dd></dl>
 
-<dl class="function">
+<dl class="method">
 <dt id="libPoMo.vcf.VCFSeq.print_header_line">
-<tt class="descname">print_header_line</tt><big>(</big><em>self</em>, <em>indiv</em><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#VCFSeq.print_header_line"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.VCFSeq.print_header_line" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">print_header_line</tt><big>(</big><em>indiv</em><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#VCFSeq.print_header_line"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.VCFSeq.print_header_line" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print a standard VCF File header with individuals <em>indiv</em>.</p>
 </dd></dl>
 
-<dl class="function">
+<dl class="method">
 <dt id="libPoMo.vcf.VCFSeq.print_info">
-<tt class="descname">print_info</tt><big>(</big><em>self</em>, <em>maxB=50</em>, <em>printHeader=False</em><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#VCFSeq.print_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.VCFSeq.print_info" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">print_info</tt><big>(</big><em>maxB=50</em>, <em>printHeader=False</em><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#VCFSeq.print_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.VCFSeq.print_info" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print VCF sequence information.</p>
 <p>Print vcf header, the total number of nucleotides and a
 maximum of <em>maxB</em> bases (defaults to 50). Only prints header
@@ -297,21 +291,21 @@ without having to read the whole file at one.</p>
 </tr>
 </tbody>
 </table>
-<dl class="function">
+<dl class="method">
 <dt id="libPoMo.vcf.VCFStream.close">
-<tt class="descname">close</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#VCFStream.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.VCFStream.close" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#VCFStream.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.VCFStream.close" title="Permalink to this definition">¶</a></dt>
 <dd><p>Closes the linked file.</p>
 </dd></dl>
 
-<dl class="function">
+<dl class="method">
 <dt id="libPoMo.vcf.VCFStream.print_info">
-<tt class="descname">print_info</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#VCFStream.print_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.VCFStream.print_info" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">print_info</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#VCFStream.print_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.VCFStream.print_info" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prints VCFStream information.</p>
 </dd></dl>
 
-<dl class="function">
+<dl class="method">
 <dt id="libPoMo.vcf.VCFStream.read_next_base">
-<tt class="descname">read_next_base</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#VCFStream.read_next_base"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.VCFStream.read_next_base" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">read_next_base</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#VCFStream.read_next_base"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.VCFStream.read_next_base" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read the next base.</p>
 <p>Return position of next base.</p>
 <p>Raise a <em>ValueError</em> if no next base is found.</p>

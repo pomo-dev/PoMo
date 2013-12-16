@@ -17,11 +17,12 @@ Exception Classes:
   - :class:`NotANucBaseError`
 
 Functions:
-  - :func:`update_base()`: Read a line into a base.
-  - :func:`get_nuc_base_from_line()`: Create a new `NucBase` from a line.
-  - :func:`check_fixed_field_header()`: Check a VCF fixed field header string.
-  - :func:`get_indiv_from_field_header()`: Extract list of individuals
-                                           from header.
+  - :func:`update_base()`, read a line into a base
+  - :func:`get_nuc_base_from_line()`, create a new `NucBase` from a line
+  - :func:`check_fixed_field_header()`, check a VCF fixed field header
+    string
+  - :func:`get_indiv_from_field_header()`, extract list of individuals
+    from header
 
 ----
 

@@ -17,7 +17,7 @@ Exception Classes:
   - :class:`NotAValidRefBase`
 
 Functions:
-  - :func:`stripFName()`: strip filename off its ending
+  - :func:`stripFName()`, strip filename off its ending
 
 ----
 

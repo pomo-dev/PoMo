@@ -96,13 +96,9 @@ chrE           end     0,0,0,1         0,1,0,0         0,1,0,0         0,5,0,0  
 </ul>
 </dd>
 <dt>Functions:</dt>
-<dd><ul class="first last">
-<li><dl class="first docutils">
-<dt><tt class="xref py py-func docutils literal"><span class="pre">save_as_vc()</span></tt>: Deprecated. Save given sequences to a counts</dt>
-<dd><p class="first last">format file.</p>
-</dd>
-</dl>
-</li>
+<dd><ul class="first last simple">
+<li><a class="reference internal" href="#libPoMo.cf.save_as_cf" title="libPoMo.cf.save_as_cf"><tt class="xref py py-func docutils literal"><span class="pre">save_as_cf()</span></tt></a>, deprecated; save given sequences to a counts
+format file</li>
 </ul>
 </dd>
 </dl>
@@ -196,21 +192,21 @@ individual names.</li>
 </tr>
 </tbody>
 </table>
-<dl class="function">
+<dl class="method">
 <dt id="libPoMo.cf.CFWriter.close">
-<tt class="descname">close</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter.close" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter.close" title="Permalink to this definition">¶</a></dt>
 <dd><p>Close fileobjects.</p>
 </dd></dl>
 
-<dl class="function">
+<dl class="method">
 <dt id="libPoMo.cf.CFWriter.write_HLn">
-<tt class="descname">write_HLn</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter.write_HLn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter.write_HLn" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">write_HLn</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter.write_HLn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter.write_HLn" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write the counts format header line to <em>self.outFN</em>.</p>
 </dd></dl>
 
-<dl class="function">
+<dl class="method">
 <dt id="libPoMo.cf.CFWriter.write_Rn">
-<tt class="descname">write_Rn</tt><big>(</big><em>self</em>, <em>rg</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter.write_Rn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter.write_Rn" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">write_Rn</tt><big>(</big><em>rg</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter.write_Rn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter.write_Rn" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write lines in counts format to <em>self.outFN</em>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -271,22 +267,21 @@ collapsed to a single one with name <em>name</em> (if <em>name</em> is given).</
 indices of these SNPs in <em>nSNPChromL</em> and <em>nSNPPosL</em>. If no
 next SNP is found on this sequence (this might happen if all
 next SNPs are on the next chromosome) a ValueError is raised.</p>
-<ul>
-<li><dl class="first docutils">
-<dt><em>nSNPChromL</em>: List with chromosome names of the next SNPs of</dt>
-<dd><p class="first last">the <em>vcfStrL</em>.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt><em>nSNPPosL</em>: List with positions of the next SNPs of the</dt>
-<dd><p class="first last"><em>vcfStrL</em>.</p>
-</dd>
-</dl>
-</li>
-<li><p class="first"><em>ref</em>: Seq object of the sequence of the reference.</p>
-</li>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>nSNPChromL</strong> &#8211; List with chromosome names of the next SNPs of
+the <em>vcfStrL</em>.</li>
+<li><strong>nSNPPosL</strong> &#8211; List with positions of the next SNPs of the
+<em>vcfStrL</em>.</li>
+<li><strong>ref</strong> &#8211; Seq object of the sequence of the reference.</li>
 </ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -318,32 +313,28 @@ object, otherwise we do not know where to compare the sequences
 to.  They must also be in the same order!</p>
 <p>Individuals with the same name and suffix &#8220;_n&#8221;, where n is a
 number, will be saved in one column without the suffix.</p>
-<ul>
-<li><p class="first"><em>vcfStrL</em>: List with VCF Streams containing SNPs.</p>
-</li>
-<li><p class="first"><em>refFaStr</em>: Reference fasta sequence stream object.</p>
-</li>
-<li><p class="first"><em>CFFileName</em>: Name of output file (counts format).</p>
-</li>
-<li><dl class="first docutils">
-<dt><em>verb</em>: If <em>verb</em> is set to True, additional information is</dt>
-<dd><p class="first last">printed to the output file.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt><em>mergeL</em>: A list of truth values. If <em>mergeL[i]</em> is True, all</dt>
-<dd><p class="first last">individuals of <em>vcfStrL[i]</em> are treated as one species
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>vcfStrL</strong> &#8211; List with VCF Streams containing SNPs.</li>
+<li><strong>refFaStr</strong> &#8211; Reference fasta sequence stream object.</li>
+<li><strong>CFFileName</strong> &#8211; Name of output file (counts format).</li>
+<li><strong>verb</strong> &#8211; If <em>verb</em> is set to True, additional information is
+printed to the output file.</li>
+<li><strong>mergeL</strong> &#8211; A list of truth values. If <em>mergeL[i]</em> is True, all
+individuals of <em>vcfStrL[i]</em> are treated as one species
 independent of their name. The respective counts are
 summed up.  If <em>nameL[i]</em> is given, the name of the
 summed sequence will be <em>nameL[i]</em>. If not, the name of
-the first individual in <em>vcfStrL[i]</em> will be used.</p>
-</dd>
-</dl>
-</li>
-<li><p class="first"><em>nameL</em>: A list of names. Cf. <em>mergeL</em>.</p>
-</li>
+the first individual in <em>vcfStrL[i]</em> will be used.</li>
+<li><strong>nameL</strong> &#8211; A list of names. Cf. <em>mergeL</em>.</li>
 </ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>

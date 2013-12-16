@@ -15,10 +15,11 @@ Exception Classes:
   - :class:`NotAFastaFileError`
 
 Functions:
-  - :func:`read_seq_from_fo()`: Read a single fasta sequence.
-  - :func:`init_seq()`: Initialize fasta sequence stream from file.
-  - :func:`open_seq()`: Open fasta file.
-  - :func:`save_as_vcf()`: Save a given `FaSeq` in variant call format (VCF).
+  - :func:`read_seq_from_fo()`, read a single fasta sequence
+  - :func:`init_seq()`, initialize fasta sequence stream from file
+  - :func:`open_seq()`, open fasta file
+  - :func:`save_as_vcf()`, save a given :class:`FaSeq` in variant call
+    format (VCF)
 
 ----
 

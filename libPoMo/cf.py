@@ -38,8 +38,8 @@ Exception Classes:
   - :class:`CountsFormatWriterError`
 
 Functions:
-  - :func:`save_as_vc()`: Deprecated. Save given sequences to a counts
-                          format file.
+  - :func:`save_as_cf()`, deprecated; save given sequences to a counts
+    format file
 
 ----
 
@@ -511,11 +511,11 @@ def find_next_SNP_pos(nSNPChromL, nSNPPosL, ref):
     next SNP is found on this sequence (this might happen if all
     next SNPs are on the next chromosome) a ValueError is raised.
 
-    - *nSNPChromL*: List with chromosome names of the next SNPs of
-                    the *vcfStrL*.
-    - *nSNPPosL*: List with positions of the next SNPs of the
-                  *vcfStrL*.
-    - *ref*: Seq object of the sequence of the reference.
+    :param nSNPChromL: List with chromosome names of the next SNPs of
+                       the *vcfStrL*.
+    :param nSNPPosL: List with positions of the next SNPs of the
+                     *vcfStrL*.
+    :param ref: Seq object of the sequence of the reference.
 
     """
     ind = -1
@@ -604,18 +604,18 @@ def save_as_cf(vcfStrL, refFaStr, CFFileName, verb=False,
     Individuals with the same name and suffix "_n", where n is a
     number, will be saved in one column without the suffix.
 
-    - *vcfStrL*: List with VCF Streams containing SNPs.
-    - *refFaStr*: Reference fasta sequence stream object.
-    - *CFFileName*: Name of output file (counts format).
-    - *verb*: If *verb* is set to True, additional information is
-              printed to the output file.
-    - *mergeL*: A list of truth values. If *mergeL[i]* is True, all
-                individuals of *vcfStrL[i]* are treated as one species
-                independent of their name. The respective counts are
-                summed up.  If *nameL[i]* is given, the name of the
-                summed sequence will be *nameL[i]*. If not, the name of
-                the first individual in *vcfStrL[i]* will be used.
-    - *nameL*: A list of names. Cf. *mergeL*.
+    :param vcfStrL: List with VCF Streams containing SNPs.
+    :param refFaStr: Reference fasta sequence stream object.
+    :param CFFileName: Name of output file (counts format).
+    :param verb: If *verb* is set to True, additional information is
+                 printed to the output file.
+    :param mergeL: A list of truth values. If *mergeL[i]* is True, all
+                  individuals of *vcfStrL[i]* are treated as one species
+                  independent of their name. The respective counts are
+                  summed up.  If *nameL[i]* is given, the name of the
+                  summed sequence will be *nameL[i]*. If not, the name of
+                  the first individual in *vcfStrL[i]* will be used.
+    :param nameL: A list of names. Cf. *mergeL*.
 
     """
     lVcfStrL = len(vcfStrL)
