@@ -40,7 +40,7 @@ The package is split into the following modules:
                   fasta files.
   - :doc:`vcf <vcf>`: Provides functions to read, write and access vcf
                       files.
-  - :doc:`cf` <cf>: Provides functions to read, write and access files
+  - :doc:`cf <cf>`: Provides functions to read, write and access files
                     that are in counts format.
 
 Contents:
