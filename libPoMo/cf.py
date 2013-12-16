@@ -1,41 +1,47 @@
 #!/usr/bin/env python
 
 """libPomo.cf
+=============
 
 This model provides functions to read, write and access files that are
 in counts format.
 
 The Counts Format
-=================
+-----------------
 This file format is used by PoMo and lists the base
-counts for every position. It contains:
+counts for every position.
 
-1 headerline with tab separated sequence names
-N lines with counts of A, C, G and T bases at position n
+It contains:
+  - 1 headerline with tab separated sequence names
+  - N lines with counts of A, C, G and T bases at position n
 
-CHROM \t Pos   \t Sheep   \t BlackSheep \t RedSheep \t Wolf    \t RedWolf
-chrA  \t s     \t 0,0,1,0 \t 0,0,1,0    \t 0,0,1,0  \t 0,0,5,0 \t 0,0,0,1
-chrA  \t s + 1 \t 0,0,0,1 \t 0,0,0,1    \t 0,0,0,1  \t 0,0,0,5 \t 0,0,0,1
-.
-.
-.
-chrF  \t 8373  \t 0,0,0,1 \t 1,0,0,0    \t 0,1,0,0  \t 0,1,4,0 \t 0,0,1,0
-.
-.
-.
-chrE  \t end   \t 0,0,0,1 \t 0,1,0,0    \t 0,1,0,0  \t 0,5,0,0 \t 0,0,1,0
+::
+
+  CHROM \t Pos   \t Sheep   \t BlackSheep \t RedSheep \t Wolf    \t RedWolf
+  chrA  \t s     \t 0,0,1,0 \t 0,0,1,0    \t 0,0,1,0  \t 0,0,5,0 \t 0,0,0,1
+  chrA  \t s + 1 \t 0,0,0,1 \t 0,0,0,1    \t 0,0,0,1  \t 0,0,0,5 \t 0,0,0,1
+  .
+  .
+  .
+  chrF  \t 8373  \t 0,0,0,1 \t 1,0,0,0    \t 0,1,0,0  \t 0,1,4,0 \t 0,0,1,0
+  .
+  .
+  .
+  chrE  \t end   \t 0,0,0,1 \t 0,1,0,0    \t 0,1,0,0  \t 0,5,0,0 \t 0,0,1,0
 
 Objects
-=======
+-------
 Classes:
-- `CFWriter`, write a counts format file
+  - :class:`CFWriter`, write a counts format file
 
 Exception Classes:
-- `CountsFormatWriterError`
+  - :class:`CountsFormatWriterError`
 
 Functions:
-- `save_as_vc()`: Deprecated. Save given sequences to a counts format
-  file.
+  - :func:`save_as_vc()`: Deprecated. Save given sequences to a counts
+                          format file.
+
+----
 
 """
 
@@ -61,91 +67,104 @@ class CFWriter():
     """Write a counts format file.
 
     Save information that is needed to write a CF file and use this
-    information to write a CF file.
+    information to write a CF file.  Initialize with a reference fasta
+    file name, a list of vcf file names and an output file name::
 
-    Initialize with a reference fasta file name, a list of vcf file
-    names and an output file name (cf. `self.__init__`):
-    .. code:: python
-       CFWriter("refFasta", [vcfFileNames], "output")
+      CFWriter("refFasta", [vcfFileNames], "output")
 
-    Write a header line to output:
-    .. code:: python
+    Write a header line to output::
+
        self.write_HLn()
 
-    Write lines in counts format from position start to end on
-    chromosome chrom to output:
-    .. code:: python
+    Write lines in counts format from 1-based positions *start* to
+    *end* on chromosome *chrom* to output::
+
        rg = sb.Region("chrom", start, end)
        self.write_Rn(rg)
 
-    Remember to close the attached file objectsL
-    .. code:: python
-       self.close()
+    Remember to close the attached file objectsL with :func:`close`.
+
+    :param str refFileName: Name of reference fasta file.
+    :param [str] vcfFileNameL: List with names of vcf files.
+    :param str outFileName: Output file name.
+    :param int verb: Optional; verbosity.
+    :param [Boolean] mergeL: Optional; a list of truth values.  If
+      *mL[i]* is True, all individuals of *self.vcfL[i]* are treated as
+      one population orspecies independent of their name.  The
+      respective counts are summed up.  If *self.nL[i]* is given, the
+      name of the summed sequence will be *self.nL[i]*.  If not, the
+      name of the first individual in *vcfL[i]* will be used.
+    :param [str] nameL: Optional; a list of names. Cf. *self.mL*.
+
+    :ivar str refFN: Name of reference fasta file.
+    :ivar [str] vcfL: List with names of vcf files.
+    :ivar str outFN: Output file name.
+    :ivar int v: Verbosity.
+    :ivar [Boolean] mL: A list of truth values.  If *mL[i]* is True,
+        all individuals of *self.vcfL[i]* are treated as one
+        population orspecies independent of their name.  The
+        respective counts are summed up.  If *self.nL[i]* is given,
+        the name of the summed sequence will be *self.nL[i]*.  If not,
+        the name of the first individual in *vcfL[i]* will be used.
+    :ivar [str] nL: A list of names. Cf. *self.mL*.
+    :ivar int nV: Number of vcf files.
+    :ivar [fo] vcfTfL: List with *pysam.Tabixfile* objects. Filled by
+        *self.__init_vcfTfL()* during initialization.
+    :ivar FaStr refFaStr: :class:`FaStream <libPoMo.fasta.FaStream>`
+        object of the reference genome. This might be changed to an
+        *MFaStream* object in the future.
+    :ivar fo outFO: File object of the outfile. Filled by
+        *self.__init_outFO()* during initialization.
+    :ivar cD: List with allele or base counts. The alleles of
+        individuals from the same population are summed up.  Hence,
+        *self.cD[p]* gives the base counts of population *p* in the
+        form: [0, 0, 0, 0].  Population *p`*does not need to be the
+        one from *self.vcfL[p]* because several populations might be
+        present in one vcf file.  *self.assM* connects the individual
+        j from *self.vcfL[i]* such that *self.assM[i][j]* is *p*.
+    :ivar str chrom: Name of the current chromosome. Set and updated
+        by :func:`write_Rn`.
+    :ivar int pos: Current position on chromosome. Set and updated by
+        :func:`write_Rn`.
+    :ivar indM: Matrix with individuals from vcf files. *self.indM[i]*
+        is the list of individuals found in *self.vcfL[i]*.
+    :ivar [int] nIndL: List with number of individuals in
+        *self.vcfL[i]*.
+    :ivar assM: Assignment matrix that connects the individuals from
+        the vcf files to the correct *self.cd* index.  Cf. *self.cD*
+    :ivar int nPop: Number of different populations in count format
+        output file (e.g. number of populations).  Filled by
+        *self.__init_assM()* during initialization.
+    :ivar int ploidy: Ploidy of individuals in vcf files.  This has to
+        be set manually to the correct value for non-diploids!
+    :ivar char __splitCh: Character that is used to split the
+        individual names.
 
     """
     def __init__(self, refFileName, vcfFileNameL, outFileName,
                  verb=None, mergeL=None, nameL=None):
         # Passed variables.
         self.refFN = refFileName
-        """Reference fasta file name."""
         self.vcfL = vcfFileNameL
-        """List with VCF file names."""
         self.outFN = outFileName
-        """CF output file name."""
         self.v = verb
-        """Verbosity level."""
         self.mL = mergeL
-        """A list of truth values.  If `mL[i]` is True, all individuals of
-        `self.vcfL[i]` are treated as one population orspecies
-        independent of their name.  The respective counts are summed
-        up.  If `self.nL[i]` is given, the name of the summed sequence
-        will be `self.nL[i]`.  If not, the name of the first
-        individual in `vcfL[i]` will be used."""
         self.nL = nameL
-        """A list of names. Cf. `self.mL`."""
         # Variables that are filled during initialization.
         self.nV = len(self.vcfL)
-        """Number of vcf files."""
         self.vcfTfL = []
-        """List with `pysam.Tabixfile` objects.  Filled by
-        `self.init_vcfTfL()` during initialization."""
         self.refFaStr = fa.init_seq(self.refFN)
-        """`FaStream` object of the reference genome. This might be changed to
-        an `MFaStream` object in the future."""  # TODO
         self.outFO = None
-        """File object of the outfile. Filled by `self.__init_outFO` during
-        initialization."""
         self.cD = []
-        """List with allele or base counts.  The alleles of individuals from
-        the same population are summed up.  Hence, `self.cD[p]` gives
-        the base counts of population `p` in the form: [0, 0, 0, 0].
-        Population `p` does not need to be the one from `self.vcfL[p]`
-        because several populations might be present in one vcf file.
-        `self.assM` connects the individual j from `self.vcfL[i]` such
-        that `self.assM[i][j]` is `p`."""
         self.chrom = None
-        """Current chromosome. Set and updated by `self.fill_cD`"""
         self.pos = None
-        """Current position on chromosome. Set and updated by `self.fill_cD"""
         self.indM = []
-        """Matrix with individuals from vcf files. `self.indM[i]` is the list
-        of individuals found in `self.vcfL[i]`."""
         self.nIndL = []
-        """List with number of individuals in `self.vcfL[i]`."""
         self.assM = []
-        """Assignment matrix that connects the individuals from the vcf files
-        to the correct `self.cd` index. Cf. `self.cD`"""
         self.nPop = 0
-        """Number of different populations in count format output file
-        (e.g. number of populations). Filled by `self.init_assM()`
-        during initialization."""
         self.ploidy = 2
-        """Ploidy of individuals in vcf files. This has to be set to the
-        correct value for non-diploids."""
 
         self.__splitCh = '-'
-
-        """Character that is used to split the individual names."""
 
         self.__init_vcfTfL()
         self.__init_outFO()
@@ -156,19 +175,19 @@ class CFWriter():
         self.__init_cD()
 
     def __init_vcfTfL(self):
-        """Open vcf files given in `self.vcfL`.
+        """Open vcf files given in *self.vcfL*.
 
         Tabix index files need to be provided. They can be created
         from the terminal with $(tabix -p vcf "vcf-file.vcf.gz"). The
-        tabix file objects are stored in `self.vcfTfL`. They need to
-        be closed with `self.close()`.
+        tabix file objects are stored in *self.vcfTfL*. They need to
+        be closed with :func:`close`.
 
         """
         for fn in self.vcfL:
             self.vcfTfL.append(ps.Tabixfile(fn))
 
     def __init_outFO(self):
-        """Open `self.outFN`.
+        """Open *self.outFN*.
 
         If the file name ends with "gz", the outfile will be
         compressed and is opened with gzip.open().
@@ -195,14 +214,17 @@ class CFWriter():
             self.nIndL.append(len(indL))
 
     def __init_assM(self):
-        """Fill assignment matrix `self.assM`."""
+        """Fill assignment matrix *self.assM*."""
         def collapse_and_append(n, dN):
-            """Collapse individual names of `self.vcfL[n]`.
+            """Collapse individual names of *self.vcfL[n]*.
 
-            Appends the collapsed individual names of `self.vcfL[n]`
-            to `self.assM`.
+            Appends the collapsed individual names of *self.vcfL[n]*
+            to *self.assM*.
 
-            - `dN`: Offset in assL.
+            :param int n: Index.
+            :param int dN: Offset in assL.
+            :rtype: int
+
             Returns new offset.
 
             """
@@ -241,7 +263,7 @@ class CFWriter():
         self.nPop = i + dI + 1
                 
     def __init_nL(self):
-        """Fill `self.nL`."""
+        """Fill *self.nL*."""
         def append_to_nL(i):
             for j in range(len(self.assM[i])):
                 try:
@@ -263,11 +285,11 @@ class CFWriter():
         self.cD = [[0, 0, 0, 0] for i in range(self.nPop)]
 
     def __snp(self, rg):
-        """Generate SNPs in region `rg` out of `self.vcfL`.
+        """Generate SNPs in region *rg* out of *self.vcfL*.
 
-        Generator that returns the next SNP in region `rg`
-        (cf. `seqbase.Region`) as a `NucBase` object.  To loop over
-        all SNPs in region `rg`:
+        Generator that returns the next SNP in region *rg*
+        (cf. :class:`Region <libPoMo.seqbase.Region>`) as a :class:`NucBase`
+        object.  To loop over all SNPs in region *rg*:
 
         >>> rg = sb.Region("chr1", 500000, 1000000)
         >>> for s in self.snp(rg):
@@ -309,22 +331,28 @@ class CFWriter():
         self.__init_cD()
 
     def __fill_cD(self, iL=None, snpL=None):
-        """Fill `self.cF`.
+        """Fill *self.cF*.
 
-        Fill `self.cF` with data from reference at chromosome `chrom`
-        and position `pos`. Possible SNPs in `slef.vcfL` at this
+        Fill *self.cF* with data from reference at chromosome *chrom*
+        and position *pos*. Possible SNPs in *slef.vcfL* at this
         position are considered.
 
-        - `iL`: List with vcf indices of the SNPs in `snpL`, must be sorted.
-        - `snpL`: List with `NucBase` SNPs at this position. None, if
-          there is no SNP.
+        :param [int] iL: List with vcf indices of the SNPs in *snpL*,
+            must be sorted.
 
-        Raises the excpetion `sb.NotAValidRefBase` if the reference
-        base is not valid (e.g. N).
+        :param [NucBase] snpL: List with :class:`NucBase
+            <libPoMo.vcf.NucBase>` SNPs at this position. None, if
+            there is no SNP.
+        :raises: :class:`NotAValidRefBase
+            <libPoMo.seqbase.NotAValidRefBase>`.
+
+        Raises the excpetion :class:`NotAValidRefBae
+        <libPoMo.seqbase.NotAValidRefBase>` if the reference base is
+        not valid (e.g. N).
 
         """
         def get_refBase():
-            """Get reference base on `chrom` at `pos`."""
+            """Get reference base on *chrom* at *pos*."""
             if self.chrom == self.refFaStr.seq.name:
                 return self.refFaStr.seq.data[self.pos]
             else:
@@ -335,13 +363,13 @@ class CFWriter():
             r = dna[refBase.lower()]
         except KeyError:
             raise sb.NotAValidRefBase()
-        # If there are no SNPS, fill `self.cD` with data from reference.
+        # If there are no SNPS, fill *self.cD* with data from reference.
         if iL is None:
             for i in range(self.nV):
                 for sp in self.assM[i]:
                     self.cD[sp][r] += self.ploidy
         elif (snpL is not None) and (len(iL) == len(snpL)):
-            # Else, only fill `self.cD` where the individual has no SNP
+            # Else, only fill *self.cD* where the individual has no SNP
             for i in range(self.nV):
                 if i not in iL:
                     for sp in self.assM[i]:
@@ -384,18 +412,19 @@ class CFWriter():
         return '\t'.join(strL)
 
     def __write_Ln(self):
-        """Write a line in counts format to `self.outFN`."""
+        """Write a line in counts format to *self.outFN*."""
         print(self.__get_Ln(), file=self.outFO)
 
     def write_HLn(self):
-        """Write the counts format header line to `self.outFN`."""
+        """Write the counts format header line to *self.outFN*."""
         print(self.__get_HLn(), file=self.outFO)
 
     def write_Rn(self, rg):
-        """Write lines in counts format to `self.outFN`.
+        """Write lines in counts format to *self.outFN*.
 
-        - `rg`: `Region` object that determines the region that is
-          covered.
+        :param Region rg: :class:`Region <libPoMo.seqbase.Region>`
+                          object that determines the region that is
+                          covered.
 
         """
         snpsG = self.__snp(rg)
@@ -443,22 +472,22 @@ class CFWriter():
 
 
 def get_cf_headerline(species):
-    """Return a string containing the headerline in counts format."""
+    """Deprecated. Return a string containing the headerline in counts
+    format."""
     stringL = [["CHROM", "POS"]]
     stringL.extend(species)
     return '\t'.join([e for lst in stringL for e in lst])
 
 
 def collapse(speciesL, merge=False, name=None):
-    """Collapse the species names.
+    """Deprecated. Collapse the species names.
 
     Collapse the species names using the naming rules given in
     save_as_countsformat. Returns a dictionary with collapsed
     species names as keys and an assignment list.
 
-    - `merge`: if set to True, all species/individuals will be
-    collapsed to a single one with name `name` (if `name` is
-    given).
+    :param Boolean merge: if set to True, all species/individuals will be
+      collapsed to a single one with name *name* (if *name* is given).
 
     """
     l = len(speciesL)
@@ -475,18 +504,18 @@ def collapse(speciesL, merge=False, name=None):
 
 
 def find_next_SNP_pos(nSNPChromL, nSNPPosL, ref):
-    """Find the position of next SNP.
+    """Deprecated. Find the position of next SNP.
 
-    Return the position of the next SNP in `ref` and a list of
-    indices of these SNPs in `nSNPChromL` and `nSNPPosL`. If no
+    Return the position of the next SNP in *ref* and a list of
+    indices of these SNPs in *nSNPChromL* and *nSNPPosL*. If no
     next SNP is found on this sequence (this might happen if all
     next SNPs are on the next chromosome) a ValueError is raised.
 
-    - `nSNPChromL`: List with chromosome names of the next SNPs of
-                    the `vcfStrL`.
-    - `nSNPPosL`: List with positions of the next SNPs of the
-                  `vcfStrL`.
-    - `ref`: Seq object of the sequence of the reference.
+    - *nSNPChromL*: List with chromosome names of the next SNPs of
+                    the *vcfStrL*.
+    - *nSNPPosL*: List with positions of the next SNPs of the
+                  *vcfStrL*.
+    - *ref*: Seq object of the sequence of the reference.
 
     """
     ind = -1
@@ -507,7 +536,7 @@ def find_next_SNP_pos(nSNPChromL, nSNPPosL, ref):
 
 
 def fill_species_dict_ref(spDi, assL, refBase, ploidy):
-    """Fills the species dictionary if no SNP is present."""
+    """Deprecated. Fills the species dictionary if no SNP is present."""
     # reset species dictionary to 0 counts per base
     for key in spDi.keys():
         spDi[key] = [0, 0, 0, 0]
@@ -523,9 +552,9 @@ def fill_species_dict_ref(spDi, assL, refBase, ploidy):
 
 
 def fill_species_dict_alt(spDi, assL, refBase, altBases, spData):
-    """Fill the species dictionary when a SNP is present.
+    """Deprecated. Fill the species dictionary when a SNP is present.
 
-    Raise `SequenceDataError`, if `spDi` could not be filled.
+    Raise *SequenceDataError*, if *spDi* could not be filled.
     """
     # reset species dictionary to 0 counts per base
     for key in spDi.keys():
@@ -548,7 +577,7 @@ def fill_species_dict_alt(spDi, assL, refBase, altBases, spData):
 
 
 def get_counts_line(chrom, pos, spDi, speciesL):
-    """Return line string in counts format."""
+    """Deprecated. Return line string in counts format."""
     stringL = [chrom, str(pos+1)]
     for i in range(len(spDi)):
         for j in range(len(speciesL[i])):
@@ -558,35 +587,35 @@ def get_counts_line(chrom, pos, spDi, speciesL):
 
 def save_as_cf(vcfStrL, refFaStr, CFFileName, verb=False,
                mergeL=None, nameL=None):
-    """Save the given sequence in counts format.
+    """Deprecated. Save the given sequence in counts format.
 
-    This function saves the SNPs from `vcfStrL`, a given list of
-    `VCFStream` (variant call format sequence stream) objects in
-    counts format to the file `CFFileName`.  The reference genome
-    `refFaStr`, to which `VCFSeqStr` is compared to, needs to be
-    passed as an `FaStream` object.
+    This function saves the SNPs from *vcfStrL*, a given list of
+    *VCFStream* (variant call format sequence stream) objects in
+    counts format to the file *CFFileName*.  The reference genome
+    *refFaStr*, to which *VCFSeqStr* is compared to, needs to be
+    passed as an *FaStream* object.
 
-    The name of all streams in `vcfStrL` should be the same as the
-    name of `faRef`.  The names of the sequences in the reference
-    should be the names of the chromosomes found in the `vcfStr`
+    The name of all streams in *vcfStrL* should be the same as the
+    name of *faRef*.  The names of the sequences in the reference
+    should be the names of the chromosomes found in the *vcfStr*
     object, otherwise we do not know where to compare the sequences
     to.  They must also be in the same order!
 
     Individuals with the same name and suffix "_n", where n is a
     number, will be saved in one column without the suffix.
 
-    - `vcfStrL`: List with VCF Streams containing SNPs.
-    - `refFaStr`: Reference fasta sequence stream object.
-    - `CFFileName`: Name of output file (counts format).
-    - `verb`: If `verb` is set to True, additional information is
+    - *vcfStrL*: List with VCF Streams containing SNPs.
+    - *refFaStr*: Reference fasta sequence stream object.
+    - *CFFileName*: Name of output file (counts format).
+    - *verb*: If *verb* is set to True, additional information is
               printed to the output file.
-    - `mergeL`: A list of truth values. If `mergeL[i]` is True, all
-                individuals of `vcfStrL[i]` are treated as one species
+    - *mergeL*: A list of truth values. If *mergeL[i]* is True, all
+                individuals of *vcfStrL[i]* are treated as one species
                 independent of their name. The respective counts are
-                summed up.  If `nameL[i]` is given, the name of the
-                summed sequence will be `nameL[i]`. If not, the name of
-                the first individual in `vcfStrL[i]` will be used.
-    - `nameL`: A list of names. Cf. `mergeL`.
+                summed up.  If *nameL[i]* is given, the name of the
+                summed sequence will be *nameL[i]*. If not, the name of
+                the first individual in *vcfStrL[i]* will be used.
+    - *nameL*: A list of names. Cf. *mergeL*.
 
     """
     lVcfStrL = len(vcfStrL)
@@ -660,7 +689,7 @@ def save_as_cf(vcfStrL, refFaStr, CFFileName, verb=False,
         except ValueError:
             nSNPPos = ref.dataLen
             nSNPIndL = None
-        # Loop over positions in sequence `ref` of the reference genome.
+        # Loop over positions in sequence *ref* of the reference genome.
         while True:
             # Loop from previous SNP to one position before this one.
             for pos in range(oldPos, nSNPPos):

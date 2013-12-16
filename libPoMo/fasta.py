@@ -1,21 +1,26 @@
 #!/usr/bin/env python
 
 """libPomo.fasta
+================
 
 This module provides functions to read, write and access fasta files.
 
+Objects
+-------
 Classes:
-- `FaStream`, fasta file sequence stream object
-- `FaSeq`, fasta file sequence object
+  - :class:`FaStream`, fasta file sequence stream object
+  - :class:`FaSeq`, fasta file sequence object
 
 Exception Classes:
-- `NotAFastaFileError`
+  - :class:`NotAFastaFileError`
 
 Functions:
-- `read_seq_from_fo()`: Read a single fasta sequence.
-- `init_seq()`: Initialize fasta sequence stream from file.
-- `open_seq()`: Open fasta file.
-- `save_as_vcf()`: Save a given `FaSeq` in variant call format (VCF).
+  - :func:`read_seq_from_fo()`: Read a single fasta sequence.
+  - :func:`init_seq()`: Initialize fasta sequence stream from file.
+  - :func:`open_seq()`: Open fasta file.
+  - :func:`save_as_vcf()`: Save a given `FaSeq` in variant call format (VCF).
+
+----
 
 """
 # TODO MFaStream
@@ -34,13 +39,15 @@ class NotAFastaFileError(sb.SequenceDataError):
 def read_seq_from_fo(line, fo):
     """Read a single fasta sequence.
 
-    Read a single fasta sequence from file object `fo` and save it to
-    a new `Seq` sequence object. Returns the header line of the next
-    fasta sequence and the newly created sequence. If no new sequence
-    is found, the next header line will be set to None.
+    Read a single fasta sequence from file object *fo* and save it to
+    a new :class:`Seq <libPoMo.seqbase.Seq>` sequence object. Return
+    the header line of the next fasta sequence and the newly created
+    sequence. If no new sequence is found, the next header line will
+    be set to None.
 
-    - `line`: the header line of the sequence.
-    - `fo`: the file object of the fasta file.
+    :param str line: Header line of the sequence.
+    :param fo fo: File object of the fasta file.
+    :rtype: (str, Seq)
 
     """
     def get_sp_name_and_description(fa_header_line):
@@ -94,32 +101,33 @@ def read_seq_from_fo(line, fo):
 class FaStream():
     """A class that stores a fasta file sequence stream.
 
-    The sequence of one species/individual/chromosome is saved and
+    The sequence of one species / individual / chromosome is saved and
     functions are provided to read in the next sequence in the file,
     if there is any. This saves memory if files are huge and doesn't
     increase runtime.
+
+    This object is usually initialized with :func:`init_seq`.
+
+    :param str name: Name of the stream.
+    :param Seq firstSeq: First sequence (:class:`Seq
+                         <libPoMo.seqbase.Seq>` object) to be saved.
+    :param str nextHL: Next header line.
+    :param fo faFileObject: File object associated with the stream.
+
+    :ivar str name: Stream name.
+    :ivar Seq seq: Saved sequence (`Seq` object)
+    :ivar str nextHeaderLine: Next header line.
+    :ivar fo fo: File object that points to the start of the data of
+                 the next sequence.
+
     """
 
     def __init__(self, name, firstSeq, nextHL, faFileObject):
-        """Initialize an `FaStream` object; add state objects.
-
-        Parameters:
-
-        - `name`: Name of the stream.
-        - `firstSeq`: First sequence to be saved.
-        - `nextHL`: String with next header line.
-        - `faFileObject`: File object associated with the stream.
-
-        """
+        """Initialize an `FaStream` object; add state objects."""
         self.name = name
-        """Stream name."""
         self.seq = firstSeq
-        """Saved sequence."""
         self.nextHeaderLine = nextHL
-        """String with next header line."""
         self.fo = faFileObject
-        """File object that points to the start of the data of the next
-        sequence."""
 
     def print_info(self, maxB=50):
         """Print sequence information.
@@ -153,20 +161,25 @@ class FaStream():
             self.nextHeaderLine = nextHL
             return self.seq.name
 
-    def close_fo(self):
+    def close(self):
         """Close the linked file."""
         self.fo.close()
 
 
 class FaSeq():
-    """Store sequence data retrieved from a fasta file."""
+    """Store sequence data retrieved from a fasta file.
+
+    :ivar str name: Name of the `FaSeq` object.
+    :ivar [Seq] seqL: List of :class:`Seq <libPoMo.seqbase.Seq>`
+                      objects that store the actual sequence data.
+    :ivar int nSepcies: Number of saved species / individuals /
+                        chromosomes.
+
+    """
     def __init__(self):
         self.name = ""
-        """Name of the `FaSeq` object."""
         self.seqL = []
-        """List of `Seq` objects that store the actual sequence data."""
         self.nSpecies = 0
-        """Number of saved species/individuals/chromosomes."""
 
     def print_info(self, maxB=50):
         """Print sequence information.
@@ -197,7 +210,8 @@ class FaSeq():
         return seq
 
     def get_seq_base(self, seq, pos):
-        """Return base at position `pos` in sequence with name `seq`."""
+        """Return base at 1-based position `pos` in sequence with name
+        `seq`."""
         names = self.get_seq_names()
         try:
             i = names.index(seq)
@@ -209,21 +223,21 @@ class FaSeq():
 
 
 def init_seq(faFileName, maxskip=50, name=None):
-    """Open a fasta file and initialize an FaStream.
+    """Open a fasta file and initialize an :class:`FaStream`.
 
     This function tries to open the given fasta file, checks if it is
     in fasta format and reads the first sequence.  It returns an
-    `FaStream` object. This object can later be used to parse the
-    whole fasta file.
+    :class:`FaStream` object. This object can later be used to parse
+    the whole fasta file.
 
     Please close the associated file object with
-    yourFaStream.close_fo() when you don't need it anymore.
+    :func:`FaStream.close` when you don't need it anymore.
 
-    - `maxskip`: Only look `maxskip` lines for the start of a sequence
-    (defaults to 50).
-
-    - `name`: Set the name of the sequence to `name`, otherwise set it
-    to the stripped filename.
+    :param str faFileName: File name of the fasta file.
+    :param int maxskip: Only look *maxskip* lines for the start of a
+                        sequence (defaults to 50).
+    :param str name: Set the name of the sequence to *name*, otherwise
+                     set it to the stripped filename.
 
     """
     flag = False
@@ -258,15 +272,15 @@ def open_seq(faFileName, maxskip=50, name=None):
     """Open and read a fasta file.
 
     This function tries to open the given fasta file, checks if it is
-    in fasta format and reads the sequence(s).  It returns an `FaSeq`
-    object that contains a list of species names, a list of the
-    respective desriptions and a list with the sequences.
+    in fasta format and reads the sequence(s).  It returns an
+    :class:`FaSeq` object that contains a list of species names, a
+    list of the respective desriptions and a list with the sequences.
 
-    - `maxskip`: Only look `maxskip` lines for the start of a sequence
-    (defaults to 50).
-
-    - `name`: Set the name of the sequence to `name`, otherwise set it
-    to the stripped filename.
+    :param str faFileName: Name of the fasta file.
+    :param int maxskip: Only look *maxskip* lines for the start of a sequence
+                        (defaults to 50).
+    :param str name: Set the name of the sequence to *name* otherwise
+                     set it to the stripped filename.
 
     """
     def test_sequence(faSequence):
@@ -315,7 +329,7 @@ def open_seq(faFileName, maxskip=50, name=None):
 
 
 def save_as_vcf(faSeq, ref, VCFFileName):
-    """Save the given `FaSeq` in VCF format.
+    """Save the given :classL`FaSeq` in VCF format.
 
     In general, we want to convert a fasta file with various
     individuals with the help of a reference that contains one
@@ -324,28 +338,31 @@ def save_as_vcf(faSeq, ref, VCFFileName):
     conversion for several chromosomes for each individual in one run.
     Still, the conversion can be done chromosome by chromosome.
 
-    This function saves the SNPs of `faSeq`, a given `FaSeq` (fasta
-    sequence) object in VCF format to the file `VCFFileName`.  The
-    reference genome `ref`, to which `faSeq` is compared to, needs to
-    be passed as a `Seq` object.
+    This function saves the SNPs of *faSeq*, a given :class:`FaSeq`
+    (fasta sequence) object in VCF format to the file *VCFFileName*.
+    The reference genome *ref*, to which *faSeq* is compared to, needs
+    to be passed as a :class:`Seq <libPoMo.seqbase.Seq>` object.
 
-    The function compares all sequences in `faSeq` to the sequence
-    given in `ref`.  The names of the individuals in the saved VCF
-    file will be the sequence names of the `faSeq` object.
+    The function compares all sequences in *faSeq* to the sequence
+    given in *ref*.  The names of the individuals in the saved VCF
+    file will be the sequence names of the *faSeq* object.
 
-    #CHROM = sequence name of the reference
-    POS    = position relative to reference
-    ID     = .
-    REF    = base of reference
-    ALT    = SNP (e.g. 'C' or 'G,T' if 2 different SNPs are present)
-    QUAL   = .
-    FILTER = .
-    INFO   = .
-    FORMAT = GT
+    ::
 
-    - `faSeq`: `FaSeq` object to be converted.
-    - `ref`: `Seq` object of the reference sequence.
-    - `VCFFileName`: Name of the VCF output file.
+      #CHROM = sequence name of the reference
+      POS    = position relative to reference
+      ID     = .
+      REF    = base of reference
+      ALT    = SNP (e.g. 'C' or 'G,T' if 2 different SNPs are present)
+      QUAL   = .
+      FILTER = .
+      INFO   = .
+      FORMAT = GT
+
+    :param FaSeq faSeq: :class:`FaSeq` object to be converted.
+    :param Seq ref: :class:`Seq <libPoMo.seqbase.Seq>` object of the
+                    reference sequence.
+    :param str VCFFileName: Name of the VCF output file.
 
     """
     def get_altBases_string(sAltBases):

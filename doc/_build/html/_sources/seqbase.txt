@@ -1,0 +1,2 @@
+.. automodule:: libPoMo.seqbase
+   :members:

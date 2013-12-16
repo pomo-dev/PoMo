@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 
 """libPomo.seqbase
+==================
 
 This module provides basic functions and classes needed to work with
 sequence data.
 
+Objects
+-------
 Classes:
   - :class:`Seq`, stores a single sequence
   - :class:`Region`, region in a genome
@@ -15,6 +18,8 @@ Exception Classes:
 
 Functions:
   - :func:`stripFName()`: strip filename off its ending
+
+----
 
 """
 
@@ -56,16 +61,21 @@ class Region():
 
 
 class Seq:
-    """A class that stores sequence data."""
+    """A class that stores sequence data.
+    .. _seqbase-seq:
+
+    :ivar str name: Name of the sequence (e.g. species or individual
+                    name).
+    :ivar str descr: Description of the sequence.
+    :ivar str data: String with sequence data.
+    :ivar int dataLen: Number of saved bases.
+
+    """
     def __init__(self):
         self.name = ''
-        """Name of the sequence (e.g. species or individual name)."""
         self.descr = ''
-        """Description of the sequence."""
         self.data = ''
-        """String with sequence data."""
         self.dataLen = 0
-        """Number of saved bases."""
 
     def print_seq_header(self):
         """Print the sequence header line in fasta format."""
@@ -73,7 +83,7 @@ class Seq:
         return
 
     def get_base(self, pos):
-        """Returns base at position `pos`."""
+        """Returns base at 1-based position `pos`."""
         if pos > self.dataLen:
             raise SequenceDataError("Position out of range.")
         return self.data[pos-1]

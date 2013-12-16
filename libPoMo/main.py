@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """libPoMo.main
-----------------------------------------------------------------------
+===============
 
 This library contains functions that are used by PoMo.
 

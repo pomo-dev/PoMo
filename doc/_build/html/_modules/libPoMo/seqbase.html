@@ -1,0 +1,197 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>libPoMo.seqbase &mdash; PoMo 1.0.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PoMo 1.0.2 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">PoMo 1.0.2 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for libPoMo.seqbase</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+
+<span class="sd">&quot;&quot;&quot;libPomo.seqbase</span>
+<span class="sd">==================</span>
+
+<span class="sd">This module provides basic functions and classes needed to work with</span>
+<span class="sd">sequence data.</span>
+
+<span class="sd">Objects</span>
+<span class="sd">-------</span>
+<span class="sd">Classes:</span>
+<span class="sd">  - :class:`Seq`, stores a single sequence</span>
+<span class="sd">  - :class:`Region`, region in a genome</span>
+
+<span class="sd">Exception Classes:</span>
+<span class="sd">  - :class:`SequenceDataError`</span>
+<span class="sd">  - :class:`NotAValidRefBase`</span>
+
+<span class="sd">Functions:</span>
+<span class="sd">  - :func:`stripFName()`: strip filename off its ending</span>
+
+<span class="sd">----</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">__docformat__</span> <span class="o">=</span> <span class="s">&#39;restructuredtext&#39;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+
+
+<div class="viewcode-block" id="SequenceDataError"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.SequenceDataError">[docs]</a><span class="k">class</span> <span class="nc">SequenceDataError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;General sequence data error exception.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="NotAValidRefBase"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.NotAValidRefBase">[docs]</a><span class="k">class</span> <span class="nc">NotAValidRefBase</span><span class="p">(</span><span class="n">SequenceDataError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Reference base is not valid.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="Region"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Region">[docs]</a><span class="k">class</span> <span class="nc">Region</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Region in a genome.</span>
+
+<span class="sd">    The start and end points need to be given 1-based and are</span>
+<span class="sd">    converted to 0-based positions that are used internally to save</span>
+<span class="sd">    all positional data.</span>
+<span class="sd">    </span>
+<span class="sd">    :param str chrom: Chromosome name.</span>
+<span class="sd">    :param int start: 1-based start position.</span>
+<span class="sd">    :param int end: 1-based end position.</span>
+
+<span class="sd">    :ivar str chrom: Chromosome name.</span>
+<span class="sd">    :ivar int start: 0-based start position.</span>
+<span class="sd">    :ivar int end: 0-base end position.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chrom</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chrom</span> <span class="o">=</span> <span class="n">chrom</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="n">start</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="mi">1</span>
+
+</div>
+<div class="viewcode-block" id="Seq"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq">[docs]</a><span class="k">class</span> <span class="nc">Seq</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A class that stores sequence data.</span>
+<span class="sd">    .. _seqbase-seq:</span>
+
+<span class="sd">    :ivar str name: Name of the sequence (e.g. species or individual</span>
+<span class="sd">                    name).</span>
+<span class="sd">    :ivar str descr: Description of the sequence.</span>
+<span class="sd">    :ivar str data: String with sequence data.</span>
+<span class="sd">    :ivar int dataLen: Number of saved bases.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">descr</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataLen</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="Seq.print_seq_header"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.print_seq_header">[docs]</a>    <span class="k">def</span> <span class="nf">print_seq_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Print the sequence header line in fasta format.&quot;&quot;&quot;</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&#39;&gt;&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&#39; &#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+</div>
+<div class="viewcode-block" id="Seq.get_base"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.get_base">[docs]</a>    <span class="k">def</span> <span class="nf">get_base</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns base at 1-based position `pos`.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">pos</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataLen</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SequenceDataError</span><span class="p">(</span><span class="s">&quot;Position out of range.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">pos</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Seq.purge"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.purge">[docs]</a>    <span class="k">def</span> <span class="nf">purge</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Purge data saved in this sequence.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">descr</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataLen</span> <span class="o">=</span> <span class="mi">0</span>
+
+</div></div>
+<div class="viewcode-block" id="stripFName"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.stripFName">[docs]</a><span class="k">def</span> <span class="nf">stripFName</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convenience function to strip filename off the &quot;.xyz&quot; ending.&quot;&quot;&quot;</span>
+    <span class="n">filename_without_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">fn</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">filename_without_path</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">PoMo 1.0.2 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Dominik Schrempf.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

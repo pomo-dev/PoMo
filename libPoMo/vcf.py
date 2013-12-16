@@ -1,23 +1,29 @@
 #!/usr/bin/env python
 
 """libPomo.vcf
+==============
 
 This module provides functions to read, write and access vcf files.
 
+Objects
+-------
 Classes:
-- `NucBase`, store a nucleotide base
-- `VCFStream`, a variant call format (VCF) stream object
-- `VCFSeq`, a VCF file sequence object
+  - :class:`NucBase`, store a nucleotide base
+  - :class:`VCFStream`, a variant call format (VCF) stream object
+  - :class:`VCFSeq`, a VCF file sequence object
 
 Exception Classes:
-- `NotAVariantCallFormatFileError`
-- `NotANucBaseError`
+  - :class:`NotAVariantCallFormatFileError`
+  - :class:`NotANucBaseError`
 
 Functions:
-- `update_base()`: Read a line into a base.
-- `get_nuc_base_from_line()`: Create a new `NucBase` from a line.
-- `check_fixed_field_header()`: Check a VCF fixed field header string.
-- `get_indiv_from_field_header()`: Extract list of individuals from header.
+  - :func:`update_base()`: Read a line into a base.
+  - :func:`get_nuc_base_from_line()`: Create a new `NucBase` from a line.
+  - :func:`check_fixed_field_header()`: Check a VCF fixed field header string.
+  - :func:`get_indiv_from_field_header()`: Extract list of individuals
+                                           from header.
+
+----
 
 """
 
@@ -41,11 +47,11 @@ hdList = ['#CHROM', 'POS', 'ID', 'REF', 'ALT',
 
 
 def update_base(ln, base, info=True):
-    """Read line `ln` into base `base`.
+    """Read line *ln* into base *base*.
 
-    Split a given VCF file line and returns a NucBase object. If
-    `info` is set to False, only #CHROM, REF, ALT and speciesData will
-    be read.
+    Split a given VCF file line and returns a :class:`NucBase`
+    object. If *info* is set to False, only #CHROM, REF, ALT and
+    speciesData will be read.
 
     """
     lnList = ln.split('\t', maxsplit=9)
@@ -69,14 +75,14 @@ def update_base(ln, base, info=True):
 
 
 def get_nuc_base_from_line(ln, info=False, ploidy=None):
-    """Retrieve base data from a VCF file line `ln`.
+    """Retrieve base data from a VCF file line *ln*.
 
     Split a given VCF file line and returns a NucBase object. If
-    `info` is set to False, only #CHROM, POS, REF, ALT and speciesData will
+    *info* is set to False, only #CHROM, POS, REF, ALT and speciesData will
     be read.
-    
-    - `info`: Boolean; determines if info is retrieved from `ln`.
-    - `ploidy`: If ploidy is known and given, it is set.
+
+    :param Bool info: Determines if info is retrieved from *ln*.
+    :param int ploidy: If ploidy is known and given, it is set.
 
     """
     base = NucBase()
@@ -95,15 +101,26 @@ class NucBase():
     http://www.1000genomes.org/ for a detailed description of the vcf
     format.
 
-    self.haploid: True if self.speciesData contains haploid data. Can
-    be set with self.set_haploid()
+    :ivar str chom: Chromosome name.
+    :ivar int pos: 1-based position on the chromosome.
+    :ivar str id: ID.
+    :ivar str ref: Reference base.
+    :ivar str alt: Alternative base(s).
+    :ivar str qual: Quality.
+    :ivar str filter: Filter.
+    :ivar str info: Additional information.
+    :ivar str format: String with format specification.
+    :ivar [str] speciesData: List with strings of the species data
+                             (e.g. 0/1:...).
+
+    :ivar int ploidy: Ploidy (number of sets of chromosomes) of the
+                      sequenced individuals. Can be set with
+                      :func:`set_ploidy`.
 
     """
     def __init__(self):
         self.chrom = ''
-        """Chromosome name."""
         self.pos = 0
-        """Position on the chromosome."""
         self.id = ''
         self.ref = ''
         self.alt = ''
@@ -113,7 +130,6 @@ class NucBase():
         self.format = ''
         self.speciesData = []
         self.ploidy = None
-        """Number of sets of chromosomes. Set by `self.set_ploidy()`."""
 
     def print_info(self):
         """Print nucleotide base information.
@@ -142,14 +158,15 @@ class NucBase():
 
     def get_speciesData(self):
         """Return species data as a list.
-        
-        data[0][0] = data of first species/individual on chromatide A
-        data[0][1] = only set for non-haploids; data of first
-        species/individual on chromatide B
 
-        Return None if bases saved are not valid ("./."). This means,
-        that the information from all other individuals or species is
-        lost too. Maybe this should be changed in the future.
+        - data[0][0] = data of first species/individual on chromatide A
+        - data[0][1] = only set for non-haploids; data of first
+                       species/individual on chromatide B
+
+        Sets data[i][j] to None if the base of individual *i* on
+        chromosome *j* could not be read (e.g. it is not valid).
+
+        :rtype: matrix of integers
 
         """
         data = []
@@ -177,42 +194,38 @@ class NucBase():
         return data
 
     def purge(self):
-        """Purge the data associated with this `NucBase`."""
+        """Purge the data associated with this :class:`NucBase`."""
         self.__init__()
 
 
 class VCFStream():
     """Store base data from a VCF file line per line.
 
-    This class stores a single base retrieved from a VCF file and the
-    file itself.  It is used to parse through a VCF file line by line
-    processing the bases without having to read the whole file at one.
+    It can be initialized with :func:`init_seq`.  This class stores a
+    single base retrieved from a VCF file and the file itself.  It is
+    used to parse through a VCF file line by line processing the bases
+    without having to read the whole file at one.
 
-    It can be initialized with init_seq().
+    :param str seqName: Name of the stream.
+    :param fo vcfFileObject: File object associated with the stream.
+    :param [str] speciesList: List with species / individuals.
+    :param NucBase firstBase: First :class:`NucBase` to be saved.
+
+    :ivar str name: Name of the stream.
+    :ivar fo fo: Stored VCF file object.
+    :ivar [str] speciesL: List with species / individuals.
+    :ivar int nSpecies: Number of species / individuals.
+    :ivar NusBase base: Stored :class:`NucBase`.
 
     """
 
     def __init__(self, seqName, vcfFileObject, speciesList, firstBase):
-        """Initialize a `VCFStream` object; add state objects.
-
-        Parameters:
-
-        - `seqName`: Name of the stream.
-        - `vcfFileObject`: File object associated with the stream.
-        - `speciesList`: List with species/individuals.
-        - `firstBase`: First base to be saved.
-
-        """
+        """Initialize a :class:`VCFStream` object; add state objects."""
         self.name = seqName
-        """Sequence name."""
         self.fo = vcfFileObject
-        """Stored VCF file object."""
         self.speciesL = speciesList
-        """List with species/individuals."""
         self.nSpecies = len(speciesList)
-        """Number of species/individuals."""
         self.base = firstBase
-        """Stored `NucBase`."""
 
     def print_info(self):
         """Prints VCFStream information."""
@@ -227,7 +240,8 @@ class VCFStream():
         """Read the next base.
 
         Return position of next base.
-        Raise a `ValueError` if no next base is found.
+
+        Raise a *ValueError* if no next base is found.
 
         """
         line = self.fo.readline()
@@ -238,30 +252,36 @@ class VCFStream():
             raise ValueError("End of VCFStream.")
             return None
 
-    def close_fo(self):
+    def close(self):
         """Closes the linked file."""
         self.fo.close()
 
 
 class VCFSeq():
-    """Store data retrieved from a VCF file."""
+    """Store data retrieved from a VCF file.
+
+    Initialized with :func:`open_seq`.
+
+    :ivar str name: Sequence name.
+    :ivar str header: Sequence header.
+    :ivar [str] speciesL: List with species / individuals.
+    :ivar int nSpecies: Number of species / individuals.
+    :ivar [NucBase] baseL: List with stored :class:`NucBase` objects.
+    :ivar int nBases: Number of :class:`NucBase` objects stored.
+
+
+"""
     def __init__(self):
-        """Initialize a `VCFSeq` object; add state objects."""
+        """Initialize a :class:`VCFSeq` object; add state objects."""
         self.name = ''
-        """Sequence name."""
         self.header = []
-        """Header information."""
         self.speciesL = []
-        """List with species/individuals."""
         self.nSpecies = 0
-        """Number of species/individuals."""
         self.baseL = []
-        """List with stored `NucBase` objects."""
         self.nBases = 0
-        """Number of `NucBase` objects stored."""
 
     def get_header_line_string(self, indiv):
-        """Return a standard VCF File header string with individuals `indiv`.
+        """Return a standard VCF File header string with individuals *indiv*.
 
         """
         string = ''
@@ -273,15 +293,15 @@ class VCFSeq():
         return string[:-1]
 
     def print_header_line(self, indiv):
-        """Print a standard VCF File header with individuals `indiv`."""
+        """Print a standard VCF File header with individuals *indiv*."""
         print(self.get_header_line_string(indiv))
 
     def print_info(self, maxB=50, printHeader=False):
         """Print VCF sequence information.
 
         Print vcf header, the total number of nucleotides and a
-        maximum of `maxB` bases (defaults to 50). Only prints header
-        if `printHeader=True` is given.
+        maximum of *maxB* bases (defaults to 50). Only prints header
+        if *printHeader* = True is given.
 
         """
         if printHeader is True:
@@ -294,7 +314,7 @@ class VCFSeq():
         return
 
     def append_nuc_base(self, base):
-        """Append `base`, a given `NucBase`, to the VCFSeq object."""
+        """Append *base*, a given :class:`NucBase`, to the VCFSeq object."""
         self.baseL.append(base)
         self.nBases += 1
         return
@@ -302,8 +322,8 @@ class VCFSeq():
     def has_base(self, chrom, pos):
         """Return True (False) if base is (not) found.
 
-        - `chrom`: Chromosome name.
-        - `pos`: Position on `chrom`.
+        :param str chrom: Chromosome name.
+        :param int pos: 1-based position on *chrom*.
 
         """
         for i in range(0, self.nBases):
@@ -313,7 +333,7 @@ class VCFSeq():
         return False
 
     def get_nuc_base(self, chrom, pos):
-        """Return base at position `pos` of chromosome `chrom`."""
+        """Return base at position *pos* of chromosome *chrom*."""
         for i in range(0, self.nBases):
             if pos == self.baseL[i].pos \
                and chrom == self.baseL[i].chrom:
@@ -324,10 +344,11 @@ class VCFSeq():
 
 
 def check_fixed_field_header(ln):
-    """Check if the given line `ln` is the header of the fixed fields.
+    """Check if the given line *ln* is the header of the fixed fields.
 
-    Sample header line:
-    #CHROM\t POS\t ID\t REF\t ALT\t QUAL\t FILTER\t INFO\t FORMAT\t SpeciesL
+    Sample header line::
+
+      #CHROM\t POS\t ID\t REF\t ALT\t QUAL\t FILTER\t INFO\t FORMAT\t SpeciesL
 
     """
     lnList = ln.split('\t', maxsplit=9)
@@ -337,10 +358,11 @@ def check_fixed_field_header(ln):
 
 
 def get_indiv_from_field_header(ln):
-    """Return species from a fixed field header line `ln`.
+    """Return species from a fixed field header line *ln*.
 
-    Sample header line:
-    #CHROM\t POS\t ID\t REF\t ALT\t QUAL\t FILTER\t INFO\t FORMAT\t SpeciesL
+    Sample header line::
+
+      #CHROM\t POS\t ID\t REF\t ALT\t QUAL\t FILTER\t INFO\t FORMAT\t SpeciesL
 
     """
     speciesL = []
@@ -353,20 +375,20 @@ def get_indiv_from_field_header(ln):
 
 
 def init_seq(VCFFileName, maxskip=100, name=None):
-    """Open a (gzipped) VCF4.2 file.
+    """Open a (gzipped) VCF4.1 file.
 
     Try to open the given VCF file, checks if it is in VCF format.
-    Initialize a `VCFStream` object that contains the first base.  For
-    help, refer to `VCFSeq.__doc__`.
+    Initialize a :class:`VCFStream` object that contains the first
+    base.
 
     Please close the associated file object with
-    yourVCFStream.close_fo() when you don't need it anymore.
+    :func:`VCFStream.close` when you don't need it anymore.
 
-    - `maxskip`: Only look `maxskip` lines for the start of the bases
-    (defaults to 80).
-
-    - `name`: Set the name of the sequence to `name`, otherwise set it
-    to the filename.
+    :param str VCFFileName: Name of the VCF file.
+    :param int maxskip: Only look *maxskip* lines for the start of the
+                        bases (defaults to 80).
+    :param str name: Set the name of the sequence to *name*, otherwise
+                     set it to the filename.
 
     """
     flag = False
@@ -398,17 +420,17 @@ def init_seq(VCFFileName, maxskip=100, name=None):
 
 
 def open_seq(VCFFileName, maxskip=100, name=None):
-    """Open a VCF4.2 file.
+    """Open a VCF4.1 file.
 
     Try to open the given VCF file, checks if it is in VCF format and
-    reads the bases(s).  It returns an `VCFSeq` object that contains
-    all the information. For help, refer to `VCFSeq.__doc__`.
+    reads the bases(s).  It returns an :class:`VCFSeq` object that
+    contains all the information.
 
-    - `maxskip`: Only look `maxskip` lines for the start of the bases
-    (defaults to 80).
-
-    - `name`: Set the name of the sequence to `name`, otherwise set it
-    to the filename.
+    :param str VCFFileName: Name of the VCF file.
+    :param int maxskip: Only look *maxskip* lines for the start of the
+                        bases (defaults to 80).
+    :param str name: Set the name of the sequence to *name*, otherwise
+                     set it to the filename.
 
     """
     def test_sequence(seq):
