@@ -99,11 +99,11 @@
 
 
 <div class="viewcode-block" id="update_base"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.update_base">[docs]</a><span class="k">def</span> <span class="nf">update_base</span><span class="p">(</span><span class="n">ln</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Read line `ln` into base `base`.</span>
+    <span class="sd">&quot;&quot;&quot;Read line *ln* into base *base*.</span>
 
-<span class="sd">    Split a given VCF file line and returns a NucBase object. If</span>
-<span class="sd">    `info` is set to False, only #CHROM, REF, ALT and speciesData will</span>
-<span class="sd">    be read.</span>
+<span class="sd">    Split a given VCF file line and returns a :class:`NucBase`</span>
+<span class="sd">    object. If *info* is set to False, only #CHROM, REF, ALT and</span>
+<span class="sd">    speciesData will be read.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">lnList</span> <span class="o">=</span> <span class="n">ln</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
@@ -127,14 +127,14 @@
 
 </div>
 <div class="viewcode-block" id="get_nuc_base_from_line"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.get_nuc_base_from_line">[docs]</a><span class="k">def</span> <span class="nf">get_nuc_base_from_line</span><span class="p">(</span><span class="n">ln</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">ploidy</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Retrieve base data from a VCF file line `ln`.</span>
+    <span class="sd">&quot;&quot;&quot;Retrieve base data from a VCF file line *ln*.</span>
 
 <span class="sd">    Split a given VCF file line and returns a NucBase object. If</span>
-<span class="sd">    `info` is set to False, only #CHROM, POS, REF, ALT and speciesData will</span>
+<span class="sd">    *info* is set to False, only #CHROM, POS, REF, ALT and speciesData will</span>
 <span class="sd">    be read.</span>
 
-<span class="sd">    - `info`: Boolean; determines if info is retrieved from `ln`.</span>
-<span class="sd">    - `ploidy`: If ploidy is known and given, it is set.</span>
+<span class="sd">    :param Bool info: Determines if info is retrieved from *ln*.</span>
+<span class="sd">    :param int ploidy: If ploidy is known and given, it is set.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">base</span> <span class="o">=</span> <span class="n">NucBase</span><span class="p">()</span>
@@ -253,35 +253,31 @@
 <div class="viewcode-block" id="VCFStream"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.VCFStream">[docs]</a><span class="k">class</span> <span class="nc">VCFStream</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;Store base data from a VCF file line per line.</span>
 
-<span class="sd">    This class stores a single base retrieved from a VCF file and the</span>
-<span class="sd">    file itself.  It is used to parse through a VCF file line by line</span>
-<span class="sd">    processing the bases without having to read the whole file at one.</span>
+<span class="sd">    It can be initialized with :func:`init_seq`.  This class stores a</span>
+<span class="sd">    single base retrieved from a VCF file and the file itself.  It is</span>
+<span class="sd">    used to parse through a VCF file line by line processing the bases</span>
+<span class="sd">    without having to read the whole file at one.</span>
 
-<span class="sd">    It can be initialized with init_seq().</span>
+<span class="sd">    :param str seqName: Name of the stream.</span>
+<span class="sd">    :param fo vcfFileObject: File object associated with the stream.</span>
+<span class="sd">    :param [str] speciesList: List with species / individuals.</span>
+<span class="sd">    :param NucBase firstBase: First :class:`NucBase` to be saved.</span>
+
+<span class="sd">    :ivar str name: Name of the stream.</span>
+<span class="sd">    :ivar fo fo: Stored VCF file object.</span>
+<span class="sd">    :ivar [str] speciesL: List with species / individuals.</span>
+<span class="sd">    :ivar int nSpecies: Number of species / individuals.</span>
+<span class="sd">    :ivar NusBase base: Stored :class:`NucBase`.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seqName</span><span class="p">,</span> <span class="n">vcfFileObject</span><span class="p">,</span> <span class="n">speciesList</span><span class="p">,</span> <span class="n">firstBase</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initialize a `VCFStream` object; add state objects.</span>
-
-<span class="sd">        Parameters:</span>
-
-<span class="sd">        - `seqName`: Name of the stream.</span>
-<span class="sd">        - `vcfFileObject`: File object associated with the stream.</span>
-<span class="sd">        - `speciesList`: List with species/individuals.</span>
-<span class="sd">        - `firstBase`: First base to be saved.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Initialize a :class:`VCFStream` object; add state objects.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">seqName</span>
-        <span class="sd">&quot;&quot;&quot;Sequence name.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fo</span> <span class="o">=</span> <span class="n">vcfFileObject</span>
-        <span class="sd">&quot;&quot;&quot;Stored VCF file object.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">speciesL</span> <span class="o">=</span> <span class="n">speciesList</span>
-        <span class="sd">&quot;&quot;&quot;List with species/individuals.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nSpecies</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">speciesList</span><span class="p">)</span>
-        <span class="sd">&quot;&quot;&quot;Number of species/individuals.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">base</span> <span class="o">=</span> <span class="n">firstBase</span>
-        <span class="sd">&quot;&quot;&quot;Stored `NucBase`.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="VCFStream.print_info"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.VCFStream.print_info">[docs]</a>    <span class="k">def</span> <span class="nf">print_info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Prints VCFStream information.&quot;&quot;&quot;</span>
@@ -296,7 +292,8 @@
         <span class="sd">&quot;&quot;&quot;Read the next base.</span>
 
 <span class="sd">        Return position of next base.</span>
-<span class="sd">        Raise a `ValueError` if no next base is found.</span>
+
+<span class="sd">        Raise a *ValueError* if no next base is found.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fo</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
@@ -307,7 +304,7 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;End of VCFStream.&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">None</span>
 </div>
-<div class="viewcode-block" id="VCFStream.close_fo"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.VCFStream.close_fo">[docs]</a>    <span class="k">def</span> <span class="nf">close_fo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="VCFStream.close"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.VCFStream.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Closes the linked file.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fo</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
@@ -315,12 +312,15 @@
 <div class="viewcode-block" id="VCFSeq"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.VCFSeq">[docs]</a><span class="k">class</span> <span class="nc">VCFSeq</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;Store data retrieved from a VCF file.</span>
 
+<span class="sd">    Initialized with :func:`open_seq`.</span>
+
 <span class="sd">    :ivar str name: Sequence name.</span>
 <span class="sd">    :ivar str header: Sequence header.</span>
 <span class="sd">    :ivar [str] speciesL: List with species / individuals.</span>
 <span class="sd">    :ivar int nSpecies: Number of species / individuals.</span>
 <span class="sd">    :ivar [NucBase] baseL: List with stored :class:`NucBase` objects.</span>
 <span class="sd">    :ivar int nBases: Number of :class:`NucBase` objects stored.</span>
+
 
 <span class="sd">&quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -396,10 +396,11 @@
 
 </div></div>
 <div class="viewcode-block" id="check_fixed_field_header"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.check_fixed_field_header">[docs]</a><span class="k">def</span> <span class="nf">check_fixed_field_header</span><span class="p">(</span><span class="n">ln</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Check if the given line `ln` is the header of the fixed fields.</span>
+    <span class="sd">&quot;&quot;&quot;Check if the given line *ln* is the header of the fixed fields.</span>
 
-<span class="sd">    Sample header line:</span>
-<span class="sd">    #CHROM\t POS\t ID\t REF\t ALT\t QUAL\t FILTER\t INFO\t FORMAT\t SpeciesL</span>
+<span class="sd">    Sample header line::</span>
+
+<span class="sd">      #CHROM\t POS\t ID\t REF\t ALT\t QUAL\t FILTER\t INFO\t FORMAT\t SpeciesL</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">lnList</span> <span class="o">=</span> <span class="n">ln</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
@@ -409,10 +410,11 @@
 
 </div>
 <div class="viewcode-block" id="get_indiv_from_field_header"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.get_indiv_from_field_header">[docs]</a><span class="k">def</span> <span class="nf">get_indiv_from_field_header</span><span class="p">(</span><span class="n">ln</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Return species from a fixed field header line `ln`.</span>
+    <span class="sd">&quot;&quot;&quot;Return species from a fixed field header line *ln*.</span>
 
-<span class="sd">    Sample header line:</span>
-<span class="sd">    #CHROM\t POS\t ID\t REF\t ALT\t QUAL\t FILTER\t INFO\t FORMAT\t SpeciesL</span>
+<span class="sd">    Sample header line::</span>
+
+<span class="sd">      #CHROM\t POS\t ID\t REF\t ALT\t QUAL\t FILTER\t INFO\t FORMAT\t SpeciesL</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">speciesL</span> <span class="o">=</span> <span class="p">[]</span>
@@ -425,20 +427,20 @@
 
 </div>
 <div class="viewcode-block" id="init_seq"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.init_seq">[docs]</a><span class="k">def</span> <span class="nf">init_seq</span><span class="p">(</span><span class="n">VCFFileName</span><span class="p">,</span> <span class="n">maxskip</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Open a (gzipped) VCF4.2 file.</span>
+    <span class="sd">&quot;&quot;&quot;Open a (gzipped) VCF4.1 file.</span>
 
 <span class="sd">    Try to open the given VCF file, checks if it is in VCF format.</span>
-<span class="sd">    Initialize a `VCFStream` object that contains the first base.  For</span>
-<span class="sd">    help, refer to `VCFSeq.__doc__`.</span>
+<span class="sd">    Initialize a :class:`VCFStream` object that contains the first</span>
+<span class="sd">    base.</span>
 
 <span class="sd">    Please close the associated file object with</span>
-<span class="sd">    yourVCFStream.close_fo() when you don&#39;t need it anymore.</span>
+<span class="sd">    :func:`VCFStream.close` when you don&#39;t need it anymore.</span>
 
-<span class="sd">    - `maxskip`: Only look `maxskip` lines for the start of the bases</span>
-<span class="sd">    (defaults to 80).</span>
-
-<span class="sd">    - `name`: Set the name of the sequence to `name`, otherwise set it</span>
-<span class="sd">    to the filename.</span>
+<span class="sd">    :param str VCFFileName: Name of the VCF file.</span>
+<span class="sd">    :param int maxskip: Only look *maxskip* lines for the start of the</span>
+<span class="sd">                        bases (defaults to 80).</span>
+<span class="sd">    :param str name: Set the name of the sequence to *name*, otherwise</span>
+<span class="sd">                     set it to the filename.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">flag</span> <span class="o">=</span> <span class="bp">False</span>
@@ -470,17 +472,17 @@
 
 </div>
 <div class="viewcode-block" id="open_seq"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.open_seq">[docs]</a><span class="k">def</span> <span class="nf">open_seq</span><span class="p">(</span><span class="n">VCFFileName</span><span class="p">,</span> <span class="n">maxskip</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Open a VCF4.2 file.</span>
+    <span class="sd">&quot;&quot;&quot;Open a VCF4.1 file.</span>
 
 <span class="sd">    Try to open the given VCF file, checks if it is in VCF format and</span>
-<span class="sd">    reads the bases(s).  It returns an `VCFSeq` object that contains</span>
-<span class="sd">    all the information. For help, refer to `VCFSeq.__doc__`.</span>
+<span class="sd">    reads the bases(s).  It returns an :class:`VCFSeq` object that</span>
+<span class="sd">    contains all the information.</span>
 
-<span class="sd">    - `maxskip`: Only look `maxskip` lines for the start of the bases</span>
-<span class="sd">    (defaults to 80).</span>
-
-<span class="sd">    - `name`: Set the name of the sequence to `name`, otherwise set it</span>
-<span class="sd">    to the filename.</span>
+<span class="sd">    :param str VCFFileName: Name of the VCF file.</span>
+<span class="sd">    :param int maxskip: Only look *maxskip* lines for the start of the</span>
+<span class="sd">                        bases (defaults to 80).</span>
+<span class="sd">    :param str name: Set the name of the sequence to *name*, otherwise</span>
+<span class="sd">                     set it to the filename.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">test_sequence</span><span class="p">(</span><span class="n">seq</span><span class="p">):</span>

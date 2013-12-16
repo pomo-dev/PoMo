@@ -52,8 +52,7 @@
   <h1>Source code for libPoMo.cf</h1><div class="highlight"><pre>
 <span class="c">#!/usr/bin/env python</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">libPomo.cf</span>
+<span class="sd">&quot;&quot;&quot;libPomo.cf</span>
 <span class="sd">=============</span>
 
 <span class="sd">This model provides functions to read, write and access files that are</span>
@@ -62,34 +61,39 @@
 <span class="sd">The Counts Format</span>
 <span class="sd">-----------------</span>
 <span class="sd">This file format is used by PoMo and lists the base</span>
-<span class="sd">counts for every position. It contains:</span>
+<span class="sd">counts for every position.</span>
 
-<span class="sd">1 headerline with tab separated sequence names</span>
-<span class="sd">N lines with counts of A, C, G and T bases at position n</span>
+<span class="sd">It contains:</span>
+<span class="sd">  - 1 headerline with tab separated sequence names</span>
+<span class="sd">  - N lines with counts of A, C, G and T bases at position n</span>
 
-<span class="sd">CHROM \t Pos   \t Sheep   \t BlackSheep \t RedSheep \t Wolf    \t RedWolf</span>
-<span class="sd">chrA  \t s     \t 0,0,1,0 \t 0,0,1,0    \t 0,0,1,0  \t 0,0,5,0 \t 0,0,0,1</span>
-<span class="sd">chrA  \t s + 1 \t 0,0,0,1 \t 0,0,0,1    \t 0,0,0,1  \t 0,0,0,5 \t 0,0,0,1</span>
-<span class="sd">.</span>
-<span class="sd">.</span>
-<span class="sd">.</span>
-<span class="sd">chrF  \t 8373  \t 0,0,0,1 \t 1,0,0,0    \t 0,1,0,0  \t 0,1,4,0 \t 0,0,1,0</span>
-<span class="sd">.</span>
-<span class="sd">.</span>
-<span class="sd">.</span>
-<span class="sd">chrE  \t end   \t 0,0,0,1 \t 0,1,0,0    \t 0,1,0,0  \t 0,5,0,0 \t 0,0,1,0</span>
+<span class="sd">::</span>
+
+<span class="sd">  CHROM \t Pos   \t Sheep   \t BlackSheep \t RedSheep \t Wolf    \t RedWolf</span>
+<span class="sd">  chrA  \t s     \t 0,0,1,0 \t 0,0,1,0    \t 0,0,1,0  \t 0,0,5,0 \t 0,0,0,1</span>
+<span class="sd">  chrA  \t s + 1 \t 0,0,0,1 \t 0,0,0,1    \t 0,0,0,1  \t 0,0,0,5 \t 0,0,0,1</span>
+<span class="sd">  .</span>
+<span class="sd">  .</span>
+<span class="sd">  .</span>
+<span class="sd">  chrF  \t 8373  \t 0,0,0,1 \t 1,0,0,0    \t 0,1,0,0  \t 0,1,4,0 \t 0,0,1,0</span>
+<span class="sd">  .</span>
+<span class="sd">  .</span>
+<span class="sd">  .</span>
+<span class="sd">  chrE  \t end   \t 0,0,0,1 \t 0,1,0,0    \t 0,1,0,0  \t 0,5,0,0 \t 0,0,1,0</span>
 
 <span class="sd">Objects</span>
 <span class="sd">-------</span>
 <span class="sd">Classes:</span>
-<span class="sd">  - `CFWriter`, write a counts format file</span>
+<span class="sd">  - :class:`CFWriter`, write a counts format file</span>
 
 <span class="sd">Exception Classes:</span>
-<span class="sd">  - `CountsFormatWriterError`</span>
+<span class="sd">  - :class:`CountsFormatWriterError`</span>
 
 <span class="sd">Functions:</span>
-<span class="sd">  - `save_as_vc()`: Deprecated. Save given sequences to a counts format</span>
-<span class="sd">    file.</span>
+<span class="sd">  - :func:`save_as_vc()`: Deprecated. Save given sequences to a counts</span>
+<span class="sd">                          format file.</span>
+
+<span class="sd">----</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -115,91 +119,104 @@
     <span class="sd">&quot;&quot;&quot;Write a counts format file.</span>
 
 <span class="sd">    Save information that is needed to write a CF file and use this</span>
-<span class="sd">    information to write a CF file.</span>
+<span class="sd">    information to write a CF file.  Initialize with a reference fasta</span>
+<span class="sd">    file name, a list of vcf file names and an output file name::</span>
 
-<span class="sd">    Initialize with a reference fasta file name, a list of vcf file</span>
-<span class="sd">    names and an output file name (cf. `self.__init__`):</span>
-<span class="sd">    .. code:: python</span>
-<span class="sd">       CFWriter(&quot;refFasta&quot;, [vcfFileNames], &quot;output&quot;)</span>
+<span class="sd">      CFWriter(&quot;refFasta&quot;, [vcfFileNames], &quot;output&quot;)</span>
 
-<span class="sd">    Write a header line to output:</span>
-<span class="sd">    .. code:: python</span>
+<span class="sd">    Write a header line to output::</span>
+
 <span class="sd">       self.write_HLn()</span>
 
-<span class="sd">    Write lines in counts format from position start to end on</span>
-<span class="sd">    chromosome chrom to output:</span>
-<span class="sd">    .. code:: python</span>
+<span class="sd">    Write lines in counts format from 1-based positions *start* to</span>
+<span class="sd">    *end* on chromosome *chrom* to output::</span>
+
 <span class="sd">       rg = sb.Region(&quot;chrom&quot;, start, end)</span>
 <span class="sd">       self.write_Rn(rg)</span>
 
-<span class="sd">    Remember to close the attached file objectsL</span>
-<span class="sd">    .. code:: python</span>
-<span class="sd">       self.close()</span>
+<span class="sd">    Remember to close the attached file objectsL with :func:`close`.</span>
+
+<span class="sd">    :param str refFileName: Name of reference fasta file.</span>
+<span class="sd">    :param [str] vcfFileNameL: List with names of vcf files.</span>
+<span class="sd">    :param str outFileName: Output file name.</span>
+<span class="sd">    :param int verb: Optional; verbosity.</span>
+<span class="sd">    :param [Boolean] mergeL: Optional; a list of truth values.  If</span>
+<span class="sd">      *mL[i]* is True, all individuals of *self.vcfL[i]* are treated as</span>
+<span class="sd">      one population orspecies independent of their name.  The</span>
+<span class="sd">      respective counts are summed up.  If *self.nL[i]* is given, the</span>
+<span class="sd">      name of the summed sequence will be *self.nL[i]*.  If not, the</span>
+<span class="sd">      name of the first individual in *vcfL[i]* will be used.</span>
+<span class="sd">    :param [str] nameL: Optional; a list of names. Cf. *self.mL*.</span>
+
+<span class="sd">    :ivar str refFN: Name of reference fasta file.</span>
+<span class="sd">    :ivar [str] vcfL: List with names of vcf files.</span>
+<span class="sd">    :ivar str outFN: Output file name.</span>
+<span class="sd">    :ivar int v: Verbosity.</span>
+<span class="sd">    :ivar [Boolean] mL: A list of truth values.  If *mL[i]* is True,</span>
+<span class="sd">        all individuals of *self.vcfL[i]* are treated as one</span>
+<span class="sd">        population orspecies independent of their name.  The</span>
+<span class="sd">        respective counts are summed up.  If *self.nL[i]* is given,</span>
+<span class="sd">        the name of the summed sequence will be *self.nL[i]*.  If not,</span>
+<span class="sd">        the name of the first individual in *vcfL[i]* will be used.</span>
+<span class="sd">    :ivar [str] nL: A list of names. Cf. *self.mL*.</span>
+<span class="sd">    :ivar int nV: Number of vcf files.</span>
+<span class="sd">    :ivar [fo] vcfTfL: List with *pysam.Tabixfile* objects. Filled by</span>
+<span class="sd">        *self.__init_vcfTfL()* during initialization.</span>
+<span class="sd">    :ivar FaStr refFaStr: :class:`FaStream &lt;libPoMo.fasta.FaStream&gt;`</span>
+<span class="sd">        object of the reference genome. This might be changed to an</span>
+<span class="sd">        *MFaStream* object in the future.</span>
+<span class="sd">    :ivar fo outFO: File object of the outfile. Filled by</span>
+<span class="sd">        *self.__init_outFO()* during initialization.</span>
+<span class="sd">    :ivar cD: List with allele or base counts. The alleles of</span>
+<span class="sd">        individuals from the same population are summed up.  Hence,</span>
+<span class="sd">        *self.cD[p]* gives the base counts of population *p* in the</span>
+<span class="sd">        form: [0, 0, 0, 0].  Population *p`*does not need to be the</span>
+<span class="sd">        one from *self.vcfL[p]* because several populations might be</span>
+<span class="sd">        present in one vcf file.  *self.assM* connects the individual</span>
+<span class="sd">        j from *self.vcfL[i]* such that *self.assM[i][j]* is *p*.</span>
+<span class="sd">    :ivar str chrom: Name of the current chromosome. Set and updated</span>
+<span class="sd">        by :func:`write_Rn`.</span>
+<span class="sd">    :ivar int pos: Current position on chromosome. Set and updated by</span>
+<span class="sd">        :func:`write_Rn`.</span>
+<span class="sd">    :ivar indM: Matrix with individuals from vcf files. *self.indM[i]*</span>
+<span class="sd">        is the list of individuals found in *self.vcfL[i]*.</span>
+<span class="sd">    :ivar [int] nIndL: List with number of individuals in</span>
+<span class="sd">        *self.vcfL[i]*.</span>
+<span class="sd">    :ivar assM: Assignment matrix that connects the individuals from</span>
+<span class="sd">        the vcf files to the correct *self.cd* index.  Cf. *self.cD*</span>
+<span class="sd">    :ivar int nPop: Number of different populations in count format</span>
+<span class="sd">        output file (e.g. number of populations).  Filled by</span>
+<span class="sd">        *self.__init_assM()* during initialization.</span>
+<span class="sd">    :ivar int ploidy: Ploidy of individuals in vcf files.  This has to</span>
+<span class="sd">        be set manually to the correct value for non-diploids!</span>
+<span class="sd">    :ivar char __splitCh: Character that is used to split the</span>
+<span class="sd">        individual names.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">refFileName</span><span class="p">,</span> <span class="n">vcfFileNameL</span><span class="p">,</span> <span class="n">outFileName</span><span class="p">,</span>
                  <span class="n">verb</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">mergeL</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">nameL</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="c"># Passed variables.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refFN</span> <span class="o">=</span> <span class="n">refFileName</span>
-        <span class="sd">&quot;&quot;&quot;Reference fasta file name.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vcfL</span> <span class="o">=</span> <span class="n">vcfFileNameL</span>
-        <span class="sd">&quot;&quot;&quot;List with VCF file names.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">outFN</span> <span class="o">=</span> <span class="n">outFileName</span>
-        <span class="sd">&quot;&quot;&quot;CF output file name.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="n">verb</span>
-        <span class="sd">&quot;&quot;&quot;Verbosity level.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mL</span> <span class="o">=</span> <span class="n">mergeL</span>
-        <span class="sd">&quot;&quot;&quot;A list of truth values.  If `mL[i]` is True, all individuals of</span>
-<span class="sd">        `self.vcfL[i]` are treated as one population orspecies</span>
-<span class="sd">        independent of their name.  The respective counts are summed</span>
-<span class="sd">        up.  If `self.nL[i]` is given, the name of the summed sequence</span>
-<span class="sd">        will be `self.nL[i]`.  If not, the name of the first</span>
-<span class="sd">        individual in `vcfL[i]` will be used.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nL</span> <span class="o">=</span> <span class="n">nameL</span>
-        <span class="sd">&quot;&quot;&quot;A list of names. Cf. `self.mL`.&quot;&quot;&quot;</span>
         <span class="c"># Variables that are filled during initialization.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nV</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vcfL</span><span class="p">)</span>
-        <span class="sd">&quot;&quot;&quot;Number of vcf files.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vcfTfL</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="sd">&quot;&quot;&quot;List with `pysam.Tabixfile` objects.  Filled by</span>
-<span class="sd">        `self.init_vcfTfL()` during initialization.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refFaStr</span> <span class="o">=</span> <span class="n">fa</span><span class="o">.</span><span class="n">init_seq</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">refFN</span><span class="p">)</span>
-        <span class="sd">&quot;&quot;&quot;`FaStream` object of the reference genome. This might be changed to</span>
-<span class="sd">        an `MFaStream` object in the future.&quot;&quot;&quot;</span>  <span class="c"># TODO</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">outFO</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="sd">&quot;&quot;&quot;File object of the outfile. Filled by `self.__init_outFO` during</span>
-<span class="sd">        initialization.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cD</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="sd">&quot;&quot;&quot;List with allele or base counts.  The alleles of individuals from</span>
-<span class="sd">        the same population are summed up.  Hence, `self.cD[p]` gives</span>
-<span class="sd">        the base counts of population `p` in the form: [0, 0, 0, 0].</span>
-<span class="sd">        Population `p` does not need to be the one from `self.vcfL[p]`</span>
-<span class="sd">        because several populations might be present in one vcf file.</span>
-<span class="sd">        `self.assM` connects the individual j from `self.vcfL[i]` such</span>
-<span class="sd">        that `self.assM[i][j]` is `p`.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">chrom</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="sd">&quot;&quot;&quot;Current chromosome. Set and updated by `self.fill_cD`&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="sd">&quot;&quot;&quot;Current position on chromosome. Set and updated by `self.fill_cD&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">indM</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="sd">&quot;&quot;&quot;Matrix with individuals from vcf files. `self.indM[i]` is the list</span>
-<span class="sd">        of individuals found in `self.vcfL[i]`.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nIndL</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="sd">&quot;&quot;&quot;List with number of individuals in `self.vcfL[i]`.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assM</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="sd">&quot;&quot;&quot;Assignment matrix that connects the individuals from the vcf files</span>
-<span class="sd">        to the correct `self.cd` index. Cf. `self.cD`&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nPop</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="sd">&quot;&quot;&quot;Number of different populations in count format output file</span>
-<span class="sd">        (e.g. number of populations). Filled by `self.init_assM()`</span>
-<span class="sd">        during initialization.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ploidy</span> <span class="o">=</span> <span class="mi">2</span>
-        <span class="sd">&quot;&quot;&quot;Ploidy of individuals in vcf files. This has to be set to the</span>
-<span class="sd">        correct value for non-diploids.&quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">__splitCh</span> <span class="o">=</span> <span class="s">&#39;-&#39;</span>
-
-        <span class="sd">&quot;&quot;&quot;Character that is used to split the individual names.&quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">__init_vcfTfL</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__init_outFO</span><span class="p">()</span>
@@ -210,19 +227,19 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">__init_cD</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">__init_vcfTfL</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Open vcf files given in `self.vcfL`.</span>
+        <span class="sd">&quot;&quot;&quot;Open vcf files given in *self.vcfL*.</span>
 
 <span class="sd">        Tabix index files need to be provided. They can be created</span>
 <span class="sd">        from the terminal with $(tabix -p vcf &quot;vcf-file.vcf.gz&quot;). The</span>
-<span class="sd">        tabix file objects are stored in `self.vcfTfL`. They need to</span>
-<span class="sd">        be closed with `self.close()`.</span>
+<span class="sd">        tabix file objects are stored in *self.vcfTfL*. They need to</span>
+<span class="sd">        be closed with :func:`close`.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vcfL</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">vcfTfL</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ps</span><span class="o">.</span><span class="n">Tabixfile</span><span class="p">(</span><span class="n">fn</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">__init_outFO</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Open `self.outFN`.</span>
+        <span class="sd">&quot;&quot;&quot;Open *self.outFN*.</span>
 
 <span class="sd">        If the file name ends with &quot;gz&quot;, the outfile will be</span>
 <span class="sd">        compressed and is opened with gzip.open().</span>
@@ -249,14 +266,17 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">nIndL</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">indL</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">__init_assM</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Fill assignment matrix `self.assM`.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Fill assignment matrix *self.assM*.&quot;&quot;&quot;</span>
         <span class="k">def</span> <span class="nf">collapse_and_append</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dN</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;Collapse individual names of `self.vcfL[n]`.</span>
+            <span class="sd">&quot;&quot;&quot;Collapse individual names of *self.vcfL[n]*.</span>
 
-<span class="sd">            Appends the collapsed individual names of `self.vcfL[n]`</span>
-<span class="sd">            to `self.assM`.</span>
+<span class="sd">            Appends the collapsed individual names of *self.vcfL[n]*</span>
+<span class="sd">            to *self.assM*.</span>
 
-<span class="sd">            - `dN`: Offset in assL.</span>
+<span class="sd">            :param int n: Index.</span>
+<span class="sd">            :param int dN: Offset in assL.</span>
+<span class="sd">            :rtype: int</span>
+
 <span class="sd">            Returns new offset.</span>
 
 <span class="sd">            &quot;&quot;&quot;</span>
@@ -295,7 +315,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">nPop</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="n">dI</span> <span class="o">+</span> <span class="mi">1</span>
                 
     <span class="k">def</span> <span class="nf">__init_nL</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Fill `self.nL`.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Fill *self.nL*.&quot;&quot;&quot;</span>
         <span class="k">def</span> <span class="nf">append_to_nL</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">assM</span><span class="p">[</span><span class="n">i</span><span class="p">])):</span>
                 <span class="k">try</span><span class="p">:</span>
@@ -317,11 +337,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">cD</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPop</span><span class="p">)]</span>
 
     <span class="k">def</span> <span class="nf">__snp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rg</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Generate SNPs in region `rg` out of `self.vcfL`.</span>
+        <span class="sd">&quot;&quot;&quot;Generate SNPs in region *rg* out of *self.vcfL*.</span>
 
-<span class="sd">        Generator that returns the next SNP in region `rg`</span>
-<span class="sd">        (cf. `seqbase.Region`) as a `NucBase` object.  To loop over</span>
-<span class="sd">        all SNPs in region `rg`:</span>
+<span class="sd">        Generator that returns the next SNP in region *rg*</span>
+<span class="sd">        (cf. :class:`Region &lt;libPoMo.seqbase.Region&gt;`) as a :class:`NucBase`</span>
+<span class="sd">        object.  To loop over all SNPs in region *rg*:</span>
 
 <span class="sd">        &gt;&gt;&gt; rg = sb.Region(&quot;chr1&quot;, 500000, 1000000)</span>
 <span class="sd">        &gt;&gt;&gt; for s in self.snp(rg):</span>
@@ -363,22 +383,28 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">__init_cD</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">__fill_cD</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iL</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">snpL</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Fill `self.cF`.</span>
+        <span class="sd">&quot;&quot;&quot;Fill *self.cF*.</span>
 
-<span class="sd">        Fill `self.cF` with data from reference at chromosome `chrom`</span>
-<span class="sd">        and position `pos`. Possible SNPs in `slef.vcfL` at this</span>
+<span class="sd">        Fill *self.cF* with data from reference at chromosome *chrom*</span>
+<span class="sd">        and position *pos*. Possible SNPs in *slef.vcfL* at this</span>
 <span class="sd">        position are considered.</span>
 
-<span class="sd">        - `iL`: List with vcf indices of the SNPs in `snpL`, must be sorted.</span>
-<span class="sd">        - `snpL`: List with `NucBase` SNPs at this position. None, if</span>
-<span class="sd">          there is no SNP.</span>
+<span class="sd">        :param [int] iL: List with vcf indices of the SNPs in *snpL*,</span>
+<span class="sd">            must be sorted.</span>
 
-<span class="sd">        Raises the excpetion `sb.NotAValidRefBase` if the reference</span>
-<span class="sd">        base is not valid (e.g. N).</span>
+<span class="sd">        :param [NucBase] snpL: List with :class:`NucBase</span>
+<span class="sd">            &lt;libPoMo.vcf.NucBase&gt;` SNPs at this position. None, if</span>
+<span class="sd">            there is no SNP.</span>
+<span class="sd">        :raises: :class:`NotAValidRefBase</span>
+<span class="sd">            &lt;libPoMo.seqbase.NotAValidRefBase&gt;`.</span>
+
+<span class="sd">        Raises the excpetion :class:`NotAValidRefBae</span>
+<span class="sd">        &lt;libPoMo.seqbase.NotAValidRefBase&gt;` if the reference base is</span>
+<span class="sd">        not valid (e.g. N).</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">def</span> <span class="nf">get_refBase</span><span class="p">():</span>
-            <span class="sd">&quot;&quot;&quot;Get reference base on `chrom` at `pos`.&quot;&quot;&quot;</span>
+            <span class="sd">&quot;&quot;&quot;Get reference base on *chrom* at *pos*.&quot;&quot;&quot;</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">chrom</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">refFaStr</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">refFaStr</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
@@ -389,13 +415,13 @@
             <span class="n">r</span> <span class="o">=</span> <span class="n">dna</span><span class="p">[</span><span class="n">refBase</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">sb</span><span class="o">.</span><span class="n">NotAValidRefBase</span><span class="p">()</span>
-        <span class="c"># If there are no SNPS, fill `self.cD` with data from reference.</span>
+        <span class="c"># If there are no SNPS, fill *self.cD* with data from reference.</span>
         <span class="k">if</span> <span class="n">iL</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nV</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">sp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">assM</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">cD</span><span class="p">[</span><span class="n">sp</span><span class="p">][</span><span class="n">r</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ploidy</span>
         <span class="k">elif</span> <span class="p">(</span><span class="n">snpL</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">iL</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">snpL</span><span class="p">)):</span>
-            <span class="c"># Else, only fill `self.cD` where the individual has no SNP</span>
+            <span class="c"># Else, only fill *self.cD* where the individual has no SNP</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nV</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">iL</span><span class="p">:</span>
                     <span class="k">for</span> <span class="n">sp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">assM</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
@@ -438,18 +464,19 @@
         <span class="k">return</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">strL</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__write_Ln</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Write a line in counts format to `self.outFN`.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Write a line in counts format to *self.outFN*.&quot;&quot;&quot;</span>
         <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__get_Ln</span><span class="p">(),</span> <span class="nb">file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">outFO</span><span class="p">)</span>
 
 <div class="viewcode-block" id="CFWriter.write_HLn"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.CFWriter.write_HLn">[docs]</a>    <span class="k">def</span> <span class="nf">write_HLn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Write the counts format header line to `self.outFN`.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Write the counts format header line to *self.outFN*.&quot;&quot;&quot;</span>
         <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__get_HLn</span><span class="p">(),</span> <span class="nb">file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">outFO</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="CFWriter.write_Rn"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.CFWriter.write_Rn">[docs]</a>    <span class="k">def</span> <span class="nf">write_Rn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rg</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Write lines in counts format to `self.outFN`.</span>
+        <span class="sd">&quot;&quot;&quot;Write lines in counts format to *self.outFN*.</span>
 
-<span class="sd">        - `rg`: `Region` object that determines the region that is</span>
-<span class="sd">          covered.</span>
+<span class="sd">        :param Region rg: :class:`Region &lt;libPoMo.seqbase.Region&gt;`</span>
+<span class="sd">                          object that determines the region that is</span>
+<span class="sd">                          covered.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">snpsG</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__snp</span><span class="p">(</span><span class="n">rg</span><span class="p">)</span>
@@ -497,22 +524,22 @@
 
 </div></div>
 <div class="viewcode-block" id="get_cf_headerline"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.get_cf_headerline">[docs]</a><span class="k">def</span> <span class="nf">get_cf_headerline</span><span class="p">(</span><span class="n">species</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Return a string containing the headerline in counts format.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Deprecated. Return a string containing the headerline in counts</span>
+<span class="sd">    format.&quot;&quot;&quot;</span>
     <span class="n">stringL</span> <span class="o">=</span> <span class="p">[[</span><span class="s">&quot;CHROM&quot;</span><span class="p">,</span> <span class="s">&quot;POS&quot;</span><span class="p">]]</span>
     <span class="n">stringL</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">species</span><span class="p">)</span>
     <span class="k">return</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">e</span> <span class="k">for</span> <span class="n">lst</span> <span class="ow">in</span> <span class="n">stringL</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">lst</span><span class="p">])</span>
 
 </div>
 <div class="viewcode-block" id="collapse"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.collapse">[docs]</a><span class="k">def</span> <span class="nf">collapse</span><span class="p">(</span><span class="n">speciesL</span><span class="p">,</span> <span class="n">merge</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Collapse the species names.</span>
+    <span class="sd">&quot;&quot;&quot;Deprecated. Collapse the species names.</span>
 
 <span class="sd">    Collapse the species names using the naming rules given in</span>
 <span class="sd">    save_as_countsformat. Returns a dictionary with collapsed</span>
 <span class="sd">    species names as keys and an assignment list.</span>
 
-<span class="sd">    - `merge`: if set to True, all species/individuals will be</span>
-<span class="sd">    collapsed to a single one with name `name` (if `name` is</span>
-<span class="sd">    given).</span>
+<span class="sd">    :param Boolean merge: if set to True, all species/individuals will be</span>
+<span class="sd">      collapsed to a single one with name *name* (if *name* is given).</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">speciesL</span><span class="p">)</span>
@@ -529,18 +556,18 @@
 
 </div>
 <div class="viewcode-block" id="find_next_SNP_pos"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.find_next_SNP_pos">[docs]</a><span class="k">def</span> <span class="nf">find_next_SNP_pos</span><span class="p">(</span><span class="n">nSNPChromL</span><span class="p">,</span> <span class="n">nSNPPosL</span><span class="p">,</span> <span class="n">ref</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Find the position of next SNP.</span>
+    <span class="sd">&quot;&quot;&quot;Deprecated. Find the position of next SNP.</span>
 
-<span class="sd">    Return the position of the next SNP in `ref` and a list of</span>
-<span class="sd">    indices of these SNPs in `nSNPChromL` and `nSNPPosL`. If no</span>
+<span class="sd">    Return the position of the next SNP in *ref* and a list of</span>
+<span class="sd">    indices of these SNPs in *nSNPChromL* and *nSNPPosL*. If no</span>
 <span class="sd">    next SNP is found on this sequence (this might happen if all</span>
 <span class="sd">    next SNPs are on the next chromosome) a ValueError is raised.</span>
 
-<span class="sd">    - `nSNPChromL`: List with chromosome names of the next SNPs of</span>
-<span class="sd">                    the `vcfStrL`.</span>
-<span class="sd">    - `nSNPPosL`: List with positions of the next SNPs of the</span>
-<span class="sd">                  `vcfStrL`.</span>
-<span class="sd">    - `ref`: Seq object of the sequence of the reference.</span>
+<span class="sd">    - *nSNPChromL*: List with chromosome names of the next SNPs of</span>
+<span class="sd">                    the *vcfStrL*.</span>
+<span class="sd">    - *nSNPPosL*: List with positions of the next SNPs of the</span>
+<span class="sd">                  *vcfStrL*.</span>
+<span class="sd">    - *ref*: Seq object of the sequence of the reference.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">ind</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
@@ -561,7 +588,7 @@
 
 </div>
 <div class="viewcode-block" id="fill_species_dict_ref"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.fill_species_dict_ref">[docs]</a><span class="k">def</span> <span class="nf">fill_species_dict_ref</span><span class="p">(</span><span class="n">spDi</span><span class="p">,</span> <span class="n">assL</span><span class="p">,</span> <span class="n">refBase</span><span class="p">,</span> <span class="n">ploidy</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Fills the species dictionary if no SNP is present.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Deprecated. Fills the species dictionary if no SNP is present.&quot;&quot;&quot;</span>
     <span class="c"># reset species dictionary to 0 counts per base</span>
     <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">spDi</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="n">spDi</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
@@ -577,9 +604,9 @@
 
 </div>
 <div class="viewcode-block" id="fill_species_dict_alt"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.fill_species_dict_alt">[docs]</a><span class="k">def</span> <span class="nf">fill_species_dict_alt</span><span class="p">(</span><span class="n">spDi</span><span class="p">,</span> <span class="n">assL</span><span class="p">,</span> <span class="n">refBase</span><span class="p">,</span> <span class="n">altBases</span><span class="p">,</span> <span class="n">spData</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Fill the species dictionary when a SNP is present.</span>
+    <span class="sd">&quot;&quot;&quot;Deprecated. Fill the species dictionary when a SNP is present.</span>
 
-<span class="sd">    Raise `SequenceDataError`, if `spDi` could not be filled.</span>
+<span class="sd">    Raise *SequenceDataError*, if *spDi* could not be filled.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c"># reset species dictionary to 0 counts per base</span>
     <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">spDi</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -602,7 +629,7 @@
 
 </div>
 <div class="viewcode-block" id="get_counts_line"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.get_counts_line">[docs]</a><span class="k">def</span> <span class="nf">get_counts_line</span><span class="p">(</span><span class="n">chrom</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">spDi</span><span class="p">,</span> <span class="n">speciesL</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Return line string in counts format.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Deprecated. Return line string in counts format.&quot;&quot;&quot;</span>
     <span class="n">stringL</span> <span class="o">=</span> <span class="p">[</span><span class="n">chrom</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">pos</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">spDi</span><span class="p">)):</span>
         <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">speciesL</span><span class="p">[</span><span class="n">i</span><span class="p">])):</span>
@@ -612,35 +639,35 @@
 </div>
 <div class="viewcode-block" id="save_as_cf"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.save_as_cf">[docs]</a><span class="k">def</span> <span class="nf">save_as_cf</span><span class="p">(</span><span class="n">vcfStrL</span><span class="p">,</span> <span class="n">refFaStr</span><span class="p">,</span> <span class="n">CFFileName</span><span class="p">,</span> <span class="n">verb</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
                <span class="n">mergeL</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">nameL</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Save the given sequence in counts format.</span>
+    <span class="sd">&quot;&quot;&quot;Deprecated. Save the given sequence in counts format.</span>
 
-<span class="sd">    This function saves the SNPs from `vcfStrL`, a given list of</span>
-<span class="sd">    `VCFStream` (variant call format sequence stream) objects in</span>
-<span class="sd">    counts format to the file `CFFileName`.  The reference genome</span>
-<span class="sd">    `refFaStr`, to which `VCFSeqStr` is compared to, needs to be</span>
-<span class="sd">    passed as an `FaStream` object.</span>
+<span class="sd">    This function saves the SNPs from *vcfStrL*, a given list of</span>
+<span class="sd">    *VCFStream* (variant call format sequence stream) objects in</span>
+<span class="sd">    counts format to the file *CFFileName*.  The reference genome</span>
+<span class="sd">    *refFaStr*, to which *VCFSeqStr* is compared to, needs to be</span>
+<span class="sd">    passed as an *FaStream* object.</span>
 
-<span class="sd">    The name of all streams in `vcfStrL` should be the same as the</span>
-<span class="sd">    name of `faRef`.  The names of the sequences in the reference</span>
-<span class="sd">    should be the names of the chromosomes found in the `vcfStr`</span>
+<span class="sd">    The name of all streams in *vcfStrL* should be the same as the</span>
+<span class="sd">    name of *faRef*.  The names of the sequences in the reference</span>
+<span class="sd">    should be the names of the chromosomes found in the *vcfStr*</span>
 <span class="sd">    object, otherwise we do not know where to compare the sequences</span>
 <span class="sd">    to.  They must also be in the same order!</span>
 
 <span class="sd">    Individuals with the same name and suffix &quot;_n&quot;, where n is a</span>
 <span class="sd">    number, will be saved in one column without the suffix.</span>
 
-<span class="sd">    - `vcfStrL`: List with VCF Streams containing SNPs.</span>
-<span class="sd">    - `refFaStr`: Reference fasta sequence stream object.</span>
-<span class="sd">    - `CFFileName`: Name of output file (counts format).</span>
-<span class="sd">    - `verb`: If `verb` is set to True, additional information is</span>
+<span class="sd">    - *vcfStrL*: List with VCF Streams containing SNPs.</span>
+<span class="sd">    - *refFaStr*: Reference fasta sequence stream object.</span>
+<span class="sd">    - *CFFileName*: Name of output file (counts format).</span>
+<span class="sd">    - *verb*: If *verb* is set to True, additional information is</span>
 <span class="sd">              printed to the output file.</span>
-<span class="sd">    - `mergeL`: A list of truth values. If `mergeL[i]` is True, all</span>
-<span class="sd">                individuals of `vcfStrL[i]` are treated as one species</span>
+<span class="sd">    - *mergeL*: A list of truth values. If *mergeL[i]* is True, all</span>
+<span class="sd">                individuals of *vcfStrL[i]* are treated as one species</span>
 <span class="sd">                independent of their name. The respective counts are</span>
-<span class="sd">                summed up.  If `nameL[i]` is given, the name of the</span>
-<span class="sd">                summed sequence will be `nameL[i]`. If not, the name of</span>
-<span class="sd">                the first individual in `vcfStrL[i]` will be used.</span>
-<span class="sd">    - `nameL`: A list of names. Cf. `mergeL`.</span>
+<span class="sd">                summed up.  If *nameL[i]* is given, the name of the</span>
+<span class="sd">                summed sequence will be *nameL[i]*. If not, the name of</span>
+<span class="sd">                the first individual in *vcfStrL[i]* will be used.</span>
+<span class="sd">    - *nameL*: A list of names. Cf. *mergeL*.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">lVcfStrL</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">vcfStrL</span><span class="p">)</span>
@@ -714,7 +741,7 @@
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
             <span class="n">nSNPPos</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">dataLen</span>
             <span class="n">nSNPIndL</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="c"># Loop over positions in sequence `ref` of the reference genome.</span>
+        <span class="c"># Loop over positions in sequence *ref* of the reference genome.</span>
         <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
             <span class="c"># Loop from previous SNP to one position before this one.</span>
             <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">oldPos</span><span class="p">,</span> <span class="n">nSNPPos</span><span class="p">):</span>
