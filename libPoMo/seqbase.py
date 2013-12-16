@@ -69,6 +69,8 @@ class Seq:
     :ivar str descr: Description of the sequence.
     :ivar str data: String with sequence data.
     :ivar int dataLen: Number of saved bases.
+    :ivar Boolean rc: True if *self.data* stores the
+                      reverse-complement of the real sequence.
 
     """
     def __init__(self):
@@ -76,6 +78,9 @@ class Seq:
         self.descr = ''
         self.data = ''
         self.dataLen = 0
+        self.rc = False
+
+        self.__lowered = False
 
     def print_seq_header(self):
         """Print the sequence header line in fasta format."""
@@ -87,6 +92,37 @@ class Seq:
         if pos > self.dataLen:
             raise SequenceDataError("Position out of range.")
         return self.data[pos-1]
+
+    def toggle_rc(self):
+        """Toggle the state of *self.rc*."""
+        self.rc = not self.rc
+
+    def get_rc(self):
+        """Determine the state of this sequence.
+
+        Returns True if *self.data* stores the reverse-complement of
+        the real sequence.
+
+        :rtype: Boolean
+
+        """
+        return self.rc
+
+    def rev_comp(self):
+        """Reverses and complements the sequence.
+
+        This is rather slow for long sequences.
+
+        """
+        compDict = {'a': 't', 'c': 'g', 'g': 'c', 't': 'a'}
+        self.data = self.data[::-1]
+        if self.__lowered is not True:
+            self.data = self.data.lower()
+        rcData = []
+        for i in range(self.dataLen):
+            rcData.append(compDict[self.data[i]])
+        self.data = ''.join(rcData)
+        self.toggle_rc()
 
     def purge(self):
         """Purge data saved in this sequence."""
