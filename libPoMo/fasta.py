@@ -9,13 +9,15 @@ Objects
 -------
 Classes:
   - :class:`FaStream`, fasta file sequence stream object
+  - :class:`MFaStrea`, multiple alignment fasta file sequence stream object
   - :class:`FaSeq`, fasta file sequence object
 
 Exception Classes:
   - :class:`NotAFastaFileError`
 
 Functions:
-  - :func:`read_seq_from_fo()`, read a single fasta sequence
+  - :func:`read_seq_from_fo()`, read a single sequence from file object
+  - :func:`read_align_from_fo()`, read an alignment from file object
   - :func:`init_seq()`, initialize fasta sequence stream from file
   - :func:`open_seq()`, open fasta file
   - :func:`save_as_vcf()`, save a given :class:`FaSeq` in variant call
@@ -27,7 +29,6 @@ Functions:
 # TODO MFaStream
 __docformat__ = 'restructuredtext'
 
-import gzip
 import libPoMo.seqbase as sb
 import libPoMo.vcf as vcf
 
@@ -37,7 +38,7 @@ class NotAFastaFileError(sb.SequenceDataError):
     pass
 
 
-def read_seq_from_fo(line, fo):
+def read_seq_from_fo(line, fo, getAlignEndFlag=False):
     """Read a single fasta sequence.
 
     Read a single fasta sequence from file object *fo* and save it to
@@ -48,7 +49,9 @@ def read_seq_from_fo(line, fo):
 
     :param str line: Header line of the sequence.
     :param fo fo: File object of the fasta file.
-    :rtype: (str, Seq)
+    :param Boolean getAlignFlag: If true, an additional Boolean value
+      that specifies if an alignment ends, is returned.
+    :rtype: (str, Seq) | (str, Seq, Boolean)
 
     """
     def get_sp_name_and_description(fa_header_line):
@@ -58,31 +61,37 @@ def read_seq_from_fo(line, fo):
         line `fa_header_line`.
 
         """
-        lineList = fa_header_line.rstrip().split()
+        lineList = fa_header_line.rstrip().split(maxsplit=1)
         name = lineList[0][1:]
         description = ""
         if len(lineList) > 1:
-            description = '\t'.join(lineList[1:])
+            description = lineList[1]
         return (name, description)
 
     def fill_seq_from_fo(line, fo, seq):
-        """Read a single fasta sequence
+        """Read a single fasta sequence.
 
         Read a single fasta sequence from file object `fo` and save it
-        to `seq`. Returns the next header line. If no new sequence is
-        found, the next header line will be set to None.
+        to `seq`. Returns the next header line and a flag that is set
+        to true if the end of an alignment is reached (a line only
+        contains a newline character).  If no new sequence is found,
+        the next header line will be set to None.
 
-        - `line`: the header line of the sequence.
-        - `fo`: the file object of the fasta file.
-        - `seq`: the sequence that will be filled.
+        :param str line: Header line of the sequence.
+        :param fo for: File object of the fasta file.
+        :param Seq seq: The sequence that will be filled.
 
         """
         (name, descr) = get_sp_name_and_description(line)
         seq.name = name
         seq.descr = descr
         data = ""
+        alignEndFl = False
         for line in fo:
-            if line[0] == '>':
+            if line == '\n':
+                # newline found, end of alignment
+                alignEndFl = True
+            elif line[0] == '>':
                 # new species found in line
                 break
             else:
@@ -92,11 +101,14 @@ def read_seq_from_fo(line, fo):
         if line[0] != '>':
             # we reached the end of file
             line = None
-        return line
+        return (line, alignEndFl)
 
     seq = sb.Seq()
-    newHeaderLine = fill_seq_from_fo(line, fo, seq)
-    return (newHeaderLine, seq)
+    (newHeaderLine, alignEndFl) = fill_seq_from_fo(line, fo, seq)
+    if getAlignEndFlag is False:
+        return (newHeaderLine, seq)
+    else:
+        return (newHeaderLine, seq, alignEndFl)
 
 
 class FaStream():
@@ -141,7 +153,7 @@ class FaStream():
         print("Associated file object:", self.fo)
         print("Next header line:", self.nextHeaderLine)
         print("Saved Sequence:")
-        self.seq.print_seq_header()
+        self.seq.print_fa_header()
         print("Printing", maxB, "out of a total of",
               self.seq.dataLen, "bases.")
         print(self.seq.data[0:maxB])
@@ -164,6 +176,162 @@ class FaStream():
 
     def close(self):
         """Close the linked file."""
+        self.fo.close()
+
+
+def read_align_from_fo(line, fo):
+    """Read a single fasta alignment.
+
+    Read a single fasta alignment from file object *fo* and save it to
+    new :class:`Seq <libPoMo.seqbase.Seq>` sequence objects.  Return
+    the header line of the next fasta alignment and the newly created
+    sequences in a list.  If no new alignment is found, the next header
+    line will be set to None.
+
+    :param str line: Header line of the sequence.
+    :param fo fo: File object of the fasta file.
+    :rtype: (str, [Seq])
+
+    """
+    alignEndFl = False
+    seqL = []
+    headerLn = line
+    while (alignEndFl is not True) and (headerLn is not None):
+        (newHeaderLn, seq, alignEndFl) = read_seq_from_fo(headerLn, fo,
+                                                          getAlignEndFlag=True)
+        headerLn = newHeaderLn
+        seq.set_rc()
+        seqL.append(seq)
+    return (newHeaderLn, seqL)
+
+
+class MFaStream():
+    """Store a multiplealignment fasta file sequence stream.
+
+    The sequences of one gene / alignment are saved for all species /
+    individuals / chromosomes.  Functions are provided to read in the
+    next gene / alignment in the file that fulfills the given
+    criteria, if there is any.  This saves memory if files are huge and
+    doesn't increase runtime.
+
+    Initialization of an :class:`MFaStream` opens the given fasta
+    file, checks if it is in fasta format and reads the first
+    alignment.  The end of an alignment is reached when a line only
+    contains the newline character.  This object can later be used to
+    parse the whole multiple alignment fasta file.
+
+    The future idea is to provide filters before the file is streamed.
+    Thus, only alignments that fulfill all the given criteria will be
+    returned (yielded).  This feature is NOT implemented yet.  TODO.
+
+    :param str faFileName: File name of the multiple alignment fasta file.
+    :param int maxskip: Only look *maxskip* lines for the start of a
+      sequence (defaults to 50).
+    :param str name: Set the name of the stream to *name*, otherwise
+      set it to the stripped filename.
+
+    :ivar str name: Stream name.
+    :ivar [Seq] seqL: Saved sequences (`Seq` objects) in a list.
+    :ivar int nSpecies: Number of saved sequences / species in the alignment.
+    :ivar str nextHeaderLine: Next header line.
+    :ivar fo fo: File object that points to the start of the data of
+                 the next sequence.
+
+    Please close the associated file object with
+    :func:`FaStream.close` when you don't need it anymore.
+
+    """
+
+    def __init__(self, faFileName, maxskip=50, name=None):
+        """Open a fasta file and initialize :class:`MFaStream`."""
+        def add_instance_variables(name, firstSeqL, nextHL, faFileObject):
+            """Add state objects."""
+            self.name = name
+            self.seqL = firstSeqL
+            self.nSpecies = len(self.seqL)
+            self.nextHeaderLine = nextHL
+            self.fo = faFileObject
+
+        flag = False
+        faFile = sb.gz_open(faFileName)
+        if name is None:
+            name = sb.stripFName(faFileName)
+        # Find the start of the first sequence.
+        for i in range(0, maxskip):
+            line = faFile.readline()
+            if line == '':
+                raise NotAFastaFileError("File contains no data.")
+            if line[0] == '>':
+                # species name found in line
+                flag = True
+                break
+        if flag is False:
+            raise NotAFastaFileError("Didn't find a species header within " +
+                                     maxskip + " lines.")
+        (nextHL, seqL) = read_align_from_fo(line, faFile)
+        try:
+            nextHL = nextHL.rstrip()
+        except:
+            pass
+        add_instance_variables(name, seqL, nextHL, faFile)
+
+    def print_info(self, maxB=50):
+        """Print sequence information.
+
+        Print information about this FaStream object, the fasta
+        sequence stored at the moment the length of the sequence and a
+        maximum of `maxB` bases (defaults to 50).
+
+        """
+        print("Associated file object:", self.fo)
+        print("Next header line:", self.nextHeaderLine)
+        print("Saved Sequences:")
+        for i in range(self.nSpecies):
+            self.seqL[i].print_fa_header()
+            if self.seqL[i].get_rc() is True:
+                print("Sequence is reversed and complemented.")
+            print("Printing", maxB, "out of a total of",
+                  self.seqL[i].dataLen, "bases.")
+            print(self.seqL[i].data[0:maxB])
+        return
+
+    def read_next_align(self):
+        """Read next alignment in fasta file.
+
+        The return value is the name of the newly saved alignment or
+        None if no next alignment is found.
+
+        """
+        if self.nextHeaderLine is None:
+            return None
+        else:
+            (nextHL, self.seqL) = read_align_from_fo(self.nextHeaderLine,
+                                                     self.fo)
+            self.nextHeaderLine = nextHL
+            self.nSpecies = len(self.seqL)
+            return self.seqL[0].name
+
+    def orient(self, firstOnly=False):
+        """Orient all sequences of the alignment to be in forward direction.
+
+        This is rather slow for long sequences.
+
+        :param Boolean firstOnly: If true, orient the first sequence only.
+
+        """
+        if firstOnly is False:
+            l = self.nSpecies
+        elif firstOnly is True:
+            l = 1
+        else:
+            raise ValueError()
+
+        for i in range(l):
+            if self.seqL[i].get_rc() is True:
+                self.seqL[i].rev_comp()
+
+    def close(self):
+        """Close the linked file object."""
         self.fo.close()
 
 
@@ -191,7 +359,7 @@ class FaSeq():
         """
         print("Sequence identifier:", self.name)
         for i in range(0, self.nSpecies):
-            self.seqL[i].print_seq_header()
+            self.seqL[i].print_fa_header()
             print("Printing", maxB, "out of a total of",
                   self.seqL[i].dataLen, "bases.")
             print(self.seqL[i].data[0:maxB])
@@ -242,10 +410,7 @@ def init_seq(faFileName, maxskip=50, name=None):
 
     """
     flag = False
-    if faFileName[-2:] == "gz":
-        faFile = gzip.open(faFileName, mode='rt')
-    else:
-        faFile = open(faFileName)
+    faFile = sb.gz_open(faFileName)
     if name is None:
         name = sb.stripFName(faFileName)
     # Find the start of the first sequence.
@@ -299,10 +464,7 @@ def open_seq(faFileName, maxskip=50, name=None):
     fastaSeq = FaSeq()
 
     flag = False
-    if faFileName[-2:] == "gz":
-        faFile = gzip.open(faFileName, mode='rt')
-    else:
-        faFile = open(faFileName)
+    faFile = sb.gz_open(faFileName)
     if name is not None:
         fastaSeq.name = name
     else:
@@ -435,11 +597,7 @@ def save_as_vcf(faSeq, ref, VCFFileName):
             raise sb.SequenceDataError(
                 "Sequence " + faSeq.seqL[i].name +
                 " has different length than reference.")
-    # initialize VCFFile
-    if VCFFileName[-2:] == "gz":
-        VCFFile = gzip.open(VCFFileName, mode='wt')
-    else:
-        VCFFile = open(VCFFileName, mode='w')
+    VCFFile = sb.gz_open(VCFFileName, mode='w')
     print(vcf.get_header_line_string(faSeq.get_seq_names()), file=VCFFile)
     # loop over bases
     refBase = ''

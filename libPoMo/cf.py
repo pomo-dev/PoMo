@@ -48,7 +48,6 @@ Functions:
 __docformat__ = 'restructuredtext'
 
 import numpy as np
-import gzip
 import pysam as ps
 
 import libPoMo.seqbase as sb
@@ -67,10 +66,14 @@ class CFWriter():
     """Write a counts format file.
 
     Save information that is needed to write a CF file and use this
-    information to write a CF file.  Initialize with a reference fasta
-    file name, a list of vcf file names and an output file name::
+    information to write a CF file.  Initialize with a list of vcf
+    file names and an output file name::
 
-      CFWriter("refFasta", [vcfFileNames], "output")
+      CFWriter([vcfFileNames], "output")
+
+    Before the count file can be written, a reference sequence has to
+    be specified.  A single reference sequence can be set with
+    :class:`set_seq`.
 
     Write a header line to output::
 
@@ -82,9 +85,13 @@ class CFWriter():
        rg = sb.Region("chrom", start, end)
        self.write_Rn(rg)
 
+    If you want to compare the SNPs of the VCF files to a multiple
+    alingment fasta stream (:class:`MFaStream
+    <libPoMo.fasta.MFaStream>`) consider the very convenient function
+    :func:`write_cf_from_MFaStream`.
+
     Remember to close the attached file objectsL with :func:`close`.
 
-    :param str refFileName: Name of reference fasta file.
     :param [str] vcfFileNameL: List with names of vcf files.
     :param str outFileName: Output file name.
     :param int verb: Optional; verbosity.
@@ -110,9 +117,6 @@ class CFWriter():
     :ivar int nV: Number of vcf files.
     :ivar [fo] vcfTfL: List with *pysam.Tabixfile* objects. Filled by
         *self.__init_vcfTfL()* during initialization.
-    :ivar FaStr refFaStr: :class:`FaStream <libPoMo.fasta.FaStream>`
-        object of the reference genome. This might be changed to an
-        *MFaStream* object in the future.
     :ivar fo outFO: File object of the outfile. Filled by
         *self.__init_outFO()* during initialization.
     :ivar cD: List with allele or base counts. The alleles of
@@ -126,6 +130,10 @@ class CFWriter():
         by :func:`write_Rn`.
     :ivar int pos: Current position on chromosome. Set and updated by
         :func:`write_Rn`.
+    :ivar int offset: Value that can be set with :func:`set_offset`,
+                      if the reference sequence does not start at the
+                      1-based position 1 but at the 1-based position
+                      *offset*.
     :ivar indM: Matrix with individuals from vcf files. *self.indM[i]*
         is the list of individuals found in *self.vcfL[i]*.
     :ivar [int] nIndL: List with number of individuals in
@@ -135,16 +143,18 @@ class CFWriter():
     :ivar int nPop: Number of different populations in count format
         output file (e.g. number of populations).  Filled by
         *self.__init_assM()* during initialization.
+    :ivar Seq refSeq: :class:`Seq <libPoMo.seqbase.Seq>` object of the
+        reference Sequence. This has to be set with :class:`set_seq`.
     :ivar int ploidy: Ploidy of individuals in vcf files.  This has to
         be set manually to the correct value for non-diploids!
     :ivar char __splitCh: Character that is used to split the
         individual names.
+    :ivar Boolean __force: If set to true, skip name checks.
 
     """
-    def __init__(self, refFileName, vcfFileNameL, outFileName,
+    def __init__(self, vcfFileNameL, outFileName,
                  verb=None, mergeL=None, nameL=None):
         # Passed variables.
-        self.refFN = refFileName
         self.vcfL = vcfFileNameL
         self.outFN = outFileName
         self.v = verb
@@ -153,18 +163,21 @@ class CFWriter():
         # Variables that are filled during initialization.
         self.nV = len(self.vcfL)
         self.vcfTfL = []
-        self.refFaStr = fa.init_seq(self.refFN)
         self.outFO = None
         self.cD = []
         self.chrom = None
         self.pos = None
+        self.offset = 0
         self.indM = []
         self.nIndL = []
         self.assM = []
         self.nPop = 0
+        # Variables that have to be set manually.
+        self.refSeq = None
         self.ploidy = 2
 
         self.__splitCh = '-'
+        self.__force = False
 
         self.__init_vcfTfL()
         self.__init_outFO()
@@ -193,10 +206,7 @@ class CFWriter():
         compressed and is opened with gzip.open().
 
         """
-        if self.outFN[-2:] == "gz":
-            self.outFO = gzip.open(self.outFN, mode="wt")
-        else:
-            self.outFO = open(self.outFN, mode='w')
+        self.outFO = sb.gz_open(self.outFN, mode='w')
 
     def __init_indM(self):
 
@@ -333,13 +343,12 @@ class CFWriter():
     def __fill_cD(self, iL=None, snpL=None):
         """Fill *self.cF*.
 
-        Fill *self.cF* with data from reference at chromosome *chrom*
-        and position *pos*. Possible SNPs in *slef.vcfL* at this
-        position are considered.
+        Fill *self.cF* with data from reference at chromosome
+        *self.chrom* and position *self.pos*. Possible SNPs in
+        *slef.vcfL* at this position are considered.
 
         :param [int] iL: List with vcf indices of the SNPs in *snpL*,
             must be sorted.
-
         :param [NucBase] snpL: List with :class:`NucBase
             <libPoMo.vcf.NucBase>` SNPs at this position. None, if
             there is no SNP.
@@ -353,9 +362,10 @@ class CFWriter():
         """
         def get_refBase():
             """Get reference base on *chrom* at *pos*."""
-            if self.chrom == self.refFaStr.seq.name:
-                return self.refFaStr.seq.data[self.pos]
+            if (self.__force is True) or (self.chrom == self.refSeq.name):
+                return self.refSeq.data[self.pos]
             else:
+                print(self.__force)
                 raise sb.SequenceDataError("Chromosome name invalid.")
         self.__purge_cD()
         refBase = get_refBase()
@@ -400,7 +410,7 @@ class CFWriter():
         is written 1-based.
 
         """
-        stringL = [self.chrom, str(self.pos + 1)]
+        stringL = [self.chrom, str(self.pos + 1 + self.offset)]
         for data in self.cD:
             stringL.append(','.join(map(str, data)))
         return '\t'.join(stringL)
@@ -410,6 +420,31 @@ class CFWriter():
         strL = ["CHROM", "POS"]
         strL.extend(self.nL)
         return '\t'.join(strL)
+
+    def set_force(self, val):
+        """Sets *self.__force* to *val*.
+
+        :param Boolean val:
+
+        """
+        self.__force = val
+
+    def set_seq(self, seq):
+        "Set the reference sequence."""
+        if (not isinstance(seq, sb.Seq)):
+            raise sb.SequenceDataError("`seq` is not a Seq object.")
+        self.refSeq = seq
+
+    def set_offset(self, offset):
+        """Set the offset of the sequence.
+
+        :param int offset: Value that can be set, if the reference
+                           sequence does not start at the 1-based
+                           position 1 but at the 1-based position
+                           *offset*.
+
+        """
+        self.offset = offset
 
     def __write_Ln(self):
         """Write a line in counts format to *self.outFN*."""
@@ -434,11 +469,11 @@ class CFWriter():
             nI = None
             nSNP = None
 
-        for pos in range(rg.start, rg.end + 1):
+        for rPos in range(rg.start, rg.end + 1):
             snpL = None
             iL = None
             while (nI is not None) or (nSNP is not None):
-                if nSNP.pos - 1 == pos:
+                if nSNP.pos - 1 - self.offset == rPos:
                     if (snpL is None) and (iL is None):
                         snpL = []
                         iL = []
@@ -452,7 +487,7 @@ class CFWriter():
                 else:
                     break
             self.chrom = rg.chrom
-            self.pos = pos
+            self.pos = rPos - self.offset
             try:
                 self.__fill_cD(iL, snpL)
             except sb.NotAValidRefBase:
@@ -467,10 +502,32 @@ class CFWriter():
         self.outFO.close()
 
 
+def write_cf_from_MFaStream(refMFaStr, cfWr):
+    """Write counts file using the given MFaStream and CFWriter.
+
+    Write the counts format file using the first sequences of all
+    alignments in MFaStream.  This is very useful if you e.g. want
+    to compare the VCF files to a CCDC alignment.
+
+    :param FMaStream refMFaStr: The reference :class:`MFaStream
+      <libPoMo.fasta.MFaStream>`.
+    :param CFWriter cfWf: The :class:`CFWriter` object that contains
+      the VCF files.
+
+    """
+    cfWr.set_force(True)
+    while True:
+        refMFaStr.orient(firstOnly=True)
+        rg = refMFaStr.seqL[0].get_region()
+        cfWr.set_seq(refMFaStr.seqL[0])
+        cfWr.set_offset(rg.start)
+        cfWr.write_Rn(rg)
+        if refMFaStr.read_next_align() is None:
+            break
+
+
 ###############################################################################
 ## Deprecated stuff follows.
-
-
 def get_cf_headerline(species):
     """Deprecated. Return a string containing the headerline in counts
     format."""
@@ -660,10 +717,7 @@ def save_as_cf(vcfStrL, refFaStr, CFFileName, verb=False,
         assL.append(ass)
         spDiL.append(dict.fromkeys(collSpecies, None))
 
-    if CFFileName[-2:] == "gz":
-        fo = gzip.open(CFFileName, mode='wt')
-    else:
-        fo = open(CFFileName, mode='w')
+    fo = sb.gz_open(CFFileName, mode='w')
 
     if verb is True:
         print("#Sequence name =", refFaStr.name, file=fo)

@@ -24,15 +24,16 @@ Feel free to post any suggestions, doubts and bugs.
 
 libPoMo
 =======
+
 PoMo comes with a small python package :doc:`libPoMo`. It contains
-several modules that ease the handling of data files in fasta or
-variant call format (vcf).
+several modules that ease the handling and preparation of data files
+in variant call format (vcf), fasta format and counts format (cf).
 
 This documentation mainly focusses on this library. For a general
 introduction to PoMo, please visit `PoMo at github.com
 <https://github.com/fazky/PoMo>`_.
 
-The package is split into the following modules:
+The *libPoMo* package is split into the following modules:
   - :doc:`main <main>`: Contains functions that are used by PoMo.
   - :doc:`seqbase <seqbase>`: Provides basic functions and classes
                     needed to work with sequence data.

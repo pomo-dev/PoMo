@@ -91,7 +91,7 @@ sequence data.</p>
 
 <dl class="class">
 <dt id="libPoMo.seqbase.Region">
-<em class="property">class </em><tt class="descclassname">libPoMo.seqbase.</tt><tt class="descname">Region</tt><big>(</big><em>chrom</em>, <em>start</em>, <em>end</em><big>)</big><a class="reference internal" href="_modules/libPoMo/seqbase.html#Region"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.seqbase.Region" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">libPoMo.seqbase.</tt><tt class="descname">Region</tt><big>(</big><em>chrom</em>, <em>start</em>, <em>end</em>, <em>name=None</em><big>)</big><a class="reference internal" href="_modules/libPoMo/seqbase.html#Region"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.seqbase.Region" title="Permalink to this definition">¶</a></dt>
 <dd><p>Region in a genome.</p>
 <p>The start and end points need to be given 1-based and are
 converted to 0-based positions that are used internally to save
@@ -104,6 +104,7 @@ all positional data.</p>
 <li><strong>chrom</strong> (<em>str</em>) &#8211; Chromosome name.</li>
 <li><strong>start</strong> (<em>int</em>) &#8211; 1-based start position.</li>
 <li><strong>end</strong> (<em>int</em>) &#8211; 1-based end position.</li>
+<li><strong>name</strong> (<em>str</em>) &#8211; Optional, region name.</li>
 </ul>
 </td>
 </tr>
@@ -111,11 +112,18 @@ all positional data.</p>
 <li><strong>chrom</strong> (<em>str</em>) &#8211; Chromosome name.</li>
 <li><strong>start</strong> (<em>int</em>) &#8211; 0-based start position.</li>
 <li><strong>end</strong> (<em>int</em>) &#8211; 0-base end position.</li>
+<li><strong>name</strong> (<em>str</em>) &#8211; Region name.</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
+<dl class="function">
+<dt id="libPoMo.seqbase.Region.print_info">
+<tt class="descname">print_info</tt><big>(</big><em>self</em><big>)</big><a class="headerlink" href="#libPoMo.seqbase.Region.print_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print information about the region.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -133,27 +141,96 @@ name).</li>
 <li><strong>descr</strong> (<em>str</em>) &#8211; Description of the sequence.</li>
 <li><strong>data</strong> (<em>str</em>) &#8211; String with sequence data.</li>
 <li><strong>dataLen</strong> (<em>int</em>) &#8211; Number of saved bases.</li>
+<li><strong>rc</strong> (<em>Boolean</em>) &#8211; True if <em>self.data</em> stores the
+reverse-complement of the real sequence.</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
-<dl class="method">
+<dl class="function">
 <dt id="libPoMo.seqbase.Seq.get_base">
-<tt class="descname">get_base</tt><big>(</big><em>pos</em><big>)</big><a class="reference internal" href="_modules/libPoMo/seqbase.html#Seq.get_base"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.seqbase.Seq.get_base" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_base</tt><big>(</big><em>self</em>, <em>pos</em><big>)</big><a class="reference internal" href="_modules/libPoMo/seqbase.html#Seq.get_base"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.seqbase.Seq.get_base" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns base at 1-based position <cite>pos</cite>.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="libPoMo.seqbase.Seq.print_seq_header">
-<tt class="descname">print_seq_header</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/seqbase.html#Seq.print_seq_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.seqbase.Seq.print_seq_header" title="Permalink to this definition">¶</a></dt>
+<dl class="function">
+<dt id="libPoMo.seqbase.Seq.get_rc">
+<tt class="descname">get_rc</tt><big>(</big><em>self</em><big>)</big><a class="headerlink" href="#libPoMo.seqbase.Seq.get_rc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the sequence is reversed and complemented.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Boolean</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.seqbase.Seq.get_region">
+<tt class="descname">get_region</tt><big>(</big><em>self</em><big>)</big><a class="headerlink" href="#libPoMo.seqbase.Seq.get_region" title="Permalink to this definition">¶</a></dt>
+<dd><p>Try to find the <a class="reference internal" href="#libPoMo.seqbase.Region" title="libPoMo.seqbase.Region"><tt class="xref py py-class docutils literal"><span class="pre">Region</span></tt></a> that the sequence spans.</p>
+<p>The sequence might not physically start at position 1 but at
+some arbitrary value that is indicated in the sequence
+description.  This function gets this physical
+<a class="reference internal" href="#libPoMo.seqbase.Region" title="libPoMo.seqbase.Region"><tt class="xref py py-class docutils literal"><span class="pre">Region</span></tt></a>, if the description of the sequence is of the
+form (cf. <a class="reference external" href="http://genome.ucsc.edu/goldenPath/help/hgTablesHelp.html#FASTA">UCSC Table Browser</a>):</p>
+<div class="highlight-python"><pre>918 0 0 chr1:58954-59871+</pre>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Raises :</th><td class="field-body"><a class="reference internal" href="#libPoMo.seqbase.SequenceDataError" title="libPoMo.seqbase.SequenceDataError"><tt class="xref py py-class docutils literal"><span class="pre">SequenceDataError</span></tt></a>, if format of description
+is invalid.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.seqbase.Seq.print_fa_header">
+<tt class="descname">print_fa_header</tt><big>(</big><em>self</em><big>)</big><a class="headerlink" href="#libPoMo.seqbase.Seq.print_fa_header" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print the sequence header line in fasta format.</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="function">
 <dt id="libPoMo.seqbase.Seq.purge">
-<tt class="descname">purge</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/seqbase.html#Seq.purge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.seqbase.Seq.purge" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">purge</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/libPoMo/seqbase.html#Seq.purge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.seqbase.Seq.purge" title="Permalink to this definition">¶</a></dt>
 <dd><p>Purge data saved in this sequence.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.seqbase.Seq.rev_comp">
+<tt class="descname">rev_comp</tt><big>(</big><em>self</em><big>)</big><a class="headerlink" href="#libPoMo.seqbase.Seq.rev_comp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reverses and complements the sequence.</p>
+<p>This is rather slow for long sequences.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.seqbase.Seq.set_rc">
+<tt class="descname">set_rc</tt><big>(</big><em>self</em><big>)</big><a class="headerlink" href="#libPoMo.seqbase.Seq.set_rc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the <em>self.rc</em>.</p>
+<p>The instance variable <em>self.rc</em> is a Boolean value that is
+true if the saved sequence is reversed and complemented.  This
+function sets this value according to the last character in
+the sequence description.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Raises :</th><td class="field-body"><em>ValueError()</em> if state could not be detected.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.seqbase.Seq.toggle_rc">
+<tt class="descname">toggle_rc</tt><big>(</big><em>self</em><big>)</big><a class="headerlink" href="#libPoMo.seqbase.Seq.toggle_rc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Toggle the state of <em>self.rc</em>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -162,6 +239,24 @@ name).</li>
 <dt id="libPoMo.seqbase.SequenceDataError">
 <em class="property">exception </em><tt class="descclassname">libPoMo.seqbase.</tt><tt class="descname">SequenceDataError</tt><a class="reference internal" href="_modules/libPoMo/seqbase.html#SequenceDataError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.seqbase.SequenceDataError" title="Permalink to this definition">¶</a></dt>
 <dd><p>General sequence data error exception.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.seqbase.gz_open">
+<tt class="descclassname">libPoMo.seqbase.</tt><tt class="descname">gz_open</tt><big>(</big><em>fn</em>, <em>mode='r'</em><big>)</big><a class="headerlink" href="#libPoMo.seqbase.gz_open" title="Permalink to this definition">¶</a></dt>
+<dd><p>Open file with io.open() or gzip.open().</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>fn</strong> (<em>str</em>) &#8211; Name of the file to open.</li>
+<li><strong>md</strong> (<em>char</em>) &#8211; Mode &#8216;<strong>r</strong>&#8216; | &#8216;w&#8217;.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">

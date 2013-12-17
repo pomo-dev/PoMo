@@ -31,7 +31,6 @@ Functions:
 __docformat__ = 'restructuredtext'
 
 import libPoMo.seqbase as sb
-import gzip
 
 
 class NotAVariantCallFormatFileError(sb.SequenceDataError):
@@ -393,10 +392,7 @@ def init_seq(VCFFileName, maxskip=100, name=None):
 
     """
     flag = False
-    if VCFFileName[-2:] == "gz":
-        VCFFile = gzip.open(VCFFileName, mode='rt')
-    else:
-        VCFFile = open(VCFFileName)
+    VCFFile = sb.gz_open(VCFFileName)
     # set the vcf sequence name
     if name is None:
         name = sb.stripFName(VCFFileName)
@@ -442,10 +438,7 @@ def open_seq(VCFFileName, maxskip=100, name=None):
     seq.header = ""
 
     flag = False
-    if VCFFileName[-2:] == "gz":
-        VCFFile = gzip.open(VCFFileName, mode='rt')
-    else:
-        VCFFile = open(VCFFileName)
+    VCFFile = sb.gz_open(VCFFileName)
     # set the vcf sequence name
     if name is not None:
         seq.name = name

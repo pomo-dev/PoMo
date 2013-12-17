@@ -2,7 +2,6 @@
 
 """Test libPoMo.fasta module."""
 
-import os
 import import_libPoMo  # noqa
 import libPoMo.fasta as fa  # noqa
 
@@ -24,7 +23,7 @@ faStr = fa.init_seq(test_sequence)
 faStr.print_info(maxB=None)
 while faStr.read_next_seq() is not None:
     faStr.print_info()
-faStr.close_fo()
+faStr.close()
 
 
 ######################################################################

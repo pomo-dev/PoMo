@@ -105,14 +105,17 @@ format file</li>
 <hr class="docutils" />
 <dl class="class">
 <dt id="libPoMo.cf.CFWriter">
-<em class="property">class </em><tt class="descclassname">libPoMo.cf.</tt><tt class="descname">CFWriter</tt><big>(</big><em>refFileName</em>, <em>vcfFileNameL</em>, <em>outFileName</em>, <em>verb=None</em>, <em>mergeL=None</em>, <em>nameL=None</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">libPoMo.cf.</tt><tt class="descname">CFWriter</tt><big>(</big><em>vcfFileNameL</em>, <em>outFileName</em>, <em>verb=None</em>, <em>mergeL=None</em>, <em>nameL=None</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write a counts format file.</p>
 <p>Save information that is needed to write a CF file and use this
-information to write a CF file.  Initialize with a reference fasta
-file name, a list of vcf file names and an output file name:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">CFWriter</span><span class="p">(</span><span class="s">&quot;refFasta&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">vcfFileNames</span><span class="p">],</span> <span class="s">&quot;output&quot;</span><span class="p">)</span>
+information to write a CF file.  Initialize with a list of vcf
+file names and an output file name:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CFWriter</span><span class="p">([</span><span class="n">vcfFileNames</span><span class="p">],</span> <span class="s">&quot;output&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
+<p>Before the count file can be written, a reference sequence has to
+be specified.  A single reference sequence can be set with
+<a class="reference internal" href="#libPoMo.cf.CFWriter.set_seq" title="libPoMo.cf.CFWriter.set_seq"><tt class="xref py py-class docutils literal"><span class="pre">set_seq</span></tt></a>.</p>
 <p>Write a header line to output:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="bp">self</span><span class="o">.</span><span class="n">write_HLn</span><span class="p">()</span>
 </pre></div>
@@ -123,13 +126,15 @@ file name, a list of vcf file names and an output file name:</p>
 <span class="bp">self</span><span class="o">.</span><span class="n">write_Rn</span><span class="p">(</span><span class="n">rg</span><span class="p">)</span>
 </pre></div>
 </div>
+<p>If you want to compare the SNPs of the VCF files to a multiple
+alingment fasta stream (<a class="reference internal" href="fasta.html#libPoMo.fasta.MFaStream" title="libPoMo.fasta.MFaStream"><tt class="xref py py-class docutils literal"><span class="pre">MFaStream</span></tt></a>) consider the very convenient function
+<a class="reference internal" href="#libPoMo.cf.write_cf_from_MFaStream" title="libPoMo.cf.write_cf_from_MFaStream"><tt class="xref py py-func docutils literal"><span class="pre">write_cf_from_MFaStream()</span></tt></a>.</p>
 <p>Remember to close the attached file objectsL with <a class="reference internal" href="#libPoMo.cf.CFWriter.close" title="libPoMo.cf.CFWriter.close"><tt class="xref py py-func docutils literal"><span class="pre">close()</span></tt></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>refFileName</strong> (<em>str</em>) &#8211; Name of reference fasta file.</li>
 <li><strong>vcfFileNameL</strong> (<em>[str]</em>) &#8211; List with names of vcf files.</li>
 <li><strong>outFileName</strong> (<em>str</em>) &#8211; Output file name.</li>
 <li><strong>verb</strong> (<em>int</em>) &#8211; Optional; verbosity.</li>
@@ -158,9 +163,6 @@ the name of the first individual in <em>vcfL[i]</em> will be used.</li>
 <li><strong>nV</strong> (<em>int</em>) &#8211; Number of vcf files.</li>
 <li><strong>vcfTfL</strong> (<em>[fo]</em>) &#8211; List with <em>pysam.Tabixfile</em> objects. Filled by
 <em>self.__init_vcfTfL()</em> during initialization.</li>
-<li><strong>refFaStr</strong> (<em>FaStr</em>) &#8211; <a class="reference internal" href="fasta.html#libPoMo.fasta.FaStream" title="libPoMo.fasta.FaStream"><tt class="xref py py-class docutils literal"><span class="pre">FaStream</span></tt></a>
-object of the reference genome. This might be changed to an
-<em>MFaStream</em> object in the future.</li>
 <li><strong>outFO</strong> (<em>fo</em>) &#8211; File object of the outfile. Filled by
 <em>self.__init_outFO()</em> during initialization.</li>
 <li><strong>cD</strong> &#8211; List with allele or base counts. The alleles of
@@ -174,6 +176,10 @@ j from <em>self.vcfL[i]</em> such that <em>self.assM[i][j]</em> is <em>p</em>.</
 by <a class="reference internal" href="#libPoMo.cf.CFWriter.write_Rn" title="libPoMo.cf.CFWriter.write_Rn"><tt class="xref py py-func docutils literal"><span class="pre">write_Rn()</span></tt></a>.</li>
 <li><strong>pos</strong> (<em>int</em>) &#8211; Current position on chromosome. Set and updated by
 <a class="reference internal" href="#libPoMo.cf.CFWriter.write_Rn" title="libPoMo.cf.CFWriter.write_Rn"><tt class="xref py py-func docutils literal"><span class="pre">write_Rn()</span></tt></a>.</li>
+<li><strong>offset</strong> (<em>int</em>) &#8211; Value that can be set with <a class="reference internal" href="#libPoMo.cf.CFWriter.set_offset" title="libPoMo.cf.CFWriter.set_offset"><tt class="xref py py-func docutils literal"><span class="pre">set_offset()</span></tt></a>,
+if the reference sequence does not start at the
+1-based position 1 but at the 1-based position
+<em>offset</em>.</li>
 <li><strong>indM</strong> &#8211; Matrix with individuals from vcf files. <em>self.indM[i]</em>
 is the list of individuals found in <em>self.vcfL[i]</em>.</li>
 <li><strong>nIndL</strong> (<em>[int]</em>) &#8211; List with number of individuals in
@@ -183,30 +189,70 @@ the vcf files to the correct <em>self.cd</em> index.  Cf. <em>self.cD</em></li>
 <li><strong>nPop</strong> (<em>int</em>) &#8211; Number of different populations in count format
 output file (e.g. number of populations).  Filled by
 <em>self.__init_assM()</em> during initialization.</li>
+<li><strong>refSeq</strong> (<em>Seq</em>) &#8211; <a class="reference internal" href="seqbase.html#libPoMo.seqbase.Seq" title="libPoMo.seqbase.Seq"><tt class="xref py py-class docutils literal"><span class="pre">Seq</span></tt></a> object of the
+reference Sequence. This has to be set with <a class="reference internal" href="#libPoMo.cf.CFWriter.set_seq" title="libPoMo.cf.CFWriter.set_seq"><tt class="xref py py-class docutils literal"><span class="pre">set_seq</span></tt></a>.</li>
 <li><strong>ploidy</strong> (<em>int</em>) &#8211; Ploidy of individuals in vcf files.  This has to
 be set manually to the correct value for non-diploids!</li>
 <li><strong>__splitCh</strong> (<em>char</em>) &#8211; Character that is used to split the
 individual names.</li>
+<li><strong>__force</strong> (<em>Boolean</em>) &#8211; If set to true, skip name checks.</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
-<dl class="method">
+<dl class="function">
 <dt id="libPoMo.cf.CFWriter.close">
-<tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter.close" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">close</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter.close" title="Permalink to this definition">¶</a></dt>
 <dd><p>Close fileobjects.</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="function">
+<dt id="libPoMo.cf.CFWriter.set_force">
+<tt class="descname">set_force</tt><big>(</big><em>self</em>, <em>val</em><big>)</big><a class="headerlink" href="#libPoMo.cf.CFWriter.set_force" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets <em>self.__force</em> to <em>val</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>val</strong> (<em>Boolean</em>) &#8211; </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.cf.CFWriter.set_offset">
+<tt class="descname">set_offset</tt><big>(</big><em>self</em>, <em>offset</em><big>)</big><a class="headerlink" href="#libPoMo.cf.CFWriter.set_offset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the offset of the sequence.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>offset</strong> (<em>int</em>) &#8211; Value that can be set, if the reference
+sequence does not start at the 1-based
+position 1 but at the 1-based position
+<em>offset</em>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.cf.CFWriter.set_seq">
+<tt class="descname">set_seq</tt><big>(</big><em>self</em>, <em>seq</em><big>)</big><a class="headerlink" href="#libPoMo.cf.CFWriter.set_seq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the reference sequence.</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="libPoMo.cf.CFWriter.write_HLn">
-<tt class="descname">write_HLn</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter.write_HLn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter.write_HLn" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">write_HLn</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter.write_HLn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter.write_HLn" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write the counts format header line to <em>self.outFN</em>.</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="function">
 <dt id="libPoMo.cf.CFWriter.write_Rn">
-<tt class="descname">write_Rn</tt><big>(</big><em>rg</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter.write_Rn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter.write_Rn" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">write_Rn</tt><big>(</big><em>self</em>, <em>rg</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter.write_Rn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter.write_Rn" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write lines in counts format to <em>self.outFN</em>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -330,6 +376,28 @@ summed up.  If <em>nameL[i]</em> is given, the name of the
 summed sequence will be <em>nameL[i]</em>. If not, the name of
 the first individual in <em>vcfStrL[i]</em> will be used.</li>
 <li><strong>nameL</strong> &#8211; A list of names. Cf. <em>mergeL</em>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.cf.write_cf_from_MFaStream">
+<tt class="descclassname">libPoMo.cf.</tt><tt class="descname">write_cf_from_MFaStream</tt><big>(</big><em>refMFaStr</em>, <em>cfWr</em><big>)</big><a class="headerlink" href="#libPoMo.cf.write_cf_from_MFaStream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write counts file using the given MFaStream and CFWriter.</p>
+<p>Write the counts format file using the first sequences of all
+alignments in MFaStream.  This is very useful if you e.g. want
+to compare the VCF files to a CCDC alignment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>refMFaStr</strong> (<em>FMaStream</em>) &#8211; The reference <a class="reference internal" href="fasta.html#libPoMo.fasta.MFaStream" title="libPoMo.fasta.MFaStream"><tt class="xref py py-class docutils literal"><span class="pre">MFaStream</span></tt></a>.</li>
+<li><strong>cfWf</strong> (<em>CFWriter</em>) &#8211; The <a class="reference internal" href="#libPoMo.cf.CFWriter" title="libPoMo.cf.CFWriter"><tt class="xref py py-class docutils literal"><span class="pre">CFWriter</span></tt></a> object that contains
+the VCF files.</li>
 </ul>
 </td>
 </tr>

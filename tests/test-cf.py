@@ -33,7 +33,7 @@ if saveAsCfSingleChrom is True:
     with open(fn) as file:
         for line in file:
             print(line, end='')
-    vcfStr.close_fo()
+    vcfStr.close()
     os.remove(fn)
 ######################################################################
 if saveAsCfMultChrom is True:
@@ -49,8 +49,8 @@ if saveAsCfMultChrom is True:
     with open(fnStr) as file:
         for line in file:
             print(line, end='')
-    vcfStr.close_fo()
-    refFaStr.close_fo()
+    vcfStr.close()
+    refFaStr.close()
     os.remove(fnStr)
 ######################################################################
 if vcfWithError is True:
@@ -66,8 +66,8 @@ if vcfWithError is True:
     with open(fnStr) as file:
         for line in file:
             print(line, end='')
-    vcfStr.close_fo()
-    refFaStr.close_fo()
+    vcfStr.close()
+    refFaStr.close()
     os.remove(fnStr)
 ######################################################################
 if gzipped is True:
@@ -83,8 +83,8 @@ if gzipped is True:
     with open(fnStr) as file:
         for line in file:
             print(line, end='')
-    vcfStr.close_fo()
-    refFaStr.close_fo()
+    vcfStr.close()
+    refFaStr.close()
     os.remove(fnStr)
 ######################################################################
 if multiVCF is True:
@@ -102,9 +102,9 @@ if multiVCF is True:
     with open(fnStr) as file:
         for line in file:
             print(line, end='')
-    vcfStr1.close_fo()
-    vcfStr2.close_fo()
-    refFaStr.close_fo()
+    vcfStr1.close()
+    vcfStr2.close()
+    refFaStr.close()
     os.remove(fnStr)
 ######################################################################
 if unrelated is True:
@@ -123,9 +123,9 @@ if unrelated is True:
     with open(fnStr) as file:
         for line in file:
             print(line, end='')
-    vcfStr1.close_fo()
-    vcfStr2.close_fo()
-    refFaStr.close_fo()
+    vcfStr1.close()
+    vcfStr2.close()
+    refFaStr.close()
     os.remove(fnStr)
 ######################################################################
 if largeFile is True:
@@ -137,5 +137,5 @@ if largeFile is True:
     vcfStr = vcf.init_seq(vcf_sequence, name="homoChr1")
     refFaStr = fa.init_seq(ref_sequence, name="homoChr1")
     cf.save_as_cf([vcfStr], refFaStr, fnStr, addL=[True], nameL=['homoChr1'])
-    vcfStr.close_fo()
-    refFaStr.close_fo()
+    vcfStr.close()
+    refFaStr.close()

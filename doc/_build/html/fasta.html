@@ -66,6 +66,7 @@
 <dt>Classes:</dt>
 <dd><ul class="first last simple">
 <li><a class="reference internal" href="#libPoMo.fasta.FaStream" title="libPoMo.fasta.FaStream"><tt class="xref py py-class docutils literal"><span class="pre">FaStream</span></tt></a>, fasta file sequence stream object</li>
+<li><tt class="xref py py-class docutils literal"><span class="pre">MFaStrea</span></tt>, multiple alignment fasta file sequence stream object</li>
 <li><a class="reference internal" href="#libPoMo.fasta.FaSeq" title="libPoMo.fasta.FaSeq"><tt class="xref py py-class docutils literal"><span class="pre">FaSeq</span></tt></a>, fasta file sequence object</li>
 </ul>
 </dd>
@@ -76,7 +77,8 @@
 </dd>
 <dt>Functions:</dt>
 <dd><ul class="first last simple">
-<li><a class="reference internal" href="#libPoMo.fasta.read_seq_from_fo" title="libPoMo.fasta.read_seq_from_fo"><tt class="xref py py-func docutils literal"><span class="pre">read_seq_from_fo()</span></tt></a>, read a single fasta sequence</li>
+<li><a class="reference internal" href="#libPoMo.fasta.read_seq_from_fo" title="libPoMo.fasta.read_seq_from_fo"><tt class="xref py py-func docutils literal"><span class="pre">read_seq_from_fo()</span></tt></a>, read a single sequence from file object</li>
+<li><a class="reference internal" href="#libPoMo.fasta.read_align_from_fo" title="libPoMo.fasta.read_align_from_fo"><tt class="xref py py-func docutils literal"><span class="pre">read_align_from_fo()</span></tt></a>, read an alignment from file object</li>
 <li><a class="reference internal" href="#libPoMo.fasta.init_seq" title="libPoMo.fasta.init_seq"><tt class="xref py py-func docutils literal"><span class="pre">init_seq()</span></tt></a>, initialize fasta sequence stream from file</li>
 <li><a class="reference internal" href="#libPoMo.fasta.open_seq" title="libPoMo.fasta.open_seq"><tt class="xref py py-func docutils literal"><span class="pre">open_seq()</span></tt></a>, open fasta file</li>
 <li><a class="reference internal" href="#libPoMo.fasta.save_as_vcf" title="libPoMo.fasta.save_as_vcf"><tt class="xref py py-func docutils literal"><span class="pre">save_as_vcf()</span></tt></a>, save a given <a class="reference internal" href="#libPoMo.fasta.FaSeq" title="libPoMo.fasta.FaSeq"><tt class="xref py py-class docutils literal"><span class="pre">FaSeq</span></tt></a> in variant call
@@ -190,6 +192,90 @@ no next sequence is found.</p>
 
 </dd></dl>
 
+<dl class="class">
+<dt id="libPoMo.fasta.MFaStream">
+<em class="property">class </em><tt class="descclassname">libPoMo.fasta.</tt><tt class="descname">MFaStream</tt><big>(</big><em>faFileName</em>, <em>maxskip=50</em>, <em>name=None</em><big>)</big><a class="headerlink" href="#libPoMo.fasta.MFaStream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Store a multiplealignment fasta file sequence stream.</p>
+<p>The sequences of one gene / alignment are saved for all species /
+individuals / chromosomes.  Functions are provided to read in the
+next gene / alignment in the file that fulfills the given
+criteria, if there is any.  This saves memory if files are huge and
+doesn&#8217;t increase runtime.</p>
+<p>Initialization of an <a class="reference internal" href="#libPoMo.fasta.MFaStream" title="libPoMo.fasta.MFaStream"><tt class="xref py py-class docutils literal"><span class="pre">MFaStream</span></tt></a> opens the given fasta
+file, checks if it is in fasta format and reads the first
+alignment.  The end of an alignment is reached when a line only
+contains the newline character.  This object can later be used to
+parse the whole multiple alignment fasta file.</p>
+<p>The future idea is to provide filters before the file is streamed.
+Thus, only alignments that fulfill all the given criteria will be
+returned (yielded).  This feature is NOT implemented yet.  TODO.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>faFileName</strong> (<em>str</em>) &#8211; File name of the multiple alignment fasta file.</li>
+<li><strong>maxskip</strong> (<em>int</em>) &#8211; Only look <em>maxskip</em> lines for the start of a
+sequence (defaults to 50).</li>
+<li><strong>name</strong> (<em>str</em>) &#8211; Set the name of the stream to <em>name</em>, otherwise
+set it to the stripped filename.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) &#8211; Stream name.</li>
+<li><strong>seqL</strong> (<em>[Seq]</em>) &#8211; Saved sequences (<cite>Seq</cite> objects) in a list.</li>
+<li><strong>nSpecies</strong> (<em>int</em>) &#8211; Number of saved sequences / species in the alignment.</li>
+<li><strong>nextHeaderLine</strong> (<em>str</em>) &#8211; Next header line.</li>
+<li><strong>fo</strong> (<em>fo</em>) &#8211; File object that points to the start of the data of
+the next sequence.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Please close the associated file object with
+<a class="reference internal" href="#libPoMo.fasta.FaStream.close" title="libPoMo.fasta.FaStream.close"><tt class="xref py py-func docutils literal"><span class="pre">FaStream.close()</span></tt></a> when you don&#8217;t need it anymore.</p>
+<dl class="method">
+<dt id="libPoMo.fasta.MFaStream.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#libPoMo.fasta.MFaStream.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close the linked file object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="libPoMo.fasta.MFaStream.orient">
+<tt class="descname">orient</tt><big>(</big><em>firstOnly=False</em><big>)</big><a class="headerlink" href="#libPoMo.fasta.MFaStream.orient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Orient all sequences of the alignment to be in forward direction.</p>
+<p>This is rather slow for long sequences.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>firstOnly</strong> (<em>Boolean</em>) &#8211; If true, orient the first sequence only.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="libPoMo.fasta.MFaStream.print_info">
+<tt class="descname">print_info</tt><big>(</big><em>maxB=50</em><big>)</big><a class="headerlink" href="#libPoMo.fasta.MFaStream.print_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print sequence information.</p>
+<p>Print information about this FaStream object, the fasta
+sequence stored at the moment the length of the sequence and a
+maximum of <cite>maxB</cite> bases (defaults to 50).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="libPoMo.fasta.MFaStream.read_next_align">
+<tt class="descname">read_next_align</tt><big>(</big><big>)</big><a class="headerlink" href="#libPoMo.fasta.MFaStream.read_next_align" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read next alignment in fasta file.</p>
+<p>The return value is the name of the newly saved alignment or
+None if no next alignment is found.</p>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="exception">
 <dt id="libPoMo.fasta.NotAFastaFileError">
 <em class="property">exception </em><tt class="descclassname">libPoMo.fasta.</tt><tt class="descname">NotAFastaFileError</tt><a class="reference internal" href="_modules/libPoMo/fasta.html#NotAFastaFileError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.NotAFastaFileError" title="Permalink to this definition">¶</a></dt>
@@ -249,8 +335,34 @@ set it to the stripped filename.</li>
 </dd></dl>
 
 <dl class="function">
+<dt id="libPoMo.fasta.read_align_from_fo">
+<tt class="descclassname">libPoMo.fasta.</tt><tt class="descname">read_align_from_fo</tt><big>(</big><em>line</em>, <em>fo</em><big>)</big><a class="headerlink" href="#libPoMo.fasta.read_align_from_fo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a single fasta alignment.</p>
+<p>Read a single fasta alignment from file object <em>fo</em> and save it to
+new <a class="reference internal" href="seqbase.html#libPoMo.seqbase.Seq" title="libPoMo.seqbase.Seq"><tt class="xref py py-class docutils literal"><span class="pre">Seq</span></tt></a> sequence objects.  Return
+the header line of the next fasta alignment and the newly created
+sequences in a list.  If no new alignment is found, the next header
+line will be set to None.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>line</strong> (<em>str</em>) &#8211; Header line of the sequence.</li>
+<li><strong>fo</strong> (<em>fo</em>) &#8211; File object of the fasta file.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(str, [Seq])</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="libPoMo.fasta.read_seq_from_fo">
-<tt class="descclassname">libPoMo.fasta.</tt><tt class="descname">read_seq_from_fo</tt><big>(</big><em>line</em>, <em>fo</em><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#read_seq_from_fo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.read_seq_from_fo" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">libPoMo.fasta.</tt><tt class="descname">read_seq_from_fo</tt><big>(</big><em>line</em>, <em>fo</em>, <em>getAlignEndFlag=False</em><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#read_seq_from_fo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.read_seq_from_fo" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read a single fasta sequence.</p>
 <p>Read a single fasta sequence from file object <em>fo</em> and save it to
 a new <a class="reference internal" href="seqbase.html#libPoMo.seqbase.Seq" title="libPoMo.seqbase.Seq"><tt class="xref py py-class docutils literal"><span class="pre">Seq</span></tt></a> sequence object. Return
@@ -264,10 +376,12 @@ be set to None.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>line</strong> (<em>str</em>) &#8211; Header line of the sequence.</li>
 <li><strong>fo</strong> (<em>fo</em>) &#8211; File object of the fasta file.</li>
+<li><strong>getAlignFlag</strong> (<em>Boolean</em>) &#8211; If true, an additional Boolean value
+that specifies if an alignment ends, is returned.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(str, Seq)</p>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(str, Seq) | (str, Seq, Boolean)</p>
 </td>
 </tr>
 </tbody>
