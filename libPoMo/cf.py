@@ -473,7 +473,7 @@ class CFWriter():
             snpL = None
             iL = None
             while (nI is not None) or (nSNP is not None):
-                if nSNP.pos - 1 - self.offset == rPos:
+                if nSNP.pos - 1 == rPos:
                     if (snpL is None) and (iL is None):
                         snpL = []
                         iL = []
