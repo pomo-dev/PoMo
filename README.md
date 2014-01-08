@@ -33,11 +33,11 @@ cmake ./
 make MP2
 ```
 
-PoMo uses the following libraries:
+PoMo uses the following libraries, that need to be installed
+separately:
 - [scipy](http://www.scipy.org/)
 - [numpy](http://www.numpy.org/)
 - [pysam](http://code.google.com/p/pysam/)
-They need to be installed separately.
 
 
 Running PoMo

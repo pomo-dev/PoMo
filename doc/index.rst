@@ -34,15 +34,16 @@ introduction to PoMo, please visit `PoMo at github.com
 <https://github.com/fazky/PoMo>`_.
 
 The *libPoMo* package is split into the following modules:
-  - :doc:`main <main>`: Contains functions that are used by PoMo.
-  - :doc:`seqbase <seqbase>`: Provides basic functions and classes
-                    needed to work with sequence data.
-  - :doc:`fasta <fasta>`: Provides functions to read, write and access
-                  fasta files.
-  - :doc:`vcf <vcf>`: Provides functions to read, write and access vcf
-                      files.
-  - :doc:`cf <cf>`: Provides functions to read, write and access files
-                    that are in counts format.
+
+- :doc:`main <main>`: Contains functions that are used by PoMo.
+- :doc:`seqbase <seqbase>`: Provides basic functions and classes
+  needed to work with sequence data.
+- :doc:`fasta <fasta>`: Provides functions to read, write and access
+  fasta files.
+- :doc:`vcf <vcf>`: Provides functions to read, write and access vcf
+  files.
+- :doc:`cf <cf>`: Provides functions to read, write and access files
+  that are in counts format.
 
 Contents:
 =========
