@@ -29,6 +29,28 @@ It contains:
   .
   chrE  \t end   \t 0,0,0,1 \t 0,1,0,0    \t 0,1,0,0  \t 0,5,0,0 \t 0,0,1,0
 
+Convert to Counts Format
+------------------------
+
+To convert a fasta reference file with SNP information from a variant
+call format (VCF) to counts format use the :class:`CFWriter` together
+with the convenience function :func:`write_cf_from_MFaStream()`. A
+code example is::
+
+  import import_libPoMo
+  import libPoMo.fasta as fa
+  import libPoMo.cf as cf
+
+  vcfFL = ["/path/to/vcf/file1", "/path/to/vcf/file2", "..."]
+
+  cfw = cf.CFWriter(vcfFL, "name-of-outfile")
+  mFaStr = fa.MFaStream("/path/to/fasta/reference")
+
+  cfw.write_HLn()
+  cf.write_cf_from_MFaStream(mFaStr, cfw)
+
+  cfw.close()
+
 Objects
 -------
 Classes:
@@ -38,8 +60,8 @@ Exception Classes:
   - :class:`CountsFormatWriterError`
 
 Functions:
-  - :func:`save_as_cf()`, deprecated; save given sequences to a counts
-    format file
+  - :func:`write_cf_from_MFaStream()`, write counts file using the
+    given MFaStream and CFWriter
 
 ----
 
