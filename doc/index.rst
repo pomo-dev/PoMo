@@ -9,10 +9,13 @@ Welcome to PoMo's documentation!
 Implementation of a polymorphism aware phylogenetic model using HYPHY.
 
 Created by:
-  - Nicola De Maio
+
+* Nicola De Maio
+
 Contributors:
-  - Carolin Kosiol 
-  - Dominik Schrempf
+
+* Carolin Kosiol 
+* Dominik Schrempf
 
 For a reference, please see and cite: De Maio, Schlotterer, Kosiol
 (MBE, 2013), and/or: De Maio, Kosiol (in preparation). You can use
@@ -35,14 +38,14 @@ introduction to PoMo, please visit `PoMo at github.com
 
 The *libPoMo* package is split into the following modules:
 
-- :doc:`main <main>`: Contains functions that are used by PoMo.
-- :doc:`seqbase <seqbase>`: Provides basic functions and classes
+* :doc:`main <main>`: Contains functions that are used by PoMo.
+* :doc:`seqbase <seqbase>`: Provides basic functions and classes
   needed to work with sequence data.
-- :doc:`fasta <fasta>`: Provides functions to read, write and access
+* :doc:`fasta <fasta>`: Provides functions to read, write and access
   fasta files.
-- :doc:`vcf <vcf>`: Provides functions to read, write and access vcf
+* :doc:`vcf <vcf>`: Provides functions to read, write and access vcf
   files.
-- :doc:`cf <cf>`: Provides functions to read, write and access files
+* :doc:`cf <cf>`: Provides functions to read, write and access files
   that are in counts format.
 
 Contents:
