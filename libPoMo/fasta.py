@@ -206,7 +206,7 @@ def read_align_from_fo(line, fo):
 
 
 class MFaStream():
-    """Store a multiplealignment fasta file sequence stream.
+    """Store a multiple alignment fasta file sequence stream.
 
     The sequences of one gene / alignment are saved for all species /
     individuals / chromosomes.  Functions are provided to read in the

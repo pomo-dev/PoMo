@@ -33,9 +33,16 @@ Convert to Counts Format
 ------------------------
 
 To convert a fasta reference file with SNP information from a variant
-call format (VCF) to counts format use the :class:`CFWriter` together
-with the convenience function :func:`write_cf_from_MFaStream()`. A
-code example is::
+call format (VCF) to counts format use the :class:`CFWriter`. If you
+want to convert a multiple alignment fasta file, use the
+:class:`CFWriter` together with the convenience function
+:func:`write_cf_from_MFaStream()`.
+
+Tabix index files need to be provided for all VCF files. They can be
+created from the terminal with $(tabix -p vcf "vcf-file.vcf.gz") if
+tabix is installed.
+
+A code example is::
 
   import import_libPoMo
   import libPoMo.fasta as fa
@@ -93,6 +100,10 @@ class CFWriter():
 
       CFWriter([vcfFileNames], "output")
 
+    Tabix index files need to be provided for all VCF files. They can
+    be created from the terminal with $(tabix -p vcf
+    "vcf-file.vcf.gz") if tabix is installed.
+
     Before the count file can be written, a reference sequence has to
     be specified.  A single reference sequence can be set with
     :class:`set_seq`.
@@ -112,11 +123,19 @@ class CFWriter():
     <libPoMo.fasta.MFaStream>`) consider the very convenient function
     :func:`write_cf_from_MFaStream`.
 
+    To determine the different populations present in the VCF files,
+    the names of the individuals will be cropped at a specific char
+    that can be set at initialization (standard value = '-'). It is
+    also possible to collapse all individuals of determined VCF files
+    to a single population (cf. mergeL and nameL).
+
     Remember to close the attached file objectsL with :func:`close`.
 
     :param [str] vcfFileNameL: List with names of vcf files.
     :param str outFileName: Output file name.
     :param int verb: Optional; verbosity.
+    :param char splitChar: Optional; set the split character so that
+      the individuals get sorted into the correct populations.
     :param [Boolean] mergeL: Optional; a list of truth values.  If
       *mL[i]* is True, all individuals of *self.vcfL[i]* are treated as
       one population orspecies independent of their name.  The
@@ -169,13 +188,13 @@ class CFWriter():
         reference Sequence. This has to be set with :class:`set_seq`.
     :ivar int ploidy: Ploidy of individuals in vcf files.  This has to
         be set manually to the correct value for non-diploids!
-    :ivar char __splitCh: Character that is used to split the
+    :ivar char splitCh: Character that is used to split the
         individual names.
     :ivar Boolean __force: If set to true, skip name checks.
 
     """
-    def __init__(self, vcfFileNameL, outFileName,
-                 verb=None, mergeL=None, nameL=None):
+    def __init__(self, vcfFileNameL, outFileName, verb=None,
+                 splitChar='-', mergeL=None, nameL=None):
         # Passed variables.
         self.vcfL = vcfFileNameL
         self.outFN = outFileName
@@ -197,8 +216,8 @@ class CFWriter():
         # Variables that have to be set manually.
         self.refSeq = None
         self.ploidy = 2
+        self.splitCh = splitChar
 
-        self.__splitCh = '-'
         self.__force = False
 
         self.__init_vcfTfL()
@@ -260,7 +279,7 @@ class CFWriter():
             Returns new offset.
 
             """
-            l = [e.rsplit(self.__splitCh, maxsplit=1)[0]
+            l = [e.rsplit(self.splitCh, maxsplit=1)[0]
                  for e in self.indM[n]]
             aL = []
             cL = [l[0]]
@@ -303,7 +322,7 @@ class CFWriter():
                 except IndexError:
                     self.nL.append(
                         self.indM[i][j].rsplit(
-                            self.__splitCh, maxsplit=1)[0])
+                            self.splitCh, maxsplit=1)[0])
 
         if self.nL is None:
             self.nL = []
@@ -375,19 +394,27 @@ class CFWriter():
             <libPoMo.vcf.NucBase>` SNPs at this position. None, if
             there is no SNP.
         :raises: :class:`NotAValidRefBase
-            <libPoMo.seqbase.NotAValidRefBase>`.
+            <libPoMo.seqbase.NotAValidRefBase>`,
+            :class:`SequenceDataError
+            <libPoMo.seqbase.SequenceDataError>`
 
-        Raises the excpetion :class:`NotAValidRefBae
-        <libPoMo.seqbase.NotAValidRefBase>` if the reference base is
-        not valid (e.g. N).
+        :class:`NotAValidRefBae <libPoMo.seqbase.NotAValidRefBase>` is
+        raised if the reference base is not valid (e.g. N).
+
+        :class:`SequenceDataError <libPoMo.seqbase.SequenceDataError>`
+        is raised if the chromosome names do not match.
 
         """
+        if snpL is not None:
+            for s in snpL:
+                s.print_info()
+
         def get_refBase():
             """Get reference base on *chrom* at *pos*."""
-            if (self.__force is True) or (self.chrom == self.refSeq.name):
+            if (self.__force is True) or \
+               (self.chrom == self.refSeq.get_region().chrom):
                 return self.refSeq.data[self.pos]
             else:
-                print(self.__force)
                 raise sb.SequenceDataError("Chromosome name invalid.")
         self.__purge_cD()
         refBase = get_refBase()
@@ -537,7 +564,7 @@ def write_cf_from_MFaStream(refMFaStr, cfWr):
       the VCF files.
 
     """
-    cfWr.set_force(True)
+    ## cfWr.set_force(True)
     while True:
         refMFaStr.orient(firstOnly=True)
         rg = refMFaStr.seqL[0].get_region()
