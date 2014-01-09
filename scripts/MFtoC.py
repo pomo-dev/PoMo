@@ -12,26 +12,27 @@ analysis).
 """
 
 import argparse
-import import_libPoMo  # noqa
 import libPoMo.fasta as fa
 import libPoMo.cf as cf  # noqa
 
-descr = """convertVCF script version 1.0
+descr = """Convert multiple sequence alignments to counts format.
 
 This script converts the alignments given in a multiple sequence
-alignment file to counts format.  It uses the SNP data from variant
-call format files.  The SNP data will be merged with the reference
-genome to create a complete sequence that contains SNPs as well as
-unchanged bases (which are also informative for phylogenetic
-analysis).
+alignment file to counts format.  It uses the SNP data from bgzipped
+variant call format files that need to be aligned to the reference
+used in the multiple sequence alignment file.  The SNP data will be
+merged with the reference genome to create a complete sequence that
+contains SNPs as well as unchanged bases (which are also informative
+for phylogenetic analysis).
 
-Tabix index files need to be provided for all VCF files. They can be
-created from the terminal with $(tabix -p vcf "vcf-file.vcf.gz") if
-tabix is installed.
+To speed up data conversion, tabix index files need to be provided for
+all VCF files. They can be created from the terminal with $(tabix -p
+vcf "vcf-file.vcf.gz") if tabix is installed.  The files to be indexed
+have to be zipped with bgzip.
 
-The chromosome names given in the multiple alignment reference
-(cf. CCDS alignments from UCSC) have to match a chromosome name of the
-VCF file.
+In order to correctly match the SNPs to the reference, the chromosome
+names given in the multiple alignment reference (cf. CCDS alignments
+from UCSC) have to match the chromosome names of the VCF file.
 
 The command line argument -m collapses all individuals of all VCF
 files so that they are represented by a single population for each VCF
@@ -43,7 +44,6 @@ The input as well as the output files can additionally be gzipped
 """
 
 parser = argparse.ArgumentParser(
-    prog="convertVCF",
     formatter_class=argparse.RawDescriptionHelpFormatter,
     description=descr)
 
@@ -58,15 +58,18 @@ parser.add_argument("-m", "--merge", action="count",
 args = parser.parse_args()
 
 MFaRefFN = args.reference
-vcfFL = args.VCFFiles
+vcfFnL = args.VCFFiles
 output = args.output
 
 if args.merge is None:
-    cfw = cf.CFWriter(vcfFL, output)
+    cfw = cf.CFWriter(vcfFnL, output)
 else:
-    l = len(vcfFL)
-    mergeList = [True for v in vcfFL]
-    cfw = cf.CFWriter(vcfFL, output, mergeL=mergeList)
+    mergeList = []
+    nameList = []
+    for fn in vcfFnL:
+        mergeList.append(True)
+        nameList.append(fn.split('.', maxsplit=1)[0])
+    cfw = cf.CFWriter(vcfFnL, output, mergeL=mergeList, nameL=nameList)
 
 mFaStr = fa.MFaStream(MFaRefFN)
 

@@ -2,7 +2,6 @@
 
 """Test libPoMo.fasta module."""
 
-import import_libPoMo  # noqa
 import libPoMo.fasta as fa  # noqa
 
 

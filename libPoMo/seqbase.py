@@ -67,8 +67,8 @@ class Region():
         if self.name is not None:
             print("Region name:", self.name)
         print("Chromosome name:", self.chrom)
-        print("1-based start position:", self.start)
-        print("1-based end position:", self.end)
+        print("0-based start position:", self.start)
+        print("0-based end position:", self.end)
 
 
 class Seq:
@@ -187,7 +187,29 @@ class Seq:
         rg = Region(chromName, start, end, name=self.name)
         return rg
 
+    def get_region_no_description(self, offset=0):
+        """Get the region of the sequence.
+
+        If no regional information is available in the sequence
+        description (cf. :func:`get_region`), the position of the
+        first base in the reference genome can be given
+        manually. E.g., if the first base of the sequence does not
+        correspond to the first but to the 11th base of the reference
+        sequence, the offset should be 10.
+
+        The name of the chromosome will be set to the name of the
+        sequence.
+
+        :param int offset: Optional, offset of the sequence.
+
+        """
+        chromName = self.name
+        start = offset + 1
+        end = offset + self.dataLen
+        return Region(chromName, start, end)
+
     def purge(self):
+
         """Purge data saved in this sequence."""
         self.name = ''
         self.descr = ''

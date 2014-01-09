@@ -33,11 +33,12 @@ cmake ./
 make MP2
 ```
 
-PoMo uses the following libraries, that need to be installed
-separately:
-- [scipy](http://www.scipy.org/)
-- [numpy](http://www.numpy.org/)
-- [pysam](http://code.google.com/p/pysam/)
+PoMo uses [scipy](http://www.scipy.org/) that needs to be installed
+separately.
+
+If you want to use libPoMo, please also install
+[numpy](http://www.numpy.org/) and
+[pysam](http://code.google.com/p/pysam/).
 
 
 Running PoMo
@@ -51,8 +52,8 @@ The data file must either be in fasta format, or in allele count format (see
 example files in `./sample-data/`).
 
 If your dataset is called "data.txt" the final output of PoMo will be
-called "data_PoMo_output.txt", and contains the log-likelihood, the
-parameters estimated, and the species tree estimated. The output will
+called "data_PoMo_output.txt". It will contain the log-likelihood, the
+estimated parameters, and the estimated species tree. The output will
 be placed in the folder that you run PoMo from.
 
 
@@ -66,8 +67,14 @@ help message about the different flags that are available.
 File Conversion
 ====
 Various scripts for file conversion are provided in the folder
-`./scripts/`. TODO
+`./scripts/`. Run `python scriptXY.py --help` for detailed help
+messages. These scripts use `libPoMo` that has to be in the python
+path.
 
+* FtoV.py: Convert a fasta file to variant call format.
+* FtoC.py: Convert a fasta file with VCF files to counts format.
+* MFtoC.py: Convert multiple sequence alignments with VCF files to
+  counts format.
 
 Notes
 ====

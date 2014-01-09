@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
-"""Test libPoMo.countsformat module."""
+"""Deprecated. Test libPoMo.cf module."""
 
 import os
-import import_libPoMo  # noqa
 import libPoMo.cf as cf  # noqa
 import libPoMo.vcf as vcf
 import libPoMo.fasta as fa
 
+print("Deprecated. Use CFWriter instead.")
 
 saveAsCfSingleChrom = False
 saveAsCfMultChrom = True

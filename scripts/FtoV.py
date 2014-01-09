@@ -10,7 +10,6 @@ will be used as reference.
 """
 
 import argparse
-import import_libPoMo  # noqa
 import libPoMo.fasta as fa  # noqa
 import libPoMo.vcf as vcf  # noqa
 

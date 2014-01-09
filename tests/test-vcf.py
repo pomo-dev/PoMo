@@ -2,7 +2,6 @@
 
 """Test libPoMo.fasta module."""
 
-import import_libPoMo  # noqa
 import libPoMo.vcf as vcf  # noqa
 # import time
 
@@ -34,7 +33,7 @@ seqS.print_info()
 print("Read next base.")
 seqS.read_next_base()
 seqS.print_info()
-seqS.close_fo()
+seqS.close()
 
 ######################################################################
 # print("\n##################################################")
@@ -51,5 +50,5 @@ seqS.close_fo()
 # i = 0
 # for i in range(0, 1000000):
 #     seqS.read_next_base()
-# seqS.close_fo()
+# seqS.close()
 # print("Runtime:", time.clock())

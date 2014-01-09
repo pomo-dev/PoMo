@@ -5,7 +5,7 @@ usage: PoMo [-h] [-m {0,1}] [-u MM] [-s SM] [-g GM] [-f GS] [-d DS_RATIO] [-v]
 PoMo10 script version 1.0.2
 
 positional arguments:
-  hyphy_bin             Absolute path of the HYPHY binary used to maximize the
+  hyphy_bin             Path of the HYPHY binary used to maximize the
                         likelihood.
   file                  Name of the fasta file containing the alignment. Each
                         individual's name must be species_n where "species" is
