@@ -73,9 +73,12 @@ args = parser.parse_args()
 fastaRef = args.reference
 vcfFnL = args.VCFFiles
 output = args.output
-ploidy = args.ploidy[0]
 offset = args.offset
 vb = args.verbosity
+if args.ploidy is not None:
+    ploidy = args.ploidy[0]
+else:
+    ploidy = None
 
 if args.merge is None:
     cfw = cf.CFWriter(vcfFnL, output, verb=vb)

@@ -145,6 +145,14 @@ class NucBase():
         print('\t'.join(self.speciesData))
         return
 
+    def get_ref_base(self):
+        """Return reference base.
+
+        :rtype: char
+
+        """
+        return self.ref
+
     def get_alt_base_list(self):
         """Return alternative bases as a list."""
         altBases = [b.lower() for b in self.alt.split(',')]
