@@ -71,10 +71,11 @@ Various scripts for file conversion are provided in the folder
 messages. These scripts use `libPoMo` that has to be in the python
 path.
 
-* FtoV.py: Convert a fasta file to variant call format.
-* FtoC.py: Convert a fasta file with VCF files to counts format.
-* MFtoC.py: Convert multiple sequence alignments with VCF files to
-  counts format.
+* FastaToVCF.py: Convert a fasta file to variant call format.
+* FastaToCounts.py: Convert a fasta file with VCF files to counts
+  format.
+* MSAToCounts.py: Convert multiple sequence alignments with VCF files
+  to counts format.
 
 Notes
 ====

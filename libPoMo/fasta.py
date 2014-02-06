@@ -9,7 +9,7 @@ Objects
 -------
 Classes:
   - :class:`FaStream`, fasta file sequence stream object
-  - :class:`MFaStrea`, multiple alignment fasta file sequence stream object
+  - :class:`MFaStream`, multiple alignment fasta file sequence stream object
   - :class:`FaSeq`, fasta file sequence object
 
 Exception Classes:
@@ -89,17 +89,17 @@ def read_seq_from_fo(line, fo, getAlignEndFlag=False):
         alignEndFl = False
         for line in fo:
             if line == '\n':
-                # newline found, end of alignment
+                # Newline found, end of alignment.
                 alignEndFl = True
             elif line[0] == '>':
-                # new species found in line
+                # New species found in line.
                 break
             else:
                 data += line.rstrip()
         seq.data = data
         seq.dataLen = len(data)
         if line[0] != '>':
-            # we reached the end of file
+            # We reached the end of file.
             line = None
         return (line, alignEndFl)
 
@@ -128,7 +128,8 @@ class FaStream():
     :param fo faFileObject: File object associated with the stream.
 
     :ivar str name: Stream name.
-    :ivar Seq seq: Saved sequence (`Seq` object)
+    :ivar Seq seq: Saved sequence (:class:`Seq
+                   <libPoMo.seqbase.Seq>` object)
     :ivar str nextHeaderLine: Next header line.
     :ivar fo fo: File object that points to the start of the data of
                  the next sequence.
@@ -231,7 +232,8 @@ class MFaStream():
       set it to the stripped filename.
 
     :ivar str name: Stream name.
-    :ivar [Seq] seqL: Saved sequences (`Seq` objects) in a list.
+    :ivar [Seq] seqL: Saved sequences (:class:`Seq
+                      <libPoMo.seqbase.Seq>` objects) in a list.
     :ivar int nSpecies: Number of saved sequences / species in the alignment.
     :ivar str nextHeaderLine: Next header line.
     :ivar fo fo: File object that points to the start of the data of

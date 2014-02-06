@@ -50,7 +50,7 @@ This has to be indicated by .gz file endings.
 """
 
 parser = argparse.ArgumentParser(
-    prog="convertVCF",
+    prog="FastaToCounts.py",
     formatter_class=argparse.RawDescriptionHelpFormatter,
     description=descr)
 
