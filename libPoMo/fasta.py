@@ -11,26 +11,29 @@ Classes:
   - :class:`FaStream`, fasta file sequence stream object
   - :class:`MFaStream`, multiple alignment fasta file sequence stream object
   - :class:`FaSeq`, fasta file sequence object
+  - :class:`MFaStrFilterProps`, define multiple fasta file filter preferences
 
 Exception Classes:
   - :class:`NotAFastaFileError`
 
 Functions:
-  - :func:`read_seq_from_fo()`, read a single sequence from file object
-  - :func:`read_align_from_fo()`, read an alignment from file object
+  - :func:`filter_mfa_str()`, filter a given :class:`MFaStream`
+      according to the filters defined in :class:`MFaStrFilterProps`
   - :func:`init_seq()`, initialize fasta sequence stream from file
   - :func:`open_seq()`, open fasta file
   - :func:`save_as_vcf()`, save a given :class:`FaSeq` in variant call
-    format (VCF)
+      format (VCF)
+  - :func:`read_seq_from_fo()`, read a single sequence from file object
+  - :func:`read_align_from_fo()`, read an alignment from file object
 
 ----
 
 """
-# TODO MFaStream
 __docformat__ = 'restructuredtext'
 
 import libPoMo.seqbase as sb
 import libPoMo.vcf as vcf
+import re
 
 
 class NotAFastaFileError(sb.SequenceDataError):
@@ -49,8 +52,11 @@ def read_seq_from_fo(line, fo, getAlignEndFlag=False):
 
     :param str line: Header line of the sequence.
     :param fo fo: File object of the fasta file.
-    :param Boolean getAlignFlag: If true, an additional Boolean value
-      that specifies if an alignment ends, is returned.
+
+    :param Boolean getAlignFlag: If set to true, an additional Boolean
+      value that specifies if a multiple sequence alignment ends, is
+      returned.
+
     :rtype: (str, Seq) | (str, Seq, Boolean)
 
     """
@@ -280,7 +286,7 @@ class MFaStream():
     def print_info(self, maxB=50):
         """Print sequence information.
 
-        Print information about this FaStream object, the fasta
+        Print information about this MFaStream object, the fasta
         sequence stored at the moment the length of the sequence and a
         maximum of `maxB` bases (defaults to 50).
 
@@ -332,9 +338,218 @@ class MFaStream():
             if self.seqL[i].get_rc() is True:
                 self.seqL[i].rev_comp()
 
+    def check_msa(self, filterObject):
+        """ToDo. FilterObject! Wie mache ich das?
+
+        """
+        pass
+        return
+
+    def write_msa(self):
+        """Print multiple sequence alignment at point.
+
+        """
+        for s in self.seqL:
+            s.print_fa_header()
+            s.print_data()
+        print('\n')
+        return
+
     def close(self):
         """Close the linked file object."""
         self.fo.close()
+
+
+class MFaStrFilterProps():
+    """Define filter preferences for multiple fasta alignments.
+
+
+    Define the properties of the filter to be applied to an
+    :class:`MFAStream`.
+
+    By default, all filters are applied (all variables are set to
+    True).
+    Parameters::
+
+    :param int nSpecies: Number of species that are aligned.
+
+    Variables::
+
+    :ivar Boolean check_all_aligned: Check if all treated species are
+      available in the alignment (`self.nSpecies` gives the number of
+      species, given to the object upon initialization).
+
+    :ivar Boolean check_divergence: Check if the divergence of the
+      reference genome (the first sequence in the alignment) is lower
+      than `self.maxDiv` (defaults to 10 percent).
+
+    :ivar Boolean self.check_start_codons: Check if all start codons
+      are conserved.
+
+    :ivar Boolean self.check_stop_codons: Check if all stop codons are
+    conserved.
+
+    :ivar Boolean self.check_frame_shifting_gaps: Check, that there
+    are no frame-shifting gaps.
+
+    :ivar Boolean self.check_for_long_gaps: Check if no gap is longer
+    than `self.maxGapLength` (defaults to 30) bases.
+
+    :ivar Boolean self.check_nonsense_codon: Check if there is no
+    premature stop codon).
+
+    :ivar Boolean self.check_gene_length: Check that the gene is
+    longer than `self.minGeneLength` (defaults to 21).
+
+    :ivar Boolean self.check_exon_numbers: Check if exon number match
+    for all sequences in the alignment.
+
+    """
+
+    def __init__(self, nSpecies):
+        self.check_all_aligned = True
+        self.nSpecies = nSpecies
+        self.check_divergence = True
+        self.maxDiv = 0.1
+        self.check_start_codons = True
+        self.check_stop_codons = True
+        self.check_frame_shifting_gaps = True
+        self.check_for_long_gaps = True
+        self.maxGapLength = 30
+        self.check_nonsense_codon = True
+        self.check_gene_length = True
+        self.minGeneLength = 21
+        self.check_exon_numbers = True
+
+
+def filter_mfa_str(mfaStr, fp, verb=None):
+    """Check multiple sequence alignment of an MFaStream.
+
+    Multiple sequence alignments usually include alignments that are
+    not apt for analysis.  These low quality alignments need to be
+    filtered out of the original multiple sequence alignment fasta
+    file.  If `verb` is unset from None, information about any
+    possible rejection is printed to the standard output.
+
+    :ivar :class:`MFaStream` mfaStr: MFaStream object to check.
+    :ivar :class:`MFaStrFilterProps` fp: Properties of the filter
+      to be applied.
+    :ivar Boolean verb: Verbosity.
+
+
+    :rtype: Boolean, True if all filters have been passed.
+
+    """
+    # Define start and stop codon regex strings
+    startCodon = r"(atg)"
+    stopCodons = r"(tag|taa|tga)"
+    # Define regex pattern for indel
+    indel = r'-'
+
+    def check_all_aligned():
+        if len(mfaStr.seqL) == fp.nSpecies:
+            return True
+        else:
+            if verb is not None:
+                print(mfaStr.seqL[0].name, "rejection;",
+                      "Not all species are aligned.")
+            return False
+
+    def check_divergence():
+        return True             # TODO
+
+    def check_start_codons():
+        pattern = r'^' + startCodon
+        for s in mfaStr.seqL:
+            dataString = s.data
+            m = re.search(pattern, dataString)
+            if m is None:
+                if verb is not None:
+                    print(s.name, "rejection;",
+                          "Start codons are not preserved.")
+                return False
+        return True
+
+    def check_stop_codons():
+        pattern = stopCodons + r'$'
+        for s in mfaStr.seqL:
+            dataString = s.data
+            m = re.search(pattern, dataString)
+            if m is None:
+                if verb is not None:
+                    print(s.name, "rejection;",
+                          "Stop codons are not preserved.")
+                return False
+        return True
+
+    def check_frame_shifting_gaps():
+        pattern = indel + r'+'
+        for s in mfaStr.seqL:
+            dataString = s.data
+            i = re.finditer(pattern, dataString)
+            for m in i:
+                if ((m.end() - m.start()) % 3) != 0:
+                    print(s.name, "rejection;",
+                          "Frame-shifting gap.")
+                    return False
+        return True
+
+    def check_for_long_gaps():
+        pattern = indel + r'{' + repr(fp.maxGapLength + 1) + r',}'
+        for s in mfaStr.seqL:
+            dataString = s.data
+            m = re.search(pattern, dataString)
+            if m is not None:
+                print(s.name, "rejection;"
+                      "A gap is too long.")
+                return False
+        return True
+
+    def check_nonsense_codon():
+        pattern = r'(' + stopCodons + r')' + r'(?!$)'
+        for s in mfaStr.seqL:
+            dataString = s.data
+            m = re.search(pattern, dataString)
+            if m is not None:
+                print(s.name, "rejection;"
+                      "A nonsense codon has been found.")
+                return False
+        return True
+
+    def check_gene_length():
+        return True             # TODO
+
+    def check_exon_numbers():
+        return True             # TODO
+
+    if fp.check_all_aligned:
+        if not check_all_aligned():
+            return False
+    if fp.check_divergence:
+        if not check_divergence():
+            return False
+    if fp.check_start_codons:
+        if not check_start_codons():
+            return False
+    if fp.check_stop_codons:
+        if not check_stop_codons():
+            return False
+    if fp.check_frame_shifting_gaps:
+        if not check_frame_shifting_gaps():
+            return False
+    if fp.check_for_long_gaps:
+        if not check_for_long_gaps():
+            return False
+    if fp.check_nonsense_codon:
+        if not check_nonsense_codon():
+            return False
+    if fp.check_gene_length:
+        if not check_gene_length():
+            return False
+    if fp.check_exon_numbers:
+        if not check_exon_numbers():
+            return False
+    return True
 
 
 class FaSeq():
@@ -353,7 +568,7 @@ class FaSeq():
         self.nSpecies = 0
 
     def print_info(self, maxB=50):
-        """Print sequence information.
+        """Print fasta sequence information.
 
         Print fasta sequence identifier, species names, the length of
         the sequence and a maximum of `maxB` bases (defaults to 50).

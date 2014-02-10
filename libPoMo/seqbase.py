@@ -45,7 +45,7 @@ class Region():
     The start and end points need to be given 1-based and are
     converted to 0-based positions that are used internally to save
     all positional data.
-    
+
     :param str chrom: Chromosome name.
     :param int start: 1-based start position.
     :param int end: 1-based end position.
@@ -98,11 +98,45 @@ class Seq:
         print('>', self.name, ' ', self.descr, sep='')
         return
 
+    def print_fa_entry(self, maxB=None):
+        """Print a fasta file entry with header and sequence data.
+
+        :ivar int maxB: Print a maximum of maxB bases. Default: print
+        all bases.
+
+        """
+        self.print_fa_header()
+        if maxB is None:
+            print(self.data)
+        else:
+            print("First", maxB, "bases: ", end='')
+            print(self.data[:maxB])
+        return
+
+    def print_data(self):
+        """Print the sequence data."""
+        print(self.data)
+        return
+
     def get_base(self, pos):
         """Returns base at 1-based position `pos`."""
         if pos > self.dataLen:
             raise SequenceDataError("Position out of range.")
         return self.data[pos-1]
+
+    def print_info(self, maxB=50):
+        """Print sequence information.
+
+        Print sequence name, description, the length of the sequence
+        and a maximum of `maxB` bases (defaults to 50).
+
+        """
+        print("Sequence name:", self.name)
+        print("Sequence description:", self.descr)
+        print("Sequence length:", self.dataLen)
+        print("First", maxB, "bases:", end='')
+        print(self.data[0:maxB])
+        return
 
     def toggle_rc(self):
         """Toggle the state of *self.rc*."""
@@ -149,6 +183,11 @@ class Seq:
         for i in range(self.dataLen):
             rcData.append(compDict[self.data[i]])
         self.data = ''.join(rcData)
+        if self.descr[-1] == '+':
+            tempDescr = self.descr[:-1] + '-'
+        elif self.descr[-1] == '-':
+            tempDescr = self.descr[:-1] + '+'
+        self.descr = tempDescr
         self.toggle_rc()
 
     def get_region(self):

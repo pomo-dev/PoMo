@@ -576,8 +576,10 @@ def write_cf_from_MFaStream(refMFaStr, cfWr):
     """Write counts file using the given MFaStream and CFWriter.
 
     Write the counts format file using the first sequences of all
-    alignments in MFaStream.  This is very useful if you e.g. want
-    to compare the VCF files to a CCDC alignment.
+    alignments in the MFaStream.  The sequences are automatically
+    reversed and complemented if this is needed (indicated in the
+    header line).  This is very useful if you e.g. want to compare the
+    VCF files to a CCDC alignment.
 
     :param FMaStream refMFaStr: The reference :class:`MFaStream
       <libPoMo.fasta.MFaStream>`.
