@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -15,7 +13,7 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
+        URL_ROOT:    './',
         VERSION:     '1.0.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
@@ -69,7 +67,7 @@ counts for every position.</p>
 </ul>
 </dd>
 </dl>
-<div class="highlight-python"><pre>CHROM          Pos     Sheep           BlackSheep      RedSheep        Wolf            RedWolf
+<div class="highlight-python"><div class="highlight"><pre>CHROM          Pos     Sheep           BlackSheep      RedSheep        Wolf            RedWolf
 chrA           s       0,0,1,0         0,0,1,0         0,0,1,0         0,0,5,0         0,0,0,1
 chrA           s + 1   0,0,0,1         0,0,0,1         0,0,0,1         0,0,0,5         0,0,0,1
 .
@@ -79,7 +77,35 @@ chrF           8373    0,0,0,1         1,0,0,0         0,1,0,0         0,1,4,0  
 .
 .
 .
-chrE           end     0,0,0,1         0,1,0,0         0,1,0,0         0,5,0,0         0,0,1,0</pre>
+chrE           end     0,0,0,1         0,1,0,0         0,1,0,0         0,5,0,0         0,0,1,0
+</pre></div>
+</div>
+</div>
+<div class="section" id="convert-to-counts-format">
+<h2>Convert to Counts Format<a class="headerlink" href="#convert-to-counts-format" title="Permalink to this headline">¶</a></h2>
+<p>To convert a fasta reference file with SNP information from a variant
+call format (VCF) to counts format use the <a class="reference internal" href="#libPoMo.cf.CFWriter" title="libPoMo.cf.CFWriter"><tt class="xref py py-class docutils literal"><span class="pre">CFWriter</span></tt></a>. If you
+want to convert a multiple alignment fasta file, use the
+<a class="reference internal" href="#libPoMo.cf.CFWriter" title="libPoMo.cf.CFWriter"><tt class="xref py py-class docutils literal"><span class="pre">CFWriter</span></tt></a> together with the convenience function
+<a class="reference internal" href="#libPoMo.cf.write_cf_from_MFaStream" title="libPoMo.cf.write_cf_from_MFaStream"><tt class="xref py py-func docutils literal"><span class="pre">write_cf_from_MFaStream()</span></tt></a>.</p>
+<p>Tabix index files need to be provided for all VCF files. They can be
+created from the terminal with $(tabix -p vcf &#8220;vcf-file.vcf.gz&#8221;) if
+tabix is installed.</p>
+<p>A code example is:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">import_libPoMo</span>
+<span class="kn">import</span> <span class="nn">libPoMo.fasta</span> <span class="kn">as</span> <span class="nn">fa</span>
+<span class="kn">import</span> <span class="nn">libPoMo.cf</span> <span class="kn">as</span> <span class="nn">cf</span>
+
+<span class="n">vcfFL</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;/path/to/vcf/file1&quot;</span><span class="p">,</span> <span class="s">&quot;/path/to/vcf/file2&quot;</span><span class="p">,</span> <span class="s">&quot;...&quot;</span><span class="p">]</span>
+
+<span class="n">cfw</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">CFWriter</span><span class="p">(</span><span class="n">vcfFL</span><span class="p">,</span> <span class="s">&quot;name-of-outfile&quot;</span><span class="p">)</span>
+<span class="n">mFaStr</span> <span class="o">=</span> <span class="n">fa</span><span class="o">.</span><span class="n">MFaStream</span><span class="p">(</span><span class="s">&quot;/path/to/fasta/reference&quot;</span><span class="p">)</span>
+
+<span class="n">cfw</span><span class="o">.</span><span class="n">write_HLn</span><span class="p">()</span>
+<span class="n">cf</span><span class="o">.</span><span class="n">write_cf_from_MFaStream</span><span class="p">(</span><span class="n">mFaStr</span><span class="p">,</span> <span class="n">cfw</span><span class="p">)</span>
+
+<span class="n">cfw</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
 </div>
 </div>
 <div class="section" id="objects">
@@ -97,15 +123,15 @@ chrE           end     0,0,0,1         0,1,0,0         0,1,0,0         0,5,0,0  
 </dd>
 <dt>Functions:</dt>
 <dd><ul class="first last simple">
-<li><a class="reference internal" href="#libPoMo.cf.save_as_cf" title="libPoMo.cf.save_as_cf"><tt class="xref py py-func docutils literal"><span class="pre">save_as_cf()</span></tt></a>, deprecated; save given sequences to a counts
-format file</li>
+<li><a class="reference internal" href="#libPoMo.cf.write_cf_from_MFaStream" title="libPoMo.cf.write_cf_from_MFaStream"><tt class="xref py py-func docutils literal"><span class="pre">write_cf_from_MFaStream()</span></tt></a>, write counts file using the
+given MFaStream and CFWriter</li>
 </ul>
 </dd>
 </dl>
 <hr class="docutils" />
 <dl class="class">
 <dt id="libPoMo.cf.CFWriter">
-<em class="property">class </em><tt class="descclassname">libPoMo.cf.</tt><tt class="descname">CFWriter</tt><big>(</big><em>vcfFileNameL</em>, <em>outFileName</em>, <em>verb=None</em>, <em>mergeL=None</em>, <em>nameL=None</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">libPoMo.cf.</tt><tt class="descname">CFWriter</tt><big>(</big><em>vcfFileNameL</em>, <em>outFileName</em>, <em>verb=None</em>, <em>splitChar='-'</em>, <em>mergeL=None</em>, <em>nameL=None</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write a counts format file.</p>
 <p>Save information that is needed to write a CF file and use this
 information to write a CF file.  Initialize with a list of vcf
@@ -113,9 +139,12 @@ file names and an output file name:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CFWriter</span><span class="p">([</span><span class="n">vcfFileNames</span><span class="p">],</span> <span class="s">&quot;output&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
+<p>Tabix index files need to be provided for all VCF files. They can
+be created from the terminal with $(tabix -p vcf
+&#8220;vcf-file.vcf.gz&#8221;) if tabix is installed.</p>
 <p>Before the count file can be written, a reference sequence has to
 be specified.  A single reference sequence can be set with
-<a class="reference internal" href="#libPoMo.cf.CFWriter.set_seq" title="libPoMo.cf.CFWriter.set_seq"><tt class="xref py py-class docutils literal"><span class="pre">set_seq</span></tt></a>.</p>
+<a class="reference internal" href="#libPoMo.cf.CFWriter.set_seq" title="libPoMo.cf.CFWriter.set_seq"><tt class="xref py py-func docutils literal"><span class="pre">set_seq()</span></tt></a>.</p>
 <p>Write a header line to output:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="bp">self</span><span class="o">.</span><span class="n">write_HLn</span><span class="p">()</span>
 </pre></div>
@@ -129,6 +158,11 @@ be specified.  A single reference sequence can be set with
 <p>If you want to compare the SNPs of the VCF files to a multiple
 alingment fasta stream (<a class="reference internal" href="fasta.html#libPoMo.fasta.MFaStream" title="libPoMo.fasta.MFaStream"><tt class="xref py py-class docutils literal"><span class="pre">MFaStream</span></tt></a>) consider the very convenient function
 <a class="reference internal" href="#libPoMo.cf.write_cf_from_MFaStream" title="libPoMo.cf.write_cf_from_MFaStream"><tt class="xref py py-func docutils literal"><span class="pre">write_cf_from_MFaStream()</span></tt></a>.</p>
+<p>To determine the different populations present in the VCF files,
+the names of the individuals will be cropped at a specific char
+that can be set at initialization (standard value = &#8216;-&#8216;). It is
+also possible to collapse all individuals of determined VCF files
+to a single population (cf. mergeL and nameL).</p>
 <p>Remember to close the attached file objectsL with <a class="reference internal" href="#libPoMo.cf.CFWriter.close" title="libPoMo.cf.CFWriter.close"><tt class="xref py py-func docutils literal"><span class="pre">close()</span></tt></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -137,7 +171,9 @@ alingment fasta stream (<a class="reference internal" href="fasta.html#libPoMo.f
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>vcfFileNameL</strong> (<em>[str]</em>) &#8211; List with names of vcf files.</li>
 <li><strong>outFileName</strong> (<em>str</em>) &#8211; Output file name.</li>
-<li><strong>verb</strong> (<em>int</em>) &#8211; Optional; verbosity.</li>
+<li><strong>verb</strong> (<em>int</em>) &#8211; Optional; verbosity level.</li>
+<li><strong>splitChar</strong> (<em>char</em>) &#8211; Optional; set the split character so that
+the individuals get sorted into the correct populations.</li>
 <li><strong>mergeL</strong> (<em>[Boolean]</em>) &#8211; Optional; a list of truth values.  If
 <em>mL[i]</em> is True, all individuals of <em>self.vcfL[i]</em> are treated as
 one population orspecies independent of their name.  The
@@ -193,7 +229,7 @@ output file (e.g. number of populations).  Filled by
 reference Sequence. This has to be set with <a class="reference internal" href="#libPoMo.cf.CFWriter.set_seq" title="libPoMo.cf.CFWriter.set_seq"><tt class="xref py py-class docutils literal"><span class="pre">set_seq</span></tt></a>.</li>
 <li><strong>ploidy</strong> (<em>int</em>) &#8211; Ploidy of individuals in vcf files.  This has to
 be set manually to the correct value for non-diploids!</li>
-<li><strong>__splitCh</strong> (<em>char</em>) &#8211; Character that is used to split the
+<li><strong>splitCh</strong> (<em>char</em>) &#8211; Character that is used to split the
 individual names.</li>
 <li><strong>__force</strong> (<em>Boolean</em>) &#8211; If set to true, skip name checks.</li>
 </ul>
@@ -209,7 +245,7 @@ individual names.</li>
 
 <dl class="method">
 <dt id="libPoMo.cf.CFWriter.set_force">
-<tt class="descname">set_force</tt><big>(</big><em>val</em><big>)</big><a class="headerlink" href="#libPoMo.cf.CFWriter.set_force" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">set_force</tt><big>(</big><em>val</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter.set_force"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter.set_force" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets <em>self.__force</em> to <em>val</em>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -223,7 +259,7 @@ individual names.</li>
 
 <dl class="method">
 <dt id="libPoMo.cf.CFWriter.set_offset">
-<tt class="descname">set_offset</tt><big>(</big><em>offset</em><big>)</big><a class="headerlink" href="#libPoMo.cf.CFWriter.set_offset" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">set_offset</tt><big>(</big><em>offset</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter.set_offset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter.set_offset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the offset of the sequence.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -239,8 +275,18 @@ position 1 but at the 1-based position
 </dd></dl>
 
 <dl class="method">
+<dt id="libPoMo.cf.CFWriter.set_ploidy">
+<tt class="descname">set_ploidy</tt><big>(</big><em>ploidy</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter.set_ploidy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter.set_ploidy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the ploidy.</p>
+<p>In VCF files, usually the bases of all copies of the same
+chromosomes are given and separated by &#8216;/&#8217; or &#8216;|&#8217;.  If the
+species is not diploid, this ploidy has to be set manually
+with this function.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="libPoMo.cf.CFWriter.set_seq">
-<tt class="descname">set_seq</tt><big>(</big><em>seq</em><big>)</big><a class="headerlink" href="#libPoMo.cf.CFWriter.set_seq" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">set_seq</tt><big>(</big><em>seq</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter.set_seq"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter.set_seq" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the reference sequence.</p>
 </dd></dl>
 
@@ -275,121 +321,14 @@ covered.</td>
 </dd></dl>
 
 <dl class="function">
-<dt id="libPoMo.cf.collapse">
-<tt class="descclassname">libPoMo.cf.</tt><tt class="descname">collapse</tt><big>(</big><em>speciesL</em>, <em>merge=False</em>, <em>name=None</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#collapse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.collapse" title="Permalink to this definition">¶</a></dt>
-<dd><p>Deprecated. Collapse the species names.</p>
-<p>Collapse the species names using the naming rules given in
-save_as_countsformat. Returns a dictionary with collapsed
-species names as keys and an assignment list.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>merge</strong> (<em>Boolean</em>) &#8211; if set to True, all species/individuals will be
-collapsed to a single one with name <em>name</em> (if <em>name</em> is given).</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="libPoMo.cf.fill_species_dict_alt">
-<tt class="descclassname">libPoMo.cf.</tt><tt class="descname">fill_species_dict_alt</tt><big>(</big><em>spDi</em>, <em>assL</em>, <em>refBase</em>, <em>altBases</em>, <em>spData</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#fill_species_dict_alt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.fill_species_dict_alt" title="Permalink to this definition">¶</a></dt>
-<dd><p>Deprecated. Fill the species dictionary when a SNP is present.</p>
-<p>Raise <em>SequenceDataError</em>, if <em>spDi</em> could not be filled.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="libPoMo.cf.fill_species_dict_ref">
-<tt class="descclassname">libPoMo.cf.</tt><tt class="descname">fill_species_dict_ref</tt><big>(</big><em>spDi</em>, <em>assL</em>, <em>refBase</em>, <em>ploidy</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#fill_species_dict_ref"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.fill_species_dict_ref" title="Permalink to this definition">¶</a></dt>
-<dd><p>Deprecated. Fills the species dictionary if no SNP is present.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="libPoMo.cf.find_next_SNP_pos">
-<tt class="descclassname">libPoMo.cf.</tt><tt class="descname">find_next_SNP_pos</tt><big>(</big><em>nSNPChromL</em>, <em>nSNPPosL</em>, <em>ref</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#find_next_SNP_pos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.find_next_SNP_pos" title="Permalink to this definition">¶</a></dt>
-<dd><p>Deprecated. Find the position of next SNP.</p>
-<p>Return the position of the next SNP in <em>ref</em> and a list of
-indices of these SNPs in <em>nSNPChromL</em> and <em>nSNPPosL</em>. If no
-next SNP is found on this sequence (this might happen if all
-next SNPs are on the next chromosome) a ValueError is raised.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>nSNPChromL</strong> &#8211; List with chromosome names of the next SNPs of
-the <em>vcfStrL</em>.</li>
-<li><strong>nSNPPosL</strong> &#8211; List with positions of the next SNPs of the
-<em>vcfStrL</em>.</li>
-<li><strong>ref</strong> &#8211; Seq object of the sequence of the reference.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="libPoMo.cf.get_cf_headerline">
-<tt class="descclassname">libPoMo.cf.</tt><tt class="descname">get_cf_headerline</tt><big>(</big><em>species</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#get_cf_headerline"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.get_cf_headerline" title="Permalink to this definition">¶</a></dt>
-<dd><p>Deprecated. Return a string containing the headerline in counts
-format.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="libPoMo.cf.get_counts_line">
-<tt class="descclassname">libPoMo.cf.</tt><tt class="descname">get_counts_line</tt><big>(</big><em>chrom</em>, <em>pos</em>, <em>spDi</em>, <em>speciesL</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#get_counts_line"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.get_counts_line" title="Permalink to this definition">¶</a></dt>
-<dd><p>Deprecated. Return line string in counts format.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="libPoMo.cf.save_as_cf">
-<tt class="descclassname">libPoMo.cf.</tt><tt class="descname">save_as_cf</tt><big>(</big><em>vcfStrL</em>, <em>refFaStr</em>, <em>CFFileName</em>, <em>verb=False</em>, <em>mergeL=None</em>, <em>nameL=None</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#save_as_cf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.save_as_cf" title="Permalink to this definition">¶</a></dt>
-<dd><p>Deprecated. Save the given sequence in counts format.</p>
-<p>This function saves the SNPs from <em>vcfStrL</em>, a given list of
-<em>VCFStream</em> (variant call format sequence stream) objects in
-counts format to the file <em>CFFileName</em>.  The reference genome
-<em>refFaStr</em>, to which <em>VCFSeqStr</em> is compared to, needs to be
-passed as an <em>FaStream</em> object.</p>
-<p>The name of all streams in <em>vcfStrL</em> should be the same as the
-name of <em>faRef</em>.  The names of the sequences in the reference
-should be the names of the chromosomes found in the <em>vcfStr</em>
-object, otherwise we do not know where to compare the sequences
-to.  They must also be in the same order!</p>
-<p>Individuals with the same name and suffix &#8220;_n&#8221;, where n is a
-number, will be saved in one column without the suffix.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>vcfStrL</strong> &#8211; List with VCF Streams containing SNPs.</li>
-<li><strong>refFaStr</strong> &#8211; Reference fasta sequence stream object.</li>
-<li><strong>CFFileName</strong> &#8211; Name of output file (counts format).</li>
-<li><strong>verb</strong> &#8211; If <em>verb</em> is set to True, additional information is
-printed to the output file.</li>
-<li><strong>mergeL</strong> &#8211; A list of truth values. If <em>mergeL[i]</em> is True, all
-individuals of <em>vcfStrL[i]</em> are treated as one species
-independent of their name. The respective counts are
-summed up.  If <em>nameL[i]</em> is given, the name of the
-summed sequence will be <em>nameL[i]</em>. If not, the name of
-the first individual in <em>vcfStrL[i]</em> will be used.</li>
-<li><strong>nameL</strong> &#8211; A list of names. Cf. <em>mergeL</em>.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
 <dt id="libPoMo.cf.write_cf_from_MFaStream">
-<tt class="descclassname">libPoMo.cf.</tt><tt class="descname">write_cf_from_MFaStream</tt><big>(</big><em>refMFaStr</em>, <em>cfWr</em><big>)</big><a class="headerlink" href="#libPoMo.cf.write_cf_from_MFaStream" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">libPoMo.cf.</tt><tt class="descname">write_cf_from_MFaStream</tt><big>(</big><em>refMFaStr</em>, <em>cfWr</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#write_cf_from_MFaStream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.write_cf_from_MFaStream" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write counts file using the given MFaStream and CFWriter.</p>
 <p>Write the counts format file using the first sequences of all
-alignments in MFaStream.  This is very useful if you e.g. want
-to compare the VCF files to a CCDC alignment.</p>
+alignments in the MFaStream.  The sequences are automatically
+reversed and complemented if this is needed (indicated in the
+header line).  This is very useful if you e.g. want to compare the
+VCF files to a CCDC alignment.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -418,6 +357,7 @@ the VCF files.</li>
   <ul>
 <li><a class="reference internal" href="#">libPomo.cf</a><ul>
 <li><a class="reference internal" href="#the-counts-format">The Counts Format</a></li>
+<li><a class="reference internal" href="#convert-to-counts-format">Convert to Counts Format</a></li>
 <li><a class="reference internal" href="#objects">Objects</a></li>
 </ul>
 </li>
@@ -466,7 +406,7 @@ the VCF files.</li>
     </div>
     <div class="footer">
         &copy; Copyright 2013, Dominik Schrempf.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
     </div>
   </body>
 </html>

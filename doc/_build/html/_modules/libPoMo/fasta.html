@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -61,26 +59,31 @@
 <span class="sd">-------</span>
 <span class="sd">Classes:</span>
 <span class="sd">  - :class:`FaStream`, fasta file sequence stream object</span>
+<span class="sd">  - :class:`MFaStream`, multiple alignment fasta file sequence stream object</span>
 <span class="sd">  - :class:`FaSeq`, fasta file sequence object</span>
+<span class="sd">  - :class:`MFaStrFilterProps`, define multiple fasta file filter preferences</span>
 
 <span class="sd">Exception Classes:</span>
 <span class="sd">  - :class:`NotAFastaFileError`</span>
 
 <span class="sd">Functions:</span>
-<span class="sd">  - :func:`read_seq_from_fo()`: Read a single fasta sequence.</span>
-<span class="sd">  - :func:`init_seq()`: Initialize fasta sequence stream from file.</span>
-<span class="sd">  - :func:`open_seq()`: Open fasta file.</span>
-<span class="sd">  - :func:`save_as_vcf()`: Save a given `FaSeq` in variant call format (VCF).</span>
+<span class="sd">  - :func:`filter_mfa_str()`, filter a given :class:`MFaStream`</span>
+<span class="sd">    according to the filters defined in :class:`MFaStrFilterProps`</span>
+<span class="sd">  - :func:`init_seq()`, initialize fasta sequence stream from file</span>
+<span class="sd">  - :func:`open_seq()`, open fasta file</span>
+<span class="sd">  - :func:`save_as_vcf()`, save a given :class:`FaSeq` in variant call</span>
+<span class="sd">    format (VCF)</span>
+<span class="sd">  - :func:`read_seq_from_fo()`, read a single sequence from file object</span>
+<span class="sd">  - :func:`read_align_from_fo()`, read an alignment from file object</span>
 
 <span class="sd">----</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="c"># TODO MFaStream</span>
 <span class="n">__docformat__</span> <span class="o">=</span> <span class="s">&#39;restructuredtext&#39;</span>
 
-<span class="kn">import</span> <span class="nn">gzip</span>
 <span class="kn">import</span> <span class="nn">libPoMo.seqbase</span> <span class="kn">as</span> <span class="nn">sb</span>
 <span class="kn">import</span> <span class="nn">libPoMo.vcf</span> <span class="kn">as</span> <span class="nn">vcf</span>
+<span class="kn">import</span> <span class="nn">re</span>
 
 
 <div class="viewcode-block" id="NotAFastaFileError"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.NotAFastaFileError">[docs]</a><span class="k">class</span> <span class="nc">NotAFastaFileError</span><span class="p">(</span><span class="n">sb</span><span class="o">.</span><span class="n">SequenceDataError</span><span class="p">):</span>
@@ -88,7 +91,7 @@
     <span class="k">pass</span>
 
 </div>
-<div class="viewcode-block" id="read_seq_from_fo"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.read_seq_from_fo">[docs]</a><span class="k">def</span> <span class="nf">read_seq_from_fo</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">fo</span><span class="p">):</span>
+<div class="viewcode-block" id="read_seq_from_fo"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.read_seq_from_fo">[docs]</a><span class="k">def</span> <span class="nf">read_seq_from_fo</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">fo</span><span class="p">,</span> <span class="n">getAlignEndFlag</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Read a single fasta sequence.</span>
 
 <span class="sd">    Read a single fasta sequence from file object *fo* and save it to</span>
@@ -99,7 +102,12 @@
 
 <span class="sd">    :param str line: Header line of the sequence.</span>
 <span class="sd">    :param fo fo: File object of the fasta file.</span>
-<span class="sd">    :rtype: (str, Seq)</span>
+
+<span class="sd">    :param Boolean getAlignFlag: If set to true, an additional Boolean</span>
+<span class="sd">      value that specifies if a multiple sequence alignment ends, is</span>
+<span class="sd">      returned.</span>
+
+<span class="sd">    :rtype: (str, Seq) | (str, Seq, Boolean)</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">get_sp_name_and_description</span><span class="p">(</span><span class="n">fa_header_line</span><span class="p">):</span>
@@ -109,45 +117,54 @@
 <span class="sd">        line `fa_header_line`.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">lineList</span> <span class="o">=</span> <span class="n">fa_header_line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="n">lineList</span> <span class="o">=</span> <span class="n">fa_header_line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">maxsplit</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">name</span> <span class="o">=</span> <span class="n">lineList</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span>
         <span class="n">description</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lineList</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">description</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lineList</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+            <span class="n">description</span> <span class="o">=</span> <span class="n">lineList</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">description</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">fill_seq_from_fo</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">fo</span><span class="p">,</span> <span class="n">seq</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Read a single fasta sequence</span>
+        <span class="sd">&quot;&quot;&quot;Read a single fasta sequence.</span>
 
 <span class="sd">        Read a single fasta sequence from file object `fo` and save it</span>
-<span class="sd">        to `seq`. Returns the next header line. If no new sequence is</span>
-<span class="sd">        found, the next header line will be set to None.</span>
+<span class="sd">        to `seq`. Returns the next header line and a flag that is set</span>
+<span class="sd">        to true if the end of an alignment is reached (a line only</span>
+<span class="sd">        contains a newline character).  If no new sequence is found,</span>
+<span class="sd">        the next header line will be set to None.</span>
 
-<span class="sd">        - `line`: the header line of the sequence.</span>
-<span class="sd">        - `fo`: the file object of the fasta file.</span>
-<span class="sd">        - `seq`: the sequence that will be filled.</span>
+<span class="sd">        :param str line: Header line of the sequence.</span>
+<span class="sd">        :param fo for: File object of the fasta file.</span>
+<span class="sd">        :param Seq seq: The sequence that will be filled.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">descr</span><span class="p">)</span> <span class="o">=</span> <span class="n">get_sp_name_and_description</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
         <span class="n">seq</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
         <span class="n">seq</span><span class="o">.</span><span class="n">descr</span> <span class="o">=</span> <span class="n">descr</span>
         <span class="n">data</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="n">alignEndFl</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">fo</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;&gt;&#39;</span><span class="p">:</span>
-                <span class="c"># new species found in line</span>
+            <span class="k">if</span> <span class="n">line</span> <span class="o">==</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">:</span>
+                <span class="c"># Newline found, end of alignment.</span>
+                <span class="n">alignEndFl</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">elif</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;&gt;&#39;</span><span class="p">:</span>
+                <span class="c"># New species found in line.</span>
                 <span class="k">break</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">data</span> <span class="o">+=</span> <span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
         <span class="n">seq</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
         <span class="n">seq</span><span class="o">.</span><span class="n">dataLen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&#39;&gt;&#39;</span><span class="p">:</span>
-            <span class="c"># we reached the end of file</span>
+            <span class="c"># We reached the end of file.</span>
             <span class="n">line</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="k">return</span> <span class="n">line</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">alignEndFl</span><span class="p">)</span>
 
     <span class="n">seq</span> <span class="o">=</span> <span class="n">sb</span><span class="o">.</span><span class="n">Seq</span><span class="p">()</span>
-    <span class="n">newHeaderLine</span> <span class="o">=</span> <span class="n">fill_seq_from_fo</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">fo</span><span class="p">,</span> <span class="n">seq</span><span class="p">)</span>
-    <span class="k">return</span> <span class="p">(</span><span class="n">newHeaderLine</span><span class="p">,</span> <span class="n">seq</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">newHeaderLine</span><span class="p">,</span> <span class="n">alignEndFl</span><span class="p">)</span> <span class="o">=</span> <span class="n">fill_seq_from_fo</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">fo</span><span class="p">,</span> <span class="n">seq</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">getAlignEndFlag</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">newHeaderLine</span><span class="p">,</span> <span class="n">seq</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">newHeaderLine</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">alignEndFl</span><span class="p">)</span>
 
 </div>
 <div class="viewcode-block" id="FaStream"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.FaStream">[docs]</a><span class="k">class</span> <span class="nc">FaStream</span><span class="p">():</span>
@@ -167,7 +184,8 @@
 <span class="sd">    :param fo faFileObject: File object associated with the stream.</span>
 
 <span class="sd">    :ivar str name: Stream name.</span>
-<span class="sd">    :ivar Seq seq: Saved sequence (`Seq` object)</span>
+<span class="sd">    :ivar Seq seq: Saved sequence (:class:`Seq</span>
+<span class="sd">                   &lt;libPoMo.seqbase.Seq&gt;` object)</span>
 <span class="sd">    :ivar str nextHeaderLine: Next header line.</span>
 <span class="sd">    :ivar fo fo: File object that points to the start of the data of</span>
 <span class="sd">                 the next sequence.</span>
@@ -192,7 +210,7 @@
         <span class="k">print</span><span class="p">(</span><span class="s">&quot;Associated file object:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fo</span><span class="p">)</span>
         <span class="k">print</span><span class="p">(</span><span class="s">&quot;Next header line:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nextHeaderLine</span><span class="p">)</span>
         <span class="k">print</span><span class="p">(</span><span class="s">&quot;Saved Sequence:&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">print_seq_header</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">print_fa_header</span><span class="p">()</span>
         <span class="k">print</span><span class="p">(</span><span class="s">&quot;Printing&quot;</span><span class="p">,</span> <span class="n">maxB</span><span class="p">,</span> <span class="s">&quot;out of a total of&quot;</span><span class="p">,</span>
               <span class="bp">self</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">dataLen</span><span class="p">,</span> <span class="s">&quot;bases.&quot;</span><span class="p">)</span>
         <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">maxB</span><span class="p">])</span>
@@ -218,6 +236,360 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">fo</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
 </div></div>
+<div class="viewcode-block" id="read_align_from_fo"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.read_align_from_fo">[docs]</a><span class="k">def</span> <span class="nf">read_align_from_fo</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">fo</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read a single fasta alignment.</span>
+
+<span class="sd">    Read a single fasta alignment from file object *fo* and save it to</span>
+<span class="sd">    new :class:`Seq &lt;libPoMo.seqbase.Seq&gt;` sequence objects.  Return</span>
+<span class="sd">    the header line of the next fasta alignment and the newly created</span>
+<span class="sd">    sequences in a list.  If no new alignment is found, the next header</span>
+<span class="sd">    line will be set to None.</span>
+
+<span class="sd">    :param str line: Header line of the sequence.</span>
+<span class="sd">    :param fo fo: File object of the fasta file.</span>
+<span class="sd">    :rtype: (str, [Seq])</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">alignEndFl</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">seqL</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">headerLn</span> <span class="o">=</span> <span class="n">line</span>
+    <span class="k">while</span> <span class="p">(</span><span class="n">alignEndFl</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">True</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">headerLn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="p">(</span><span class="n">newHeaderLn</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">alignEndFl</span><span class="p">)</span> <span class="o">=</span> <span class="n">read_seq_from_fo</span><span class="p">(</span><span class="n">headerLn</span><span class="p">,</span> <span class="n">fo</span><span class="p">,</span>
+                                                          <span class="n">getAlignEndFlag</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="n">headerLn</span> <span class="o">=</span> <span class="n">newHeaderLn</span>
+        <span class="n">seq</span><span class="o">.</span><span class="n">set_rc</span><span class="p">()</span>
+        <span class="n">seqL</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">newHeaderLn</span><span class="p">,</span> <span class="n">seqL</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="MFaStream"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.MFaStream">[docs]</a><span class="k">class</span> <span class="nc">MFaStream</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Store a multiple alignment fasta file sequence stream.</span>
+
+<span class="sd">    The sequences of one gene / alignment are saved for all species /</span>
+<span class="sd">    individuals / chromosomes.  Functions are provided to read in the</span>
+<span class="sd">    next gene / alignment in the file that fulfills the given</span>
+<span class="sd">    criteria, if there is any.  This saves memory if files are huge and</span>
+<span class="sd">    doesn&#39;t increase runtime.</span>
+
+<span class="sd">    Initialization of an :class:`MFaStream` opens the given fasta</span>
+<span class="sd">    file, checks if it is in fasta format and reads the first</span>
+<span class="sd">    alignment.  The end of an alignment is reached when a line only</span>
+<span class="sd">    contains the newline character.  This object can later be used to</span>
+<span class="sd">    parse the whole multiple alignment fasta file.</span>
+
+<span class="sd">    The future idea is to provide filters before the file is streamed.</span>
+<span class="sd">    Thus, only alignments that fulfill all the given criteria will be</span>
+<span class="sd">    returned (yielded).  This feature is NOT implemented yet.  TODO.</span>
+
+<span class="sd">    :param str faFileName: File name of the multiple alignment fasta file.</span>
+<span class="sd">    :param int maxskip: Only look *maxskip* lines for the start of a</span>
+<span class="sd">      sequence (defaults to 50).</span>
+<span class="sd">    :param str name: Set the name of the stream to *name*, otherwise</span>
+<span class="sd">      set it to the stripped filename.</span>
+
+<span class="sd">    :ivar str name: Stream name.</span>
+<span class="sd">    :ivar [Seq] seqL: Saved sequences (:class:`Seq</span>
+<span class="sd">                      &lt;libPoMo.seqbase.Seq&gt;` objects) in a list.</span>
+<span class="sd">    :ivar int nSpecies: Number of saved sequences / species in the alignment.</span>
+<span class="sd">    :ivar str nextHeaderLine: Next header line.</span>
+<span class="sd">    :ivar fo fo: File object that points to the start of the data of</span>
+<span class="sd">                 the next sequence.</span>
+
+<span class="sd">    Please close the associated file object with</span>
+<span class="sd">    :func:`FaStream.close` when you don&#39;t need it anymore.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">faFileName</span><span class="p">,</span> <span class="n">maxskip</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Open a fasta file and initialize :class:`MFaStream`.&quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">add_instance_variables</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">firstSeqL</span><span class="p">,</span> <span class="n">nextHL</span><span class="p">,</span> <span class="n">faFileObject</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Add state objects.&quot;&quot;&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">seqL</span> <span class="o">=</span> <span class="n">firstSeqL</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nSpecies</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nextHeaderLine</span> <span class="o">=</span> <span class="n">nextHL</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fo</span> <span class="o">=</span> <span class="n">faFileObject</span>
+
+        <span class="n">flag</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">faFile</span> <span class="o">=</span> <span class="n">sb</span><span class="o">.</span><span class="n">gz_open</span><span class="p">(</span><span class="n">faFileName</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">sb</span><span class="o">.</span><span class="n">stripFName</span><span class="p">(</span><span class="n">faFileName</span><span class="p">)</span>
+        <span class="c"># Find the start of the first sequence.</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxskip</span><span class="p">):</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">faFile</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">line</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">NotAFastaFileError</span><span class="p">(</span><span class="s">&quot;File contains no data.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;&gt;&#39;</span><span class="p">:</span>
+                <span class="c"># species name found in line</span>
+                <span class="n">flag</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="n">flag</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotAFastaFileError</span><span class="p">(</span><span class="s">&quot;Didn&#39;t find a species header within &quot;</span> <span class="o">+</span>
+                                     <span class="n">maxskip</span> <span class="o">+</span> <span class="s">&quot; lines.&quot;</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">nextHL</span><span class="p">,</span> <span class="n">seqL</span><span class="p">)</span> <span class="o">=</span> <span class="n">read_align_from_fo</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">faFile</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">nextHL</span> <span class="o">=</span> <span class="n">nextHL</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="n">add_instance_variables</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">seqL</span><span class="p">,</span> <span class="n">nextHL</span><span class="p">,</span> <span class="n">faFile</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MFaStream.print_info"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.MFaStream.print_info">[docs]</a>    <span class="k">def</span> <span class="nf">print_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxB</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Print sequence information.</span>
+
+<span class="sd">        Print information about this MFaStream object, the fasta</span>
+<span class="sd">        sequence stored at the moment the length of the sequence and a</span>
+<span class="sd">        maximum of `maxB` bases (defaults to 50).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Associated file object:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fo</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Next header line:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nextHeaderLine</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Saved Sequences:&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nSpecies</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">print_fa_header</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_rc</span><span class="p">()</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&quot;Sequence is reversed and complemented.&quot;</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Printing&quot;</span><span class="p">,</span> <span class="n">maxB</span><span class="p">,</span> <span class="s">&quot;out of a total of&quot;</span><span class="p">,</span>
+                  <span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">dataLen</span><span class="p">,</span> <span class="s">&quot;bases.&quot;</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">maxB</span><span class="p">])</span>
+        <span class="k">return</span>
+</div>
+<div class="viewcode-block" id="MFaStream.read_next_align"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.MFaStream.read_next_align">[docs]</a>    <span class="k">def</span> <span class="nf">read_next_align</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read next alignment in fasta file.</span>
+
+<span class="sd">        The return value is the name of the newly saved alignment or</span>
+<span class="sd">        None if no next alignment is found.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nextHeaderLine</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">nextHL</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">)</span> <span class="o">=</span> <span class="n">read_align_from_fo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nextHeaderLine</span><span class="p">,</span>
+                                                     <span class="bp">self</span><span class="o">.</span><span class="n">fo</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nextHeaderLine</span> <span class="o">=</span> <span class="n">nextHL</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nSpecies</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+</div>
+<div class="viewcode-block" id="MFaStream.orient"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.MFaStream.orient">[docs]</a>    <span class="k">def</span> <span class="nf">orient</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">firstOnly</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Orient all sequences of the alignment to be in forward direction.</span>
+
+<span class="sd">        This is rather slow for long sequences.</span>
+
+<span class="sd">        :param Boolean firstOnly: If true, orient the first sequence only.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">firstOnly</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+            <span class="n">l</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nSpecies</span>
+        <span class="k">elif</span> <span class="n">firstOnly</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">l</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_rc</span><span class="p">()</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">rev_comp</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="MFaStream.check_msa"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.MFaStream.check_msa">[docs]</a>    <span class="k">def</span> <span class="nf">check_msa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filterObject</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;ToDo. FilterObject! Wie mache ich das?</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+        <span class="k">return</span>
+</div>
+<div class="viewcode-block" id="MFaStream.write_msa"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.MFaStream.write_msa">[docs]</a>    <span class="k">def</span> <span class="nf">write_msa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Print multiple sequence alignment at point.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">:</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">print_fa_header</span><span class="p">()</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">print_data</span><span class="p">()</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+</div>
+<div class="viewcode-block" id="MFaStream.close"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.MFaStream.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Close the linked file object.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fo</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="MFaStrFilterProps"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.MFaStrFilterProps">[docs]</a><span class="k">class</span> <span class="nc">MFaStrFilterProps</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Define filter preferences for multiple fasta alignments.</span>
+
+
+<span class="sd">    Define the properties of the filter to be applied to an</span>
+<span class="sd">    :class:`MFaStream`.</span>
+
+<span class="sd">    By default, all filters are applied (all variables are set to</span>
+<span class="sd">    True).</span>
+
+<span class="sd">    :param int nSpecies: Number of species that are aligned.</span>
+
+<span class="sd">    :ivar Boolean check_all_aligned: Check if all treated species</span>
+<span class="sd">      are available in the alignment (`nSpecies` gives the number</span>
+<span class="sd">      of species, given to the object upon initialization).</span>
+<span class="sd">    :ivar Boolean check_divergence: Check if the divergence of the</span>
+<span class="sd">      reference genome (the first sequence in the alignment) is lower</span>
+<span class="sd">      than `maxDiv` (defaults to 10 percent).</span>
+<span class="sd">    :ivar Boolean check_start_codons: Check if all start codons</span>
+<span class="sd">      are conserved.</span>
+<span class="sd">    :ivar Boolean check_stop_codons: Check if all stop codons are</span>
+<span class="sd">      conserved.</span>
+<span class="sd">    :ivar Boolean check_frame_shifting_gaps: Check, that there</span>
+<span class="sd">      are no frame-shifting gaps.</span>
+<span class="sd">    :ivar Boolean check_for_long_gaps: Check if no gap is longer</span>
+<span class="sd">      than `maxGapLength` (defaults to 30) bases.</span>
+<span class="sd">    :ivar Boolean check_nonsense_codon: Check if there is no</span>
+<span class="sd">      premature stop codon).</span>
+<span class="sd">    :ivar Boolean check_gene_length: Check that the gene is</span>
+<span class="sd">      longer than `minGeneLength` (defaults to 21).</span>
+<span class="sd">    :ivar Boolean check_exon_numbers: Check if exon number match</span>
+<span class="sd">      for all sequences in the alignment.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nSpecies</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_all_aligned</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nSpecies</span> <span class="o">=</span> <span class="n">nSpecies</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_divergence</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxDiv</span> <span class="o">=</span> <span class="mf">0.1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_start_codons</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_stop_codons</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_frame_shifting_gaps</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_for_long_gaps</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxGapLength</span> <span class="o">=</span> <span class="mi">30</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_nonsense_codon</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_gene_length</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minGeneLength</span> <span class="o">=</span> <span class="mi">21</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_exon_numbers</span> <span class="o">=</span> <span class="bp">True</span>
+
+</div>
+<div class="viewcode-block" id="filter_mfa_str"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.filter_mfa_str">[docs]</a><span class="k">def</span> <span class="nf">filter_mfa_str</span><span class="p">(</span><span class="n">mfaStr</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">verb</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Check multiple sequence alignment of an MFaStream.</span>
+
+<span class="sd">    Multiple sequence alignments usually include alignments that are</span>
+<span class="sd">    not apt for analysis.  These low quality alignments need to be</span>
+<span class="sd">    filtered out of the original multiple sequence alignment fasta</span>
+<span class="sd">    file.  If `verb` is unset from None, information about any</span>
+<span class="sd">    possible rejection is printed to the standard output.</span>
+
+<span class="sd">    :ivar MFaStream mfaStr: :class:`MFaStream` object to check.</span>
+<span class="sd">    :ivar MFaStrFilterProps fp: :class:`MFaStrFilterProps`; Properties</span>
+<span class="sd">      of the filter to be applied.</span>
+<span class="sd">    :ivar Boolean verb: Verbosity.</span>
+
+<span class="sd">    :rtype: Boolean, True if all filters have been passed.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># Define start and stop codon regex strings</span>
+    <span class="n">startCodon</span> <span class="o">=</span> <span class="s">r&quot;(atg)&quot;</span>
+    <span class="n">stopCodons</span> <span class="o">=</span> <span class="s">r&quot;(tag|taa|tga)&quot;</span>
+    <span class="c"># Define regex pattern for indel</span>
+    <span class="n">indel</span> <span class="o">=</span> <span class="s">r&#39;-&#39;</span>
+
+    <span class="k">def</span> <span class="nf">check_all_aligned</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mfaStr</span><span class="o">.</span><span class="n">seqL</span><span class="p">)</span> <span class="o">==</span> <span class="n">fp</span><span class="o">.</span><span class="n">nSpecies</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">verb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">print</span><span class="p">(</span><span class="n">mfaStr</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;rejection;&quot;</span><span class="p">,</span>
+                      <span class="s">&quot;Not all species are aligned.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">False</span>
+
+    <span class="k">def</span> <span class="nf">check_divergence</span><span class="p">():</span>
+        <span class="k">return</span> <span class="bp">True</span>             <span class="c"># TODO</span>
+
+    <span class="k">def</span> <span class="nf">check_start_codons</span><span class="p">():</span>
+        <span class="n">pattern</span> <span class="o">=</span> <span class="s">r&#39;^&#39;</span> <span class="o">+</span> <span class="n">startCodon</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">mfaStr</span><span class="o">.</span><span class="n">seqL</span><span class="p">:</span>
+            <span class="n">dataString</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">data</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">dataString</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">verb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;rejection;&quot;</span><span class="p">,</span>
+                          <span class="s">&quot;Start codons are not preserved.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+    <span class="k">def</span> <span class="nf">check_stop_codons</span><span class="p">():</span>
+        <span class="n">pattern</span> <span class="o">=</span> <span class="n">stopCodons</span> <span class="o">+</span> <span class="s">r&#39;$&#39;</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">mfaStr</span><span class="o">.</span><span class="n">seqL</span><span class="p">:</span>
+            <span class="n">dataString</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">data</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">dataString</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">verb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;rejection;&quot;</span><span class="p">,</span>
+                          <span class="s">&quot;Stop codons are not preserved.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+    <span class="k">def</span> <span class="nf">check_frame_shifting_gaps</span><span class="p">():</span>
+        <span class="n">pattern</span> <span class="o">=</span> <span class="n">indel</span> <span class="o">+</span> <span class="s">r&#39;+&#39;</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">mfaStr</span><span class="o">.</span><span class="n">seqL</span><span class="p">:</span>
+            <span class="n">dataString</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">data</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">dataString</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">i</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">((</span><span class="n">m</span><span class="o">.</span><span class="n">end</span><span class="p">()</span> <span class="o">-</span> <span class="n">m</span><span class="o">.</span><span class="n">start</span><span class="p">())</span> <span class="o">%</span> <span class="mi">3</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;rejection;&quot;</span><span class="p">,</span>
+                          <span class="s">&quot;Frame-shifting gap.&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+    <span class="k">def</span> <span class="nf">check_for_long_gaps</span><span class="p">():</span>
+        <span class="n">pattern</span> <span class="o">=</span> <span class="n">indel</span> <span class="o">+</span> <span class="s">r&#39;{&#39;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">maxGapLength</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="s">r&#39;,}&#39;</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">mfaStr</span><span class="o">.</span><span class="n">seqL</span><span class="p">:</span>
+            <span class="n">dataString</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">data</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">dataString</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">print</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;rejection;&quot;</span>
+                      <span class="s">&quot;A gap is too long.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+    <span class="k">def</span> <span class="nf">check_nonsense_codon</span><span class="p">():</span>
+        <span class="n">pattern</span> <span class="o">=</span> <span class="s">r&#39;(&#39;</span> <span class="o">+</span> <span class="n">stopCodons</span> <span class="o">+</span> <span class="s">r&#39;)&#39;</span> <span class="o">+</span> <span class="s">r&#39;(?!$)&#39;</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">mfaStr</span><span class="o">.</span><span class="n">seqL</span><span class="p">:</span>
+            <span class="n">dataString</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">data</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">dataString</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">print</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;rejection;&quot;</span>
+                      <span class="s">&quot;A nonsense codon has been found.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+    <span class="k">def</span> <span class="nf">check_gene_length</span><span class="p">():</span>
+        <span class="k">return</span> <span class="bp">True</span>             <span class="c"># TODO</span>
+
+    <span class="k">def</span> <span class="nf">check_exon_numbers</span><span class="p">():</span>
+        <span class="k">return</span> <span class="bp">True</span>             <span class="c"># TODO</span>
+
+    <span class="k">if</span> <span class="n">fp</span><span class="o">.</span><span class="n">check_all_aligned</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_all_aligned</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="n">fp</span><span class="o">.</span><span class="n">check_divergence</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_divergence</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="n">fp</span><span class="o">.</span><span class="n">check_start_codons</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_start_codons</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="n">fp</span><span class="o">.</span><span class="n">check_stop_codons</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_stop_codons</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="n">fp</span><span class="o">.</span><span class="n">check_frame_shifting_gaps</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_frame_shifting_gaps</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="n">fp</span><span class="o">.</span><span class="n">check_for_long_gaps</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_for_long_gaps</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="n">fp</span><span class="o">.</span><span class="n">check_nonsense_codon</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_nonsense_codon</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="n">fp</span><span class="o">.</span><span class="n">check_gene_length</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_gene_length</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="n">fp</span><span class="o">.</span><span class="n">check_exon_numbers</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_exon_numbers</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">return</span> <span class="bp">True</span>
+
+</div>
 <div class="viewcode-block" id="FaSeq"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.FaSeq">[docs]</a><span class="k">class</span> <span class="nc">FaSeq</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;Store sequence data retrieved from a fasta file.</span>
 
@@ -234,7 +606,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">nSpecies</span> <span class="o">=</span> <span class="mi">0</span>
 
 <div class="viewcode-block" id="FaSeq.print_info"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.FaSeq.print_info">[docs]</a>    <span class="k">def</span> <span class="nf">print_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxB</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Print sequence information.</span>
+        <span class="sd">&quot;&quot;&quot;Print fasta sequence information.</span>
 
 <span class="sd">        Print fasta sequence identifier, species names, the length of</span>
 <span class="sd">        the sequence and a maximum of `maxB` bases (defaults to 50).</span>
@@ -242,7 +614,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">print</span><span class="p">(</span><span class="s">&quot;Sequence identifier:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nSpecies</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">print_seq_header</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">print_fa_header</span><span class="p">()</span>
             <span class="k">print</span><span class="p">(</span><span class="s">&quot;Printing&quot;</span><span class="p">,</span> <span class="n">maxB</span><span class="p">,</span> <span class="s">&quot;out of a total of&quot;</span><span class="p">,</span>
                   <span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">dataLen</span><span class="p">,</span> <span class="s">&quot;bases.&quot;</span><span class="p">)</span>
             <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">maxB</span><span class="p">])</span>
@@ -293,10 +665,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">flag</span> <span class="o">=</span> <span class="bp">False</span>
-    <span class="k">if</span> <span class="n">faFileName</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="s">&quot;gz&quot;</span><span class="p">:</span>
-        <span class="n">faFile</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">faFileName</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;rt&#39;</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">faFile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">faFileName</span><span class="p">)</span>
+    <span class="n">faFile</span> <span class="o">=</span> <span class="n">sb</span><span class="o">.</span><span class="n">gz_open</span><span class="p">(</span><span class="n">faFileName</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
         <span class="n">name</span> <span class="o">=</span> <span class="n">sb</span><span class="o">.</span><span class="n">stripFName</span><span class="p">(</span><span class="n">faFileName</span><span class="p">)</span>
     <span class="c"># Find the start of the first sequence.</span>
@@ -350,10 +719,7 @@
     <span class="n">fastaSeq</span> <span class="o">=</span> <span class="n">FaSeq</span><span class="p">()</span>
 
     <span class="n">flag</span> <span class="o">=</span> <span class="bp">False</span>
-    <span class="k">if</span> <span class="n">faFileName</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="s">&quot;gz&quot;</span><span class="p">:</span>
-        <span class="n">faFile</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">faFileName</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;rt&#39;</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">faFile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">faFileName</span><span class="p">)</span>
+    <span class="n">faFile</span> <span class="o">=</span> <span class="n">sb</span><span class="o">.</span><span class="n">gz_open</span><span class="p">(</span><span class="n">faFileName</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
         <span class="n">fastaSeq</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
     <span class="k">else</span><span class="p">:</span>
@@ -486,11 +852,7 @@
             <span class="k">raise</span> <span class="n">sb</span><span class="o">.</span><span class="n">SequenceDataError</span><span class="p">(</span>
                 <span class="s">&quot;Sequence &quot;</span> <span class="o">+</span> <span class="n">faSeq</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span>
                 <span class="s">&quot; has different length than reference.&quot;</span><span class="p">)</span>
-    <span class="c"># initialize VCFFile</span>
-    <span class="k">if</span> <span class="n">VCFFileName</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="s">&quot;gz&quot;</span><span class="p">:</span>
-        <span class="n">VCFFile</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">VCFFileName</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;wt&#39;</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">VCFFile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">VCFFileName</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+    <span class="n">VCFFile</span> <span class="o">=</span> <span class="n">sb</span><span class="o">.</span><span class="n">gz_open</span><span class="p">(</span><span class="n">VCFFileName</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
     <span class="k">print</span><span class="p">(</span><span class="n">vcf</span><span class="o">.</span><span class="n">get_header_line_string</span><span class="p">(</span><span class="n">faSeq</span><span class="o">.</span><span class="n">get_seq_names</span><span class="p">()),</span> <span class="nb">file</span><span class="o">=</span><span class="n">VCFFile</span><span class="p">)</span>
     <span class="c"># loop over bases</span>
     <span class="n">refBase</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
@@ -552,7 +914,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2013, Dominik Schrempf.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
     </div>
   </body>
 </html>

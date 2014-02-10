@@ -18,11 +18,11 @@ Exception Classes:
 
 Functions:
   - :func:`filter_mfa_str()`, filter a given :class:`MFaStream`
-      according to the filters defined in :class:`MFaStrFilterProps`
+    according to the filters defined in :class:`MFaStrFilterProps`
   - :func:`init_seq()`, initialize fasta sequence stream from file
   - :func:`open_seq()`, open fasta file
   - :func:`save_as_vcf()`, save a given :class:`FaSeq` in variant call
-      format (VCF)
+    format (VCF)
   - :func:`read_seq_from_fo()`, read a single sequence from file object
   - :func:`read_align_from_fo()`, read an alignment from file object
 
@@ -365,44 +365,33 @@ class MFaStrFilterProps():
 
 
     Define the properties of the filter to be applied to an
-    :class:`MFAStream`.
+    :class:`MFaStream`.
 
     By default, all filters are applied (all variables are set to
     True).
-    Parameters::
 
     :param int nSpecies: Number of species that are aligned.
 
-    Variables::
-
-    :ivar Boolean check_all_aligned: Check if all treated species are
-      available in the alignment (`self.nSpecies` gives the number of
-      species, given to the object upon initialization).
-
+    :ivar Boolean check_all_aligned: Check if all treated species
+      are available in the alignment (`nSpecies` gives the number
+      of species, given to the object upon initialization).
     :ivar Boolean check_divergence: Check if the divergence of the
       reference genome (the first sequence in the alignment) is lower
-      than `self.maxDiv` (defaults to 10 percent).
-
-    :ivar Boolean self.check_start_codons: Check if all start codons
+      than `maxDiv` (defaults to 10 percent).
+    :ivar Boolean check_start_codons: Check if all start codons
       are conserved.
-
-    :ivar Boolean self.check_stop_codons: Check if all stop codons are
-    conserved.
-
-    :ivar Boolean self.check_frame_shifting_gaps: Check, that there
-    are no frame-shifting gaps.
-
-    :ivar Boolean self.check_for_long_gaps: Check if no gap is longer
-    than `self.maxGapLength` (defaults to 30) bases.
-
-    :ivar Boolean self.check_nonsense_codon: Check if there is no
-    premature stop codon).
-
-    :ivar Boolean self.check_gene_length: Check that the gene is
-    longer than `self.minGeneLength` (defaults to 21).
-
-    :ivar Boolean self.check_exon_numbers: Check if exon number match
-    for all sequences in the alignment.
+    :ivar Boolean check_stop_codons: Check if all stop codons are
+      conserved.
+    :ivar Boolean check_frame_shifting_gaps: Check, that there
+      are no frame-shifting gaps.
+    :ivar Boolean check_for_long_gaps: Check if no gap is longer
+      than `maxGapLength` (defaults to 30) bases.
+    :ivar Boolean check_nonsense_codon: Check if there is no
+      premature stop codon).
+    :ivar Boolean check_gene_length: Check that the gene is
+      longer than `minGeneLength` (defaults to 21).
+    :ivar Boolean check_exon_numbers: Check if exon number match
+      for all sequences in the alignment.
 
     """
 
@@ -431,11 +420,10 @@ def filter_mfa_str(mfaStr, fp, verb=None):
     file.  If `verb` is unset from None, information about any
     possible rejection is printed to the standard output.
 
-    :ivar :class:`MFaStream` mfaStr: MFaStream object to check.
-    :ivar :class:`MFaStrFilterProps` fp: Properties of the filter
-      to be applied.
+    :ivar MFaStream mfaStr: :class:`MFaStream` object to check.
+    :ivar MFaStrFilterProps fp: :class:`MFaStrFilterProps`; Properties
+      of the filter to be applied.
     :ivar Boolean verb: Verbosity.
-
 
     :rtype: Boolean, True if all filters have been passed.
 
@@ -461,33 +449,38 @@ def filter_mfa_str(mfaStr, fp, verb=None):
     def check_start_codons():
         pattern = r'^' + startCodon
         for s in mfaStr.seqL:
-            dataString = s.data
-            m = re.search(pattern, dataString)
-            if m is None:
-                if verb is not None:
-                    print(s.name, "rejection;",
-                          "Start codons are not preserved.")
-                return False
+            (nEx, nExTot) = s.get_exon_nr()
+            if nEx == 1:
+                dataString = s.data
+                m = re.search(pattern, dataString, re.I)
+                if m is None:
+                    if verb is not None:
+                        print(s.name, "rejection;",
+                              "Start codons are not preserved.")
+                    return False
         return True
 
     def check_stop_codons():
         pattern = stopCodons + r'$'
         for s in mfaStr.seqL:
-            dataString = s.data
-            m = re.search(pattern, dataString)
-            if m is None:
-                if verb is not None:
-                    print(s.name, "rejection;",
-                          "Stop codons are not preserved.")
-                return False
+            (nEx, nExTot) = s.get_exon_nr()
+            if nEx == nExTot:
+                dataString = s.data
+                m = re.search(pattern, dataString, re.I)
+                if m is None:
+                    if verb is not None:
+                        print(s.name, "rejection;",
+                              "Stop codons are not preserved.")
+                    return False
         return True
 
     def check_frame_shifting_gaps():
         pattern = indel + r'+'
         for s in mfaStr.seqL:
             dataString = s.data
-            i = re.finditer(pattern, dataString)
+            i = re.finditer(pattern, dataString, re.I)
             for m in i:
+                # A gap has been found.  Check for frame shift.
                 if ((m.end() - m.start()) % 3) != 0:
                     print(s.name, "rejection;",
                           "Frame-shifting gap.")
@@ -498,9 +491,9 @@ def filter_mfa_str(mfaStr, fp, verb=None):
         pattern = indel + r'{' + repr(fp.maxGapLength + 1) + r',}'
         for s in mfaStr.seqL:
             dataString = s.data
-            m = re.search(pattern, dataString)
+            m = re.search(pattern, dataString, re.I)
             if m is not None:
-                print(s.name, "rejection;"
+                print(s.name, "rejection;",
                       "A gap is too long.")
                 return False
         return True
@@ -509,11 +502,14 @@ def filter_mfa_str(mfaStr, fp, verb=None):
         pattern = r'(' + stopCodons + r')' + r'(?!$)'
         for s in mfaStr.seqL:
             dataString = s.data
-            m = re.search(pattern, dataString)
+            m = re.search(pattern, dataString, re.I)
             if m is not None:
-                print(s.name, "rejection;"
-                      "A nonsense codon has been found.")
-                return False
+                # Stop codon pattern has been found.  Check if frame
+                # is not shifted.
+                if m.start() % 3 is 0:
+                    print(s.name, "rejection;",
+                          "A nonsense codon has been found.")
+                    return False
         return True
 
     def check_gene_length():

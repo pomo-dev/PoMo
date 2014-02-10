@@ -102,7 +102,7 @@ class Seq:
         """Print a fasta file entry with header and sequence data.
 
         :ivar int maxB: Print a maximum of maxB bases. Default: print
-        all bases.
+          all bases.
 
         """
         self.print_fa_header()
@@ -189,6 +189,35 @@ class Seq:
             tempDescr = self.descr[:-1] + '+'
         self.descr = tempDescr
         self.toggle_rc()
+
+    def get_exon_nr(self):
+        """Try to find the current and the total exon number of the sequence.
+
+        Extract the exon number and the total number of exons, if the
+        name of the sequence is of the form (cf. `UCSC Table Browser
+        <http://genome.ucsc.edu/goldenPath/help/hgTablesHelp.html#FASTA>`_)::
+
+          >CCDS3.1_hg18_2_19
+
+        :rtype: (int nEx, int nExTot)
+
+        :raises: :class:`SequenceDataError`, if the format of the
+          sequence name is invalid.
+
+        """
+        nameL = self.name.rsplit(sep='_', maxsplit=2)
+        if len(nameL) >= 3:
+            try:
+                nEx = int(nameL[-1])
+            except ValueError:
+                raise SequenceDataError("Exon number not valid.")
+            try:
+                nExTot = int(nameL[-2])
+            except ValueError:
+                raise SequenceDataError("Total exon number not valid.")
+        else:
+            raise SequenceDataError("Exon information not valid.")
+        return (nEx, nExTot)
 
     def get_region(self):
         """Try to find the :class:`Region` that the sequence spans.

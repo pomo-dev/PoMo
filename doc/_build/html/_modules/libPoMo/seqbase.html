@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -69,7 +67,7 @@
 <span class="sd">  - :class:`NotAValidRefBase`</span>
 
 <span class="sd">Functions:</span>
-<span class="sd">  - :func:`stripFName()`: strip filename off its ending</span>
+<span class="sd">  - :func:`stripFName()`, strip filename off its ending</span>
 
 <span class="sd">----</span>
 
@@ -78,6 +76,7 @@
 <span class="n">__docformat__</span> <span class="o">=</span> <span class="s">&#39;restructuredtext&#39;</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">gzip</span>
 
 
 <div class="viewcode-block" id="SequenceDataError"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.SequenceDataError">[docs]</a><span class="k">class</span> <span class="nc">SequenceDataError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
@@ -96,22 +95,32 @@
 <span class="sd">    The start and end points need to be given 1-based and are</span>
 <span class="sd">    converted to 0-based positions that are used internally to save</span>
 <span class="sd">    all positional data.</span>
-<span class="sd">    </span>
+
 <span class="sd">    :param str chrom: Chromosome name.</span>
 <span class="sd">    :param int start: 1-based start position.</span>
 <span class="sd">    :param int end: 1-based end position.</span>
+<span class="sd">    :param str name: Optional, region name.</span>
 
 <span class="sd">    :ivar str chrom: Chromosome name.</span>
 <span class="sd">    :ivar int start: 0-based start position.</span>
 <span class="sd">    :ivar int end: 0-base end position.</span>
-
+<span class="sd">    :ivar str name: Region name.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chrom</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chrom</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">chrom</span> <span class="o">=</span> <span class="n">chrom</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="n">start</span> <span class="o">-</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">end</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
 
-</div>
+<div class="viewcode-block" id="Region.print_info"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Region.print_info">[docs]</a>    <span class="k">def</span> <span class="nf">print_info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Print information about the region.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Region name:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Chromosome name:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chrom</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;0-based start position:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;0-based end position:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span><span class="p">)</span>
+
+</div></div>
 <div class="viewcode-block" id="Seq"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq">[docs]</a><span class="k">class</span> <span class="nc">Seq</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;A class that stores sequence data.</span>
 <span class="sd">    .. _seqbase-seq:</span>
@@ -121,6 +130,8 @@
 <span class="sd">    :ivar str descr: Description of the sequence.</span>
 <span class="sd">    :ivar str data: String with sequence data.</span>
 <span class="sd">    :ivar int dataLen: Number of saved bases.</span>
+<span class="sd">    :ivar Boolean rc: True if *self.data* stores the</span>
+<span class="sd">                      reverse-complement of the real sequence.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -128,10 +139,33 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">descr</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dataLen</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rc</span> <span class="o">=</span> <span class="bp">False</span>
 
-<div class="viewcode-block" id="Seq.print_seq_header"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.print_seq_header">[docs]</a>    <span class="k">def</span> <span class="nf">print_seq_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__lowered</span> <span class="o">=</span> <span class="bp">False</span>
+
+<div class="viewcode-block" id="Seq.print_fa_header"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.print_fa_header">[docs]</a>    <span class="k">def</span> <span class="nf">print_fa_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Print the sequence header line in fasta format.&quot;&quot;&quot;</span>
         <span class="k">print</span><span class="p">(</span><span class="s">&#39;&gt;&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&#39; &#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+</div>
+<div class="viewcode-block" id="Seq.print_fa_entry"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.print_fa_entry">[docs]</a>    <span class="k">def</span> <span class="nf">print_fa_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxB</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Print a fasta file entry with header and sequence data.</span>
+
+<span class="sd">        :ivar int maxB: Print a maximum of maxB bases. Default: print</span>
+<span class="sd">          all bases.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">print_fa_header</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">maxB</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;First&quot;</span><span class="p">,</span> <span class="n">maxB</span><span class="p">,</span> <span class="s">&quot;bases: &quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[:</span><span class="n">maxB</span><span class="p">])</span>
+        <span class="k">return</span>
+</div>
+<div class="viewcode-block" id="Seq.print_data"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.print_data">[docs]</a>    <span class="k">def</span> <span class="nf">print_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Print the sequence data.&quot;&quot;&quot;</span>
+        <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
         <span class="k">return</span>
 </div>
 <div class="viewcode-block" id="Seq.get_base"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.get_base">[docs]</a>    <span class="k">def</span> <span class="nf">get_base</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
@@ -140,7 +174,155 @@
             <span class="k">raise</span> <span class="n">SequenceDataError</span><span class="p">(</span><span class="s">&quot;Position out of range.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">pos</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 </div>
+<div class="viewcode-block" id="Seq.print_info"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.print_info">[docs]</a>    <span class="k">def</span> <span class="nf">print_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxB</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Print sequence information.</span>
+
+<span class="sd">        Print sequence name, description, the length of the sequence</span>
+<span class="sd">        and a maximum of `maxB` bases (defaults to 50).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Sequence name:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Sequence description:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Sequence length:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataLen</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;First&quot;</span><span class="p">,</span> <span class="n">maxB</span><span class="p">,</span> <span class="s">&quot;bases:&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">maxB</span><span class="p">])</span>
+        <span class="k">return</span>
+</div>
+<div class="viewcode-block" id="Seq.toggle_rc"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.toggle_rc">[docs]</a>    <span class="k">def</span> <span class="nf">toggle_rc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Toggle the state of *self.rc*.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rc</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">rc</span>
+</div>
+<div class="viewcode-block" id="Seq.set_rc"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.set_rc">[docs]</a>    <span class="k">def</span> <span class="nf">set_rc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the *self.rc*.</span>
+
+<span class="sd">        The instance variable *self.rc* is a Boolean value that is</span>
+<span class="sd">        true if the saved sequence is reversed and complemented.  This</span>
+<span class="sd">        function sets this value according to the last character in</span>
+<span class="sd">        the sequence description.</span>
+
+<span class="sd">        :raises: *ValueError()* if state could not be detected.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;-&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rc</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;+&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rc</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;State could not be detected.&quot;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Seq.get_rc"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.get_rc">[docs]</a>    <span class="k">def</span> <span class="nf">get_rc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if the sequence is reversed and complemented.</span>
+
+<span class="sd">        :rtype: Boolean</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rc</span>
+</div>
+<div class="viewcode-block" id="Seq.rev_comp"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.rev_comp">[docs]</a>    <span class="k">def</span> <span class="nf">rev_comp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reverses and complements the sequence.</span>
+
+<span class="sd">        This is rather slow for long sequences.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">compDict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;a&#39;</span><span class="p">:</span> <span class="s">&#39;t&#39;</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">:</span> <span class="s">&#39;g&#39;</span><span class="p">,</span> <span class="s">&#39;g&#39;</span><span class="p">:</span> <span class="s">&#39;c&#39;</span><span class="p">,</span> <span class="s">&#39;t&#39;</span><span class="p">:</span> <span class="s">&#39;a&#39;</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__lowered</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">rcData</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataLen</span><span class="p">):</span>
+            <span class="n">rcData</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">compDict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rcData</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;+&#39;</span><span class="p">:</span>
+            <span class="n">tempDescr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s">&#39;-&#39;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;-&#39;</span><span class="p">:</span>
+            <span class="n">tempDescr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s">&#39;+&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">descr</span> <span class="o">=</span> <span class="n">tempDescr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">toggle_rc</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Seq.get_exon_nr"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.get_exon_nr">[docs]</a>    <span class="k">def</span> <span class="nf">get_exon_nr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Try to find the current and the total exon number of the sequence.</span>
+
+<span class="sd">        Extract the exon number and the total number of exons, if the</span>
+<span class="sd">        name of the sequence is of the form (cf. `UCSC Table Browser</span>
+<span class="sd">        &lt;http://genome.ucsc.edu/goldenPath/help/hgTablesHelp.html#FASTA&gt;`_)::</span>
+
+<span class="sd">          &gt;CCDS3.1_hg18_2_19</span>
+
+<span class="sd">        :rtype: (int nEx, int nExTot)</span>
+
+<span class="sd">        :raises: :class:`SequenceDataError`, if the format of the</span>
+<span class="sd">          sequence name is invalid.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">nameL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="n">sep</span><span class="o">=</span><span class="s">&#39;_&#39;</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nameL</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">nEx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nameL</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">nExTot</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nameL</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SequenceDataError</span><span class="p">(</span><span class="s">&quot;Exon information not valid.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">nEx</span><span class="p">,</span> <span class="n">nExTot</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="Seq.get_region"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.get_region">[docs]</a>    <span class="k">def</span> <span class="nf">get_region</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Try to find the :class:`Region` that the sequence spans.</span>
+
+<span class="sd">        The sequence might not physically start at position 1 but at</span>
+<span class="sd">        some arbitrary value that is indicated in the sequence</span>
+<span class="sd">        description.  This function gets this physical</span>
+<span class="sd">        :class:`Region`, if the description of the sequence is of the</span>
+<span class="sd">        form (cf. `UCSC Table Browser</span>
+<span class="sd">        &lt;http://genome.ucsc.edu/goldenPath/help/hgTablesHelp.html#FASTA&gt;`_)::</span>
+
+<span class="sd">          918 0 0 chr1:58954-59871+</span>
+
+<span class="sd">        :raises: :class:`SequenceDataError`, if format of description</span>
+<span class="sd">          is invalid.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;+&#39;</span><span class="p">,</span> <span class="s">&#39;-&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">SequenceDataError</span><span class="p">(</span><span class="s">&quot;Direction character is missing.&quot;</span><span class="p">)</span>
+        <span class="n">descrL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="n">maxsplit</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">descrL</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">rgStr</span> <span class="o">=</span> <span class="n">descrL</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">rgStrL</span> <span class="o">=</span> <span class="n">rgStr</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rgStrL</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">chromName</span> <span class="o">=</span> <span class="n">rgStrL</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">posStr</span> <span class="o">=</span> <span class="n">rgStrL</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">posStrL</span> <span class="o">=</span> <span class="n">posStr</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;-&#39;</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">posStrL</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">posStrL</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">posStrL</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SequenceDataError</span><span class="p">(</span><span class="s">&quot;Regional information is invalid.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SequenceDataError</span><span class="p">(</span><span class="s">&quot;Description format is invalid.&quot;</span><span class="p">)</span>
+        <span class="n">rg</span> <span class="o">=</span> <span class="n">Region</span><span class="p">(</span><span class="n">chromName</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">rg</span>
+</div>
+<div class="viewcode-block" id="Seq.get_region_no_description"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.get_region_no_description">[docs]</a>    <span class="k">def</span> <span class="nf">get_region_no_description</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the region of the sequence.</span>
+
+<span class="sd">        If no regional information is available in the sequence</span>
+<span class="sd">        description (cf. :func:`get_region`), the position of the</span>
+<span class="sd">        first base in the reference genome can be given</span>
+<span class="sd">        manually. E.g., if the first base of the sequence does not</span>
+<span class="sd">        correspond to the first but to the 11th base of the reference</span>
+<span class="sd">        sequence, the offset should be 10.</span>
+
+<span class="sd">        The name of the chromosome will be set to the name of the</span>
+<span class="sd">        sequence.</span>
+
+<span class="sd">        :param int offset: Optional, offset of the sequence.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">chromName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">offset</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">offset</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataLen</span>
+        <span class="k">return</span> <span class="n">Region</span><span class="p">(</span><span class="n">chromName</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+</div>
 <div class="viewcode-block" id="Seq.purge"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.purge">[docs]</a>    <span class="k">def</span> <span class="nf">purge</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
         <span class="sd">&quot;&quot;&quot;Purge data saved in this sequence.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">descr</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
@@ -151,7 +333,21 @@
 <div class="viewcode-block" id="stripFName"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.stripFName">[docs]</a><span class="k">def</span> <span class="nf">stripFName</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Convenience function to strip filename off the &quot;.xyz&quot; ending.&quot;&quot;&quot;</span>
     <span class="n">filename_without_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">fn</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">filename_without_path</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
+    <span class="k">return</span> <span class="n">filename_without_path</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+</div>
+<div class="viewcode-block" id="gz_open"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.gz_open">[docs]</a><span class="k">def</span> <span class="nf">gz_open</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Open file with io.open() or gzip.open().</span>
+
+<span class="sd">    :param str fn: Name of the file to open.</span>
+<span class="sd">    :param char md: Mode &#39;**r**&#39; | &#39;w&#39;.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">fn</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="s">&quot;gz&quot;</span><span class="p">:</span>
+        <span class="n">fo</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="o">+</span><span class="s">&#39;t&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fo</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fo</span></div>
 </pre></div>
 
           </div>
@@ -191,7 +387,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2013, Dominik Schrempf.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
     </div>
   </body>
 </html>

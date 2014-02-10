@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -15,7 +13,7 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
+        URL_ROOT:    './',
         VERSION:     '1.0.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
@@ -66,8 +64,9 @@
 <dt>Classes:</dt>
 <dd><ul class="first last simple">
 <li><a class="reference internal" href="#libPoMo.fasta.FaStream" title="libPoMo.fasta.FaStream"><tt class="xref py py-class docutils literal"><span class="pre">FaStream</span></tt></a>, fasta file sequence stream object</li>
-<li><tt class="xref py py-class docutils literal"><span class="pre">MFaStrea</span></tt>, multiple alignment fasta file sequence stream object</li>
+<li><a class="reference internal" href="#libPoMo.fasta.MFaStream" title="libPoMo.fasta.MFaStream"><tt class="xref py py-class docutils literal"><span class="pre">MFaStream</span></tt></a>, multiple alignment fasta file sequence stream object</li>
 <li><a class="reference internal" href="#libPoMo.fasta.FaSeq" title="libPoMo.fasta.FaSeq"><tt class="xref py py-class docutils literal"><span class="pre">FaSeq</span></tt></a>, fasta file sequence object</li>
+<li><a class="reference internal" href="#libPoMo.fasta.MFaStrFilterProps" title="libPoMo.fasta.MFaStrFilterProps"><tt class="xref py py-class docutils literal"><span class="pre">MFaStrFilterProps</span></tt></a>, define multiple fasta file filter preferences</li>
 </ul>
 </dd>
 <dt>Exception Classes:</dt>
@@ -77,12 +76,14 @@
 </dd>
 <dt>Functions:</dt>
 <dd><ul class="first last simple">
-<li><a class="reference internal" href="#libPoMo.fasta.read_seq_from_fo" title="libPoMo.fasta.read_seq_from_fo"><tt class="xref py py-func docutils literal"><span class="pre">read_seq_from_fo()</span></tt></a>, read a single sequence from file object</li>
-<li><a class="reference internal" href="#libPoMo.fasta.read_align_from_fo" title="libPoMo.fasta.read_align_from_fo"><tt class="xref py py-func docutils literal"><span class="pre">read_align_from_fo()</span></tt></a>, read an alignment from file object</li>
+<li><a class="reference internal" href="#libPoMo.fasta.filter_mfa_str" title="libPoMo.fasta.filter_mfa_str"><tt class="xref py py-func docutils literal"><span class="pre">filter_mfa_str()</span></tt></a>, filter a given <a class="reference internal" href="#libPoMo.fasta.MFaStream" title="libPoMo.fasta.MFaStream"><tt class="xref py py-class docutils literal"><span class="pre">MFaStream</span></tt></a>
+according to the filters defined in <a class="reference internal" href="#libPoMo.fasta.MFaStrFilterProps" title="libPoMo.fasta.MFaStrFilterProps"><tt class="xref py py-class docutils literal"><span class="pre">MFaStrFilterProps</span></tt></a></li>
 <li><a class="reference internal" href="#libPoMo.fasta.init_seq" title="libPoMo.fasta.init_seq"><tt class="xref py py-func docutils literal"><span class="pre">init_seq()</span></tt></a>, initialize fasta sequence stream from file</li>
 <li><a class="reference internal" href="#libPoMo.fasta.open_seq" title="libPoMo.fasta.open_seq"><tt class="xref py py-func docutils literal"><span class="pre">open_seq()</span></tt></a>, open fasta file</li>
 <li><a class="reference internal" href="#libPoMo.fasta.save_as_vcf" title="libPoMo.fasta.save_as_vcf"><tt class="xref py py-func docutils literal"><span class="pre">save_as_vcf()</span></tt></a>, save a given <a class="reference internal" href="#libPoMo.fasta.FaSeq" title="libPoMo.fasta.FaSeq"><tt class="xref py py-class docutils literal"><span class="pre">FaSeq</span></tt></a> in variant call
 format (VCF)</li>
+<li><a class="reference internal" href="#libPoMo.fasta.read_seq_from_fo" title="libPoMo.fasta.read_seq_from_fo"><tt class="xref py py-func docutils literal"><span class="pre">read_seq_from_fo()</span></tt></a>, read a single sequence from file object</li>
+<li><a class="reference internal" href="#libPoMo.fasta.read_align_from_fo" title="libPoMo.fasta.read_align_from_fo"><tt class="xref py py-func docutils literal"><span class="pre">read_align_from_fo()</span></tt></a>, read an alignment from file object</li>
 </ul>
 </dd>
 </dl>
@@ -128,7 +129,7 @@ chromosomes.</li>
 <dl class="method">
 <dt id="libPoMo.fasta.FaSeq.print_info">
 <tt class="descname">print_info</tt><big>(</big><em>maxB=50</em><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#FaSeq.print_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.FaSeq.print_info" title="Permalink to this definition">¶</a></dt>
-<dd><p>Print sequence information.</p>
+<dd><p>Print fasta sequence information.</p>
 <p>Print fasta sequence identifier, species names, the length of
 the sequence and a maximum of <cite>maxB</cite> bases (defaults to 50).</p>
 </dd></dl>
@@ -158,7 +159,7 @@ increase runtime.</p>
 </tr>
 <tr class="field-even field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first last simple">
 <li><strong>name</strong> (<em>str</em>) &#8211; Stream name.</li>
-<li><strong>seq</strong> (<em>Seq</em>) &#8211; Saved sequence (<cite>Seq</cite> object)</li>
+<li><strong>seq</strong> (<em>Seq</em>) &#8211; Saved sequence (<a class="reference internal" href="seqbase.html#libPoMo.seqbase.Seq" title="libPoMo.seqbase.Seq"><tt class="xref py py-class docutils literal"><span class="pre">Seq</span></tt></a> object)</li>
 <li><strong>nextHeaderLine</strong> (<em>str</em>) &#8211; Next header line.</li>
 <li><strong>fo</strong> (<em>fo</em>) &#8211; File object that points to the start of the data of
 the next sequence.</li>
@@ -193,9 +194,52 @@ no next sequence is found.</p>
 </dd></dl>
 
 <dl class="class">
+<dt id="libPoMo.fasta.MFaStrFilterProps">
+<em class="property">class </em><tt class="descclassname">libPoMo.fasta.</tt><tt class="descname">MFaStrFilterProps</tt><big>(</big><em>nSpecies</em><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#MFaStrFilterProps"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.MFaStrFilterProps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Define filter preferences for multiple fasta alignments.</p>
+<p>Define the properties of the filter to be applied to an
+<a class="reference internal" href="#libPoMo.fasta.MFaStream" title="libPoMo.fasta.MFaStream"><tt class="xref py py-class docutils literal"><span class="pre">MFaStream</span></tt></a>.</p>
+<p>By default, all filters are applied (all variables are set to
+True).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>nSpecies</strong> (<em>int</em>) &#8211; Number of species that are aligned.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first last simple">
+<li><strong>check_all_aligned</strong> (<em>Boolean</em>) &#8211; Check if all treated species
+are available in the alignment (<cite>nSpecies</cite> gives the number
+of species, given to the object upon initialization).</li>
+<li><strong>check_divergence</strong> (<em>Boolean</em>) &#8211; Check if the divergence of the
+reference genome (the first sequence in the alignment) is lower
+than <cite>maxDiv</cite> (defaults to 10 percent).</li>
+<li><strong>check_start_codons</strong> (<em>Boolean</em>) &#8211; Check if all start codons
+are conserved.</li>
+<li><strong>check_stop_codons</strong> (<em>Boolean</em>) &#8211; Check if all stop codons are
+conserved.</li>
+<li><strong>check_frame_shifting_gaps</strong> (<em>Boolean</em>) &#8211; Check, that there
+are no frame-shifting gaps.</li>
+<li><strong>check_for_long_gaps</strong> (<em>Boolean</em>) &#8211; Check if no gap is longer
+than <cite>maxGapLength</cite> (defaults to 30) bases.</li>
+<li><strong>check_nonsense_codon</strong> (<em>Boolean</em>) &#8211; Check if there is no
+premature stop codon).</li>
+<li><strong>check_gene_length</strong> (<em>Boolean</em>) &#8211; Check that the gene is
+longer than <cite>minGeneLength</cite> (defaults to 21).</li>
+<li><strong>check_exon_numbers</strong> (<em>Boolean</em>) &#8211; Check if exon number match
+for all sequences in the alignment.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
 <dt id="libPoMo.fasta.MFaStream">
-<em class="property">class </em><tt class="descclassname">libPoMo.fasta.</tt><tt class="descname">MFaStream</tt><big>(</big><em>faFileName</em>, <em>maxskip=50</em>, <em>name=None</em><big>)</big><a class="headerlink" href="#libPoMo.fasta.MFaStream" title="Permalink to this definition">¶</a></dt>
-<dd><p>Store a multiplealignment fasta file sequence stream.</p>
+<em class="property">class </em><tt class="descclassname">libPoMo.fasta.</tt><tt class="descname">MFaStream</tt><big>(</big><em>faFileName</em>, <em>maxskip=50</em>, <em>name=None</em><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#MFaStream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.MFaStream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Store a multiple alignment fasta file sequence stream.</p>
 <p>The sequences of one gene / alignment are saved for all species /
 individuals / chromosomes.  Functions are provided to read in the
 next gene / alignment in the file that fulfills the given
@@ -224,7 +268,7 @@ set it to the stripped filename.</li>
 </tr>
 <tr class="field-even field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first last simple">
 <li><strong>name</strong> (<em>str</em>) &#8211; Stream name.</li>
-<li><strong>seqL</strong> (<em>[Seq]</em>) &#8211; Saved sequences (<cite>Seq</cite> objects) in a list.</li>
+<li><strong>seqL</strong> (<em>[Seq]</em>) &#8211; Saved sequences (<a class="reference internal" href="seqbase.html#libPoMo.seqbase.Seq" title="libPoMo.seqbase.Seq"><tt class="xref py py-class docutils literal"><span class="pre">Seq</span></tt></a> objects) in a list.</li>
 <li><strong>nSpecies</strong> (<em>int</em>) &#8211; Number of saved sequences / species in the alignment.</li>
 <li><strong>nextHeaderLine</strong> (<em>str</em>) &#8211; Next header line.</li>
 <li><strong>fo</strong> (<em>fo</em>) &#8211; File object that points to the start of the data of
@@ -237,14 +281,20 @@ the next sequence.</li>
 <p>Please close the associated file object with
 <a class="reference internal" href="#libPoMo.fasta.FaStream.close" title="libPoMo.fasta.FaStream.close"><tt class="xref py py-func docutils literal"><span class="pre">FaStream.close()</span></tt></a> when you don&#8217;t need it anymore.</p>
 <dl class="method">
+<dt id="libPoMo.fasta.MFaStream.check_msa">
+<tt class="descname">check_msa</tt><big>(</big><em>filterObject</em><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#MFaStream.check_msa"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.MFaStream.check_msa" title="Permalink to this definition">¶</a></dt>
+<dd><p>ToDo. FilterObject! Wie mache ich das?</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="libPoMo.fasta.MFaStream.close">
-<tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#libPoMo.fasta.MFaStream.close" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#MFaStream.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.MFaStream.close" title="Permalink to this definition">¶</a></dt>
 <dd><p>Close the linked file object.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="libPoMo.fasta.MFaStream.orient">
-<tt class="descname">orient</tt><big>(</big><em>firstOnly=False</em><big>)</big><a class="headerlink" href="#libPoMo.fasta.MFaStream.orient" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">orient</tt><big>(</big><em>firstOnly=False</em><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#MFaStream.orient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.MFaStream.orient" title="Permalink to this definition">¶</a></dt>
 <dd><p>Orient all sequences of the alignment to be in forward direction.</p>
 <p>This is rather slow for long sequences.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -259,19 +309,25 @@ the next sequence.</li>
 
 <dl class="method">
 <dt id="libPoMo.fasta.MFaStream.print_info">
-<tt class="descname">print_info</tt><big>(</big><em>maxB=50</em><big>)</big><a class="headerlink" href="#libPoMo.fasta.MFaStream.print_info" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">print_info</tt><big>(</big><em>maxB=50</em><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#MFaStream.print_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.MFaStream.print_info" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print sequence information.</p>
-<p>Print information about this FaStream object, the fasta
+<p>Print information about this MFaStream object, the fasta
 sequence stored at the moment the length of the sequence and a
 maximum of <cite>maxB</cite> bases (defaults to 50).</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="libPoMo.fasta.MFaStream.read_next_align">
-<tt class="descname">read_next_align</tt><big>(</big><big>)</big><a class="headerlink" href="#libPoMo.fasta.MFaStream.read_next_align" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">read_next_align</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#MFaStream.read_next_align"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.MFaStream.read_next_align" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read next alignment in fasta file.</p>
 <p>The return value is the name of the newly saved alignment or
 None if no next alignment is found.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="libPoMo.fasta.MFaStream.write_msa">
+<tt class="descname">write_msa</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#MFaStream.write_msa"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.MFaStream.write_msa" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print multiple sequence alignment at point.</p>
 </dd></dl>
 
 </dd></dl>
@@ -280,6 +336,34 @@ None if no next alignment is found.</p>
 <dt id="libPoMo.fasta.NotAFastaFileError">
 <em class="property">exception </em><tt class="descclassname">libPoMo.fasta.</tt><tt class="descname">NotAFastaFileError</tt><a class="reference internal" href="_modules/libPoMo/fasta.html#NotAFastaFileError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.NotAFastaFileError" title="Permalink to this definition">¶</a></dt>
 <dd><p>Exception raised if given fasta file is not valid.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.fasta.filter_mfa_str">
+<tt class="descclassname">libPoMo.fasta.</tt><tt class="descname">filter_mfa_str</tt><big>(</big><em>mfaStr</em>, <em>fp</em>, <em>verb=None</em><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#filter_mfa_str"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.filter_mfa_str" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check multiple sequence alignment of an MFaStream.</p>
+<p>Multiple sequence alignments usually include alignments that are
+not apt for analysis.  These low quality alignments need to be
+filtered out of the original multiple sequence alignment fasta
+file.  If <cite>verb</cite> is unset from None, information about any
+possible rejection is printed to the standard output.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first simple">
+<li><strong>mfaStr</strong> (<em>MFaStream</em>) &#8211; <a class="reference internal" href="#libPoMo.fasta.MFaStream" title="libPoMo.fasta.MFaStream"><tt class="xref py py-class docutils literal"><span class="pre">MFaStream</span></tt></a> object to check.</li>
+<li><strong>fp</strong> (<em>MFaStrFilterProps</em>) &#8211; <a class="reference internal" href="#libPoMo.fasta.MFaStrFilterProps" title="libPoMo.fasta.MFaStrFilterProps"><tt class="xref py py-class docutils literal"><span class="pre">MFaStrFilterProps</span></tt></a>; Properties
+of the filter to be applied.</li>
+<li><strong>verb</strong> (<em>Boolean</em>) &#8211; Verbosity.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Boolean, True if all filters have been passed.</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -336,7 +420,7 @@ set it to the stripped filename.</li>
 
 <dl class="function">
 <dt id="libPoMo.fasta.read_align_from_fo">
-<tt class="descclassname">libPoMo.fasta.</tt><tt class="descname">read_align_from_fo</tt><big>(</big><em>line</em>, <em>fo</em><big>)</big><a class="headerlink" href="#libPoMo.fasta.read_align_from_fo" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">libPoMo.fasta.</tt><tt class="descname">read_align_from_fo</tt><big>(</big><em>line</em>, <em>fo</em><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#read_align_from_fo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.read_align_from_fo" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read a single fasta alignment.</p>
 <p>Read a single fasta alignment from file object <em>fo</em> and save it to
 new <a class="reference internal" href="seqbase.html#libPoMo.seqbase.Seq" title="libPoMo.seqbase.Seq"><tt class="xref py py-class docutils literal"><span class="pre">Seq</span></tt></a> sequence objects.  Return
@@ -376,8 +460,9 @@ be set to None.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>line</strong> (<em>str</em>) &#8211; Header line of the sequence.</li>
 <li><strong>fo</strong> (<em>fo</em>) &#8211; File object of the fasta file.</li>
-<li><strong>getAlignFlag</strong> (<em>Boolean</em>) &#8211; If true, an additional Boolean value
-that specifies if an alignment ends, is returned.</li>
+<li><strong>getAlignFlag</strong> (<em>Boolean</em>) &#8211; If set to true, an additional Boolean
+value that specifies if a multiple sequence alignment ends, is
+returned.</li>
 </ul>
 </td>
 </tr>
@@ -405,15 +490,16 @@ to be passed as a <a class="reference internal" href="seqbase.html#libPoMo.seqba
 <p>The function compares all sequences in <em>faSeq</em> to the sequence
 given in <em>ref</em>.  The names of the individuals in the saved VCF
 file will be the sequence names of the <em>faSeq</em> object.</p>
-<div class="highlight-python"><pre>#CHROM = sequence name of the reference
+<div class="highlight-python"><div class="highlight"><pre>#CHROM = sequence name of the reference
 POS    = position relative to reference
 ID     = .
 REF    = base of reference
-ALT    = SNP (e.g. &#x27;C&#x27; or &#x27;G,T&#x27; if 2 different SNPs are present)
+ALT    = SNP (e.g. &#39;C&#39; or &#39;G,T&#39; if 2 different SNPs are present)
 QUAL   = .
 FILTER = .
 INFO   = .
-FORMAT = GT</pre>
+FORMAT = GT
+</pre></div>
 </div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -497,7 +583,7 @@ reference sequence.</li>
     </div>
     <div class="footer">
         &copy; Copyright 2013, Dominik Schrempf.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
     </div>
   </body>
 </html>
