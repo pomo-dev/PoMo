@@ -83,6 +83,7 @@
 
 <span class="kn">import</span> <span class="nn">libPoMo.seqbase</span> <span class="kn">as</span> <span class="nn">sb</span>
 <span class="kn">import</span> <span class="nn">libPoMo.vcf</span> <span class="kn">as</span> <span class="nn">vcf</span>
+<span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">re</span>
 
 
@@ -277,9 +278,7 @@
 <span class="sd">    contains the newline character.  This object can later be used to</span>
 <span class="sd">    parse the whole multiple alignment fasta file.</span>
 
-<span class="sd">    The future idea is to provide filters before the file is streamed.</span>
-<span class="sd">    Thus, only alignments that fulfill all the given criteria will be</span>
-<span class="sd">    returned (yielded).  This feature is NOT implemented yet.  TODO.</span>
+<span class="sd">    Alignments can be filtered with :func:`filter_mfa_str()`.</span>
 
 <span class="sd">    :param str faFileName: File name of the multiple alignment fasta file.</span>
 <span class="sd">    :param int maxskip: Only look *maxskip* lines for the start of a</span>
@@ -388,21 +387,18 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_rc</span><span class="p">()</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">rev_comp</span><span class="p">()</span>
 </div>
-<div class="viewcode-block" id="MFaStream.check_msa"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.MFaStream.check_msa">[docs]</a>    <span class="k">def</span> <span class="nf">check_msa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filterObject</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;ToDo. FilterObject! Wie mache ich das?</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span>
-        <span class="k">return</span>
-</div>
-<div class="viewcode-block" id="MFaStream.write_msa"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.MFaStream.write_msa">[docs]</a>    <span class="k">def</span> <span class="nf">write_msa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="MFaStream.print_msa"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.MFaStream.print_msa">[docs]</a>    <span class="k">def</span> <span class="nf">print_msa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fo</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Print multiple sequence alignment at point.</span>
+
+<span class="sd">        :ivar fileObject fo: Print to file object fo. Defaults to</span>
+<span class="sd">          stdout.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">seqL</span><span class="p">:</span>
-            <span class="n">s</span><span class="o">.</span><span class="n">print_fa_header</span><span class="p">()</span>
-            <span class="n">s</span><span class="o">.</span><span class="n">print_data</span><span class="p">()</span>
-        <span class="k">print</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+            <span class="k">pass</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">print_fa_header</span><span class="p">(</span><span class="n">fo</span><span class="o">=</span><span class="n">fo</span><span class="p">)</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">print_data</span><span class="p">(</span><span class="n">fo</span><span class="o">=</span><span class="n">fo</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">,</span> <span class="nb">file</span><span class="o">=</span><span class="n">fo</span><span class="p">)</span>
         <span class="k">return</span>
 </div>
 <div class="viewcode-block" id="MFaStream.close"><a class="viewcode-back" href="../../fasta.html#libPoMo.fasta.MFaStream.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -439,7 +435,7 @@
 <span class="sd">    :ivar Boolean check_nonsense_codon: Check if there is no</span>
 <span class="sd">      premature stop codon).</span>
 <span class="sd">    :ivar Boolean check_gene_length: Check that the gene is</span>
-<span class="sd">      longer than `minGeneLength` (defaults to 21).</span>
+<span class="sd">      longer than `minExonLen` (defaults to 21).</span>
 <span class="sd">    :ivar Boolean check_exon_numbers: Check if exon number match</span>
 <span class="sd">      for all sequences in the alignment.</span>
 
@@ -457,7 +453,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">maxGapLength</span> <span class="o">=</span> <span class="mi">30</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">check_nonsense_codon</span> <span class="o">=</span> <span class="bp">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">check_gene_length</span> <span class="o">=</span> <span class="bp">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">minGeneLength</span> <span class="o">=</span> <span class="mi">21</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minExonLen</span> <span class="o">=</span> <span class="mi">21</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">check_exon_numbers</span> <span class="o">=</span> <span class="bp">True</span>
 
 </div>
@@ -494,30 +490,46 @@
             <span class="k">return</span> <span class="bp">False</span>
 
     <span class="k">def</span> <span class="nf">check_divergence</span><span class="p">():</span>
-        <span class="k">return</span> <span class="bp">True</span>             <span class="c"># TODO</span>
+        <span class="n">s0Data</span> <span class="o">=</span> <span class="n">mfaStr</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">mfaStr</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+            <span class="n">sData</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">data</span>
+            <span class="n">counts</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">s0Data</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">s0Data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="n">sData</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                    <span class="n">counts</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">counts</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">s0Data</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">fp</span><span class="o">.</span><span class="n">maxDiv</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">verb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="n">mfaStr</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;rejection;&quot;</span><span class="p">,</span>
+                          <span class="s">&quot;Sequences are too diverged.&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">True</span>
 
     <span class="k">def</span> <span class="nf">check_start_codons</span><span class="p">():</span>
         <span class="n">pattern</span> <span class="o">=</span> <span class="s">r&#39;^&#39;</span> <span class="o">+</span> <span class="n">startCodon</span>
         <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">mfaStr</span><span class="o">.</span><span class="n">seqL</span><span class="p">:</span>
-            <span class="n">dataString</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">data</span>
-            <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">dataString</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">verb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-                    <span class="k">print</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;rejection;&quot;</span><span class="p">,</span>
-                          <span class="s">&quot;Start codons are not preserved.&quot;</span><span class="p">)</span>
-                <span class="k">return</span> <span class="bp">False</span>
+            <span class="p">(</span><span class="n">nEx</span><span class="p">,</span> <span class="n">nExTot</span><span class="p">)</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">get_exon_nr</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">nEx</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">dataString</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">data</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">dataString</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">verb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="k">print</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;rejection;&quot;</span><span class="p">,</span>
+                              <span class="s">&quot;Start codons are not preserved.&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="bp">False</span>
         <span class="k">return</span> <span class="bp">True</span>
 
     <span class="k">def</span> <span class="nf">check_stop_codons</span><span class="p">():</span>
         <span class="n">pattern</span> <span class="o">=</span> <span class="n">stopCodons</span> <span class="o">+</span> <span class="s">r&#39;$&#39;</span>
         <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">mfaStr</span><span class="o">.</span><span class="n">seqL</span><span class="p">:</span>
-            <span class="n">dataString</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">data</span>
-            <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">dataString</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">verb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-                    <span class="k">print</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;rejection;&quot;</span><span class="p">,</span>
-                          <span class="s">&quot;Stop codons are not preserved.&quot;</span><span class="p">)</span>
-                <span class="k">return</span> <span class="bp">False</span>
+            <span class="p">(</span><span class="n">nEx</span><span class="p">,</span> <span class="n">nExTot</span><span class="p">)</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">get_exon_nr</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">nEx</span> <span class="o">==</span> <span class="n">nExTot</span><span class="p">:</span>
+                <span class="n">dataString</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">data</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">dataString</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">verb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="k">print</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;rejection;&quot;</span><span class="p">,</span>
+                              <span class="s">&quot;Stop codons are not preserved.&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="bp">False</span>
         <span class="k">return</span> <span class="bp">True</span>
 
     <span class="k">def</span> <span class="nf">check_frame_shifting_gaps</span><span class="p">():</span>
@@ -526,9 +538,11 @@
             <span class="n">dataString</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">data</span>
             <span class="n">i</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">dataString</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">i</span><span class="p">:</span>
+                <span class="c"># A gap has been found.  Check for frame shift.</span>
                 <span class="k">if</span> <span class="p">((</span><span class="n">m</span><span class="o">.</span><span class="n">end</span><span class="p">()</span> <span class="o">-</span> <span class="n">m</span><span class="o">.</span><span class="n">start</span><span class="p">())</span> <span class="o">%</span> <span class="mi">3</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="k">print</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;rejection;&quot;</span><span class="p">,</span>
-                          <span class="s">&quot;Frame-shifting gap.&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">verb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="k">print</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;rejection;&quot;</span><span class="p">,</span>
+                              <span class="s">&quot;Frame-shifting gap.&quot;</span><span class="p">)</span>
                     <span class="k">return</span> <span class="bp">False</span>
         <span class="k">return</span> <span class="bp">True</span>
 
@@ -538,8 +552,9 @@
             <span class="n">dataString</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">data</span>
             <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">dataString</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-                <span class="k">print</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;rejection;&quot;</span>
-                      <span class="s">&quot;A gap is too long.&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">verb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;rejection;&quot;</span><span class="p">,</span>
+                          <span class="s">&quot;A gap is too long.&quot;</span><span class="p">)</span>
                 <span class="k">return</span> <span class="bp">False</span>
         <span class="k">return</span> <span class="bp">True</span>
 
@@ -549,21 +564,45 @@
             <span class="n">dataString</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">data</span>
             <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">dataString</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-                <span class="k">print</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;rejection;&quot;</span>
-                      <span class="s">&quot;A nonsense codon has been found.&quot;</span><span class="p">)</span>
-                <span class="k">return</span> <span class="bp">False</span>
+                <span class="c"># Stop codon pattern has been found.  Check if frame</span>
+                <span class="c"># is not shifted.</span>
+                <span class="n">inFr</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">get_in_frame</span><span class="p">()</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="o">+</span> <span class="n">inFr</span><span class="p">)</span> <span class="o">%</span> <span class="mi">3</span> <span class="ow">is</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">verb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="k">print</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;rejection;&quot;</span><span class="p">,</span>
+                              <span class="s">&quot;A nonsense codon has been found.&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="bp">False</span>
         <span class="k">return</span> <span class="bp">True</span>
 
     <span class="k">def</span> <span class="nf">check_gene_length</span><span class="p">():</span>
-        <span class="k">return</span> <span class="bp">True</span>             <span class="c"># TODO</span>
+        <span class="n">dataStr</span> <span class="o">=</span> <span class="n">mfaStr</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataStr</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">fp</span><span class="o">.</span><span class="n">minExonLen</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">verb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">print</span><span class="p">(</span><span class="n">mfaStr</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;rejection;&quot;</span><span class="p">,</span>
+                      <span class="s">&quot;Exon is too short.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">True</span>
 
     <span class="k">def</span> <span class="nf">check_exon_numbers</span><span class="p">():</span>
-        <span class="k">return</span> <span class="bp">True</span>             <span class="c"># TODO</span>
+        <span class="n">nExTotL</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">mfaStr</span><span class="o">.</span><span class="n">seqL</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">nEx</span><span class="p">,</span> <span class="n">nExTot</span><span class="p">)</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">get_exon_nr</span><span class="p">()</span>
+            <span class="n">nExTotL</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nExTot</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nExTotL</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">nExTotL</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">nExTotL</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">verb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="n">mfaStr</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;rejection;&quot;</span><span class="p">,</span>
+                          <span class="s">&quot;Exon numbers do not match.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">True</span>
 
     <span class="k">if</span> <span class="n">fp</span><span class="o">.</span><span class="n">check_all_aligned</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">check_all_aligned</span><span class="p">():</span>
             <span class="k">return</span> <span class="bp">False</span>
-    <span class="k">if</span> <span class="n">fp</span><span class="o">.</span><span class="n">check_divergence</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">fp</span><span class="o">.</span><span class="n">check_for_long_gaps</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_for_long_gaps</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">nSpecies</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="n">fp</span><span class="o">.</span><span class="n">check_divergence</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">check_divergence</span><span class="p">():</span>
             <span class="k">return</span> <span class="bp">False</span>
     <span class="k">if</span> <span class="n">fp</span><span class="o">.</span><span class="n">check_start_codons</span><span class="p">:</span>
@@ -574,9 +613,6 @@
             <span class="k">return</span> <span class="bp">False</span>
     <span class="k">if</span> <span class="n">fp</span><span class="o">.</span><span class="n">check_frame_shifting_gaps</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">check_frame_shifting_gaps</span><span class="p">():</span>
-            <span class="k">return</span> <span class="bp">False</span>
-    <span class="k">if</span> <span class="n">fp</span><span class="o">.</span><span class="n">check_for_long_gaps</span><span class="p">:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_for_long_gaps</span><span class="p">():</span>
             <span class="k">return</span> <span class="bp">False</span>
     <span class="k">if</span> <span class="n">fp</span><span class="o">.</span><span class="n">check_nonsense_codon</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">check_nonsense_codon</span><span class="p">():</span>

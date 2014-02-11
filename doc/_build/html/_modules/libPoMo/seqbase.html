@@ -77,6 +77,7 @@
 
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">gzip</span>
+<span class="kn">import</span> <span class="nn">sys</span>
 
 
 <div class="viewcode-block" id="SequenceDataError"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.SequenceDataError">[docs]</a><span class="k">class</span> <span class="nc">SequenceDataError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
@@ -143,9 +144,14 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">__lowered</span> <span class="o">=</span> <span class="bp">False</span>
 
-<div class="viewcode-block" id="Seq.print_fa_header"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.print_fa_header">[docs]</a>    <span class="k">def</span> <span class="nf">print_fa_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Print the sequence header line in fasta format.&quot;&quot;&quot;</span>
-        <span class="k">print</span><span class="p">(</span><span class="s">&#39;&gt;&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&#39; &#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+<div class="viewcode-block" id="Seq.print_fa_header"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.print_fa_header">[docs]</a>    <span class="k">def</span> <span class="nf">print_fa_header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fo</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Print the sequence header line in fasta format.</span>
+
+<span class="sd">        :ivar fileObject fo: Print to file object fo. Defaults to</span>
+<span class="sd">          stdout.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&#39;&gt;&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&#39; &#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="nb">file</span><span class="o">=</span><span class="n">fo</span><span class="p">)</span>
         <span class="k">return</span>
 </div>
 <div class="viewcode-block" id="Seq.print_fa_entry"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.print_fa_entry">[docs]</a>    <span class="k">def</span> <span class="nf">print_fa_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxB</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
@@ -163,9 +169,14 @@
             <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[:</span><span class="n">maxB</span><span class="p">])</span>
         <span class="k">return</span>
 </div>
-<div class="viewcode-block" id="Seq.print_data"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.print_data">[docs]</a>    <span class="k">def</span> <span class="nf">print_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Print the sequence data.&quot;&quot;&quot;</span>
-        <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+<div class="viewcode-block" id="Seq.print_data"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.print_data">[docs]</a>    <span class="k">def</span> <span class="nf">print_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fo</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Print the sequence data.</span>
+
+<span class="sd">        :ivar fileObject fo: Print to file object fo. Defaults to</span>
+<span class="sd">          stdout.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="nb">file</span><span class="o">=</span><span class="n">fo</span><span class="p">)</span>
         <span class="k">return</span>
 </div>
 <div class="viewcode-block" id="Seq.get_base"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.get_base">[docs]</a>    <span class="k">def</span> <span class="nf">get_base</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
@@ -255,16 +266,84 @@
 <span class="sd">          sequence name is invalid.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">nameL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="n">sep</span><span class="o">=</span><span class="s">&#39;_&#39;</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">nameL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="n">sep</span><span class="o">=</span><span class="s">&#39;_&#39;</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nameL</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
-            <span class="n">nEx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nameL</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-            <span class="n">nExTot</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nameL</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">nEx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nameL</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SequenceDataError</span><span class="p">(</span><span class="s">&quot;Exon number not valid.&quot;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">nExTot</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nameL</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SequenceDataError</span><span class="p">(</span><span class="s">&quot;Total exon number not valid.&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">SequenceDataError</span><span class="p">(</span><span class="s">&quot;Exon information not valid.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">nEx</span><span class="p">,</span> <span class="n">nExTot</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Seq.get_in_frame"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.get_in_frame">[docs]</a>    <span class="k">def</span> <span class="nf">get_in_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Try to find the `inFrame` of the gene.</span>
 
+<span class="sd">        `inFrame`: the frame number of the first nucleotide in the</span>
+<span class="sd">        exon. Frame numbers can be 0, 1, or 2 depending on what</span>
+<span class="sd">        position that nucleotide takes in the codon which contains it.</span>
+<span class="sd">        This function gets the `inFrame`, if the description of the</span>
+<span class="sd">        sequence is of the form (cf. `UCSC Table Browser</span>
+<span class="sd">        &lt;http://genome.ucsc.edu/goldenPath/help/hgTablesHelp.html#FASTA&gt;`_)::</span>
+
+<span class="sd">          918 0 0 chr1:58954-59871+</span>
+
+<span class="sd">        :rtype: int</span>
+
+<span class="sd">        :raises: :class:`SequenceDataError`, if format of description</span>
+<span class="sd">          is invalid.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">descrL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">maxsplit</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">descrL</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">inFrame</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">descrL</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">SequenceDataError</span><span class="p">(</span><span class="s">&quot;Description format is invalid.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SequenceDataError</span><span class="p">(</span><span class="s">&quot;Description format is invalid.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">inFrame</span>
+</div>
+<div class="viewcode-block" id="Seq.is_synonymous"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.is_synonymous">[docs]</a>    <span class="k">def</span> <span class="nf">is_synonymous</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if the base at `pos` is 4-fold degenerate.</span>
+
+<span class="sd">        This function checks if the base at `pos` is a synonymous one.</span>
+<span class="sd">        The description of the sequence has to be of the form</span>
+<span class="sd">        (cf. `UCSC Table Browser</span>
+<span class="sd">        &lt;http://genome.ucsc.edu/goldenPath/help/hgTablesHelp.html#FASTA&gt;`_)::</span>
+
+<span class="sd">          918 0 0 chr1:58954-59871+</span>
+
+<span class="sd">        :ivar int pos: Position of the base in the sequence (0 to</span>
+<span class="sd">          self.dataLen).</span>
+
+<span class="sd">        :rtype Boolean: True if base is 4-fold degenerate.</span>
+
+<span class="sd">        :raises: :class:`SequenceDataError`, if format of description</span>
+<span class="sd">          is invalid.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">degTriplets</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;tc&quot;</span><span class="p">,</span> <span class="s">&quot;ct&quot;</span><span class="p">,</span> <span class="s">&quot;cc&quot;</span><span class="p">,</span> <span class="s">&quot;cg&quot;</span><span class="p">,</span> <span class="s">&quot;ac&quot;</span><span class="p">,</span> <span class="s">&quot;gt&quot;</span><span class="p">,</span> <span class="s">&quot;gc&quot;</span><span class="p">,</span> <span class="s">&quot;gg&quot;</span><span class="p">]</span>
+        <span class="n">inFr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_in_frame</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">pos</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="c"># Degeneracy can not be determined.</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">pos</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">inFr</span><span class="p">)</span> <span class="o">%</span> <span class="mi">3</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c"># Position within a Frame is not the third one.</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">triplet</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">pos</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span><span class="n">pos</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">triplet</span> <span class="o">=</span> <span class="n">triplet</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">triplet</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="ow">in</span> <span class="n">degTriplets</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="bp">False</span>
 </div>
 <div class="viewcode-block" id="Seq.get_region"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.get_region">[docs]</a>    <span class="k">def</span> <span class="nf">get_region</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
         <span class="sd">&quot;&quot;&quot;Try to find the :class:`Region` that the sequence spans.</span>
 
 <span class="sd">        The sequence might not physically start at position 1 but at</span>

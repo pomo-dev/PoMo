@@ -33,6 +33,7 @@ __docformat__ = 'restructuredtext'
 
 import libPoMo.seqbase as sb
 import libPoMo.vcf as vcf
+import sys
 import re
 
 
@@ -227,9 +228,7 @@ class MFaStream():
     contains the newline character.  This object can later be used to
     parse the whole multiple alignment fasta file.
 
-    The future idea is to provide filters before the file is streamed.
-    Thus, only alignments that fulfill all the given criteria will be
-    returned (yielded).  This feature is NOT implemented yet.  TODO.
+    Alignments can be filtered with :func:`filter_mfa_str()`.
 
     :param str faFileName: File name of the multiple alignment fasta file.
     :param int maxskip: Only look *maxskip* lines for the start of a
@@ -338,21 +337,18 @@ class MFaStream():
             if self.seqL[i].get_rc() is True:
                 self.seqL[i].rev_comp()
 
-    def check_msa(self, filterObject):
-        """ToDo. FilterObject! Wie mache ich das?
-
-        """
-        pass
-        return
-
-    def write_msa(self):
+    def print_msa(self, fo=sys.stdout):
         """Print multiple sequence alignment at point.
+
+        :ivar fileObject fo: Print to file object fo. Defaults to
+          stdout.
 
         """
         for s in self.seqL:
-            s.print_fa_header()
-            s.print_data()
-        print('\n')
+            pass
+            s.print_fa_header(fo=fo)
+            s.print_data(fo=fo)
+        print('\n', file=fo)
         return
 
     def close(self):
@@ -389,7 +385,7 @@ class MFaStrFilterProps():
     :ivar Boolean check_nonsense_codon: Check if there is no
       premature stop codon).
     :ivar Boolean check_gene_length: Check that the gene is
-      longer than `minGeneLength` (defaults to 21).
+      longer than `minExonLen` (defaults to 21).
     :ivar Boolean check_exon_numbers: Check if exon number match
       for all sequences in the alignment.
 
@@ -407,7 +403,7 @@ class MFaStrFilterProps():
         self.maxGapLength = 30
         self.check_nonsense_codon = True
         self.check_gene_length = True
-        self.minGeneLength = 21
+        self.minExonLen = 21
         self.check_exon_numbers = True
 
 
@@ -444,7 +440,19 @@ def filter_mfa_str(mfaStr, fp, verb=None):
             return False
 
     def check_divergence():
-        return True             # TODO
+        s0Data = mfaStr.seqL[0].data
+        for s in mfaStr.seqL[1:]:
+            sData = s.data
+            counts = 0
+            for i in range(len(s0Data)):
+                if s0Data[i].lower() != sData[i].lower():
+                    counts += 1
+            if (counts / len(s0Data)) > fp.maxDiv:
+                if verb is not None:
+                    print(mfaStr.seqL[0].name, "rejection;",
+                          "Sequences are too diverged.")
+                    return False
+        return True
 
     def check_start_codons():
         pattern = r'^' + startCodon
@@ -482,8 +490,9 @@ def filter_mfa_str(mfaStr, fp, verb=None):
             for m in i:
                 # A gap has been found.  Check for frame shift.
                 if ((m.end() - m.start()) % 3) != 0:
-                    print(s.name, "rejection;",
-                          "Frame-shifting gap.")
+                    if verb is not None:
+                        print(s.name, "rejection;",
+                              "Frame-shifting gap.")
                     return False
         return True
 
@@ -493,8 +502,9 @@ def filter_mfa_str(mfaStr, fp, verb=None):
             dataString = s.data
             m = re.search(pattern, dataString, re.I)
             if m is not None:
-                print(s.name, "rejection;",
-                      "A gap is too long.")
+                if verb is not None:
+                    print(s.name, "rejection;",
+                          "A gap is too long.")
                 return False
         return True
 
@@ -506,22 +516,43 @@ def filter_mfa_str(mfaStr, fp, verb=None):
             if m is not None:
                 # Stop codon pattern has been found.  Check if frame
                 # is not shifted.
-                if m.start() % 3 is 0:
-                    print(s.name, "rejection;",
-                          "A nonsense codon has been found.")
+                inFr = s.get_in_frame()
+                if (m.start() + inFr) % 3 is 0:
+                    if verb is not None:
+                        print(s.name, "rejection;",
+                              "A nonsense codon has been found.")
                     return False
         return True
 
     def check_gene_length():
-        return True             # TODO
+        dataStr = mfaStr.seqL[0].data
+        if len(dataStr) < fp.minExonLen:
+            if verb is not None:
+                print(mfaStr.seqL[0].name, "rejection;",
+                      "Exon is too short.")
+            return False
+        return True
 
     def check_exon_numbers():
-        return True             # TODO
+        nExTotL = []
+        for s in mfaStr.seqL:
+            (nEx, nExTot) = s.get_exon_nr()
+            nExTotL.append(nExTot)
+        for i in range(len(nExTotL)):
+            if nExTotL[0] != nExTotL[i]:
+                if verb is not None:
+                    print(mfaStr.seqL[0].name, "rejection;",
+                          "Exon numbers do not match.")
+                return False
+        return True
 
     if fp.check_all_aligned:
         if not check_all_aligned():
             return False
-    if fp.check_divergence:
+    if fp.check_for_long_gaps:
+        if not check_for_long_gaps():
+            return False
+    if (fp.nSpecies > 1) and fp.check_divergence:
         if not check_divergence():
             return False
     if fp.check_start_codons:
@@ -532,9 +563,6 @@ def filter_mfa_str(mfaStr, fp, verb=None):
             return False
     if fp.check_frame_shifting_gaps:
         if not check_frame_shifting_gaps():
-            return False
-    if fp.check_for_long_gaps:
-        if not check_for_long_gaps():
             return False
     if fp.check_nonsense_codon:
         if not check_nonsense_codon():

@@ -175,6 +175,31 @@ sequence name is invalid.</td>
 </dd></dl>
 
 <dl class="method">
+<dt id="libPoMo.seqbase.Seq.get_in_frame">
+<tt class="descname">get_in_frame</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/seqbase.html#Seq.get_in_frame"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.seqbase.Seq.get_in_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Try to find the <cite>inFrame</cite> of the gene.</p>
+<p><cite>inFrame</cite>: the frame number of the first nucleotide in the
+exon. Frame numbers can be 0, 1, or 2 depending on what
+position that nucleotide takes in the codon which contains it.
+This function gets the <cite>inFrame</cite>, if the description of the
+sequence is of the form (cf. <a class="reference external" href="http://genome.ucsc.edu/goldenPath/help/hgTablesHelp.html#FASTA">UCSC Table Browser</a>):</p>
+<div class="highlight-python"><div class="highlight"><pre>918 0 0 chr1:58954-59871+
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">int</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><a class="reference internal" href="#libPoMo.seqbase.SequenceDataError" title="libPoMo.seqbase.SequenceDataError"><tt class="xref py py-class docutils literal"><span class="pre">SequenceDataError</span></tt></a>, if format of description
+is invalid.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="libPoMo.seqbase.Seq.get_rc">
 <tt class="descname">get_rc</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/seqbase.html#Seq.get_rc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.seqbase.Seq.get_rc" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return True if the sequence is reversed and complemented.</p>
@@ -234,9 +259,44 @@ sequence.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="libPoMo.seqbase.Seq.is_synonymous">
+<tt class="descname">is_synonymous</tt><big>(</big><em>pos</em><big>)</big><a class="reference internal" href="_modules/libPoMo/seqbase.html#Seq.is_synonymous"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.seqbase.Seq.is_synonymous" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the base at <cite>pos</cite> is 4-fold degenerate.</p>
+<p>This function checks if the base at <cite>pos</cite> is a synonymous one.
+The description of the sequence has to be of the form
+(cf. <a class="reference external" href="http://genome.ucsc.edu/goldenPath/help/hgTablesHelp.html#FASTA">UCSC Table Browser</a>):</p>
+<div class="highlight-python"><div class="highlight"><pre>918 0 0 chr1:58954-59871+
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Variables:</th><td class="field-body"><strong>pos</strong> (<em>int</em>) &#8211; Position of the base in the sequence (0 to
+self.dataLen).</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Rtype Boolean:</th><td class="field-body">True if base is 4-fold degenerate.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><a class="reference internal" href="#libPoMo.seqbase.SequenceDataError" title="libPoMo.seqbase.SequenceDataError"><tt class="xref py py-class docutils literal"><span class="pre">SequenceDataError</span></tt></a>, if format of description
+is invalid.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="libPoMo.seqbase.Seq.print_data">
-<tt class="descname">print_data</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/seqbase.html#Seq.print_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.seqbase.Seq.print_data" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">print_data</tt><big>(</big><em>fo=&lt;_io.TextIOWrapper name='&lt;stdout&gt;' mode='w' encoding='ANSI_X3.4-1968'&gt;</em><big>)</big><a class="reference internal" href="_modules/libPoMo/seqbase.html#Seq.print_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.seqbase.Seq.print_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print the sequence data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Variables:</th><td class="field-body"><strong>fo</strong> (<em>fileObject</em>) &#8211; Print to file object fo. Defaults to
+stdout.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -256,8 +316,17 @@ all bases.</td>
 
 <dl class="method">
 <dt id="libPoMo.seqbase.Seq.print_fa_header">
-<tt class="descname">print_fa_header</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/seqbase.html#Seq.print_fa_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.seqbase.Seq.print_fa_header" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">print_fa_header</tt><big>(</big><em>fo=&lt;_io.TextIOWrapper name='&lt;stdout&gt;' mode='w' encoding='ANSI_X3.4-1968'&gt;</em><big>)</big><a class="reference internal" href="_modules/libPoMo/seqbase.html#Seq.print_fa_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.seqbase.Seq.print_fa_header" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print the sequence header line in fasta format.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Variables:</th><td class="field-body"><strong>fo</strong> (<em>fileObject</em>) &#8211; Print to file object fo. Defaults to
+stdout.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">

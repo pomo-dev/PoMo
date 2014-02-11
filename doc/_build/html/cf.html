@@ -163,6 +163,9 @@ the names of the individuals will be cropped at a specific char
 that can be set at initialization (standard value = &#8216;-&#8216;). It is
 also possible to collapse all individuals of determined VCF files
 to a single population (cf. mergeL and nameL).</p>
+<p>The ploidity has to be set manually if it differs from 2.</p>
+<p>Additional filters can be set before the counts file is written
+(e.g. only write synonymous sites).</p>
 <p>Remember to close the attached file objectsL with <a class="reference internal" href="#libPoMo.cf.CFWriter.close" title="libPoMo.cf.CFWriter.close"><tt class="xref py py-func docutils literal"><span class="pre">close()</span></tt></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -231,6 +234,7 @@ reference Sequence. This has to be set with <a class="reference internal" href="
 be set manually to the correct value for non-diploids!</li>
 <li><strong>splitCh</strong> (<em>char</em>) &#8211; Character that is used to split the
 individual names.</li>
+<li><strong>onlySynonymous</strong> (<em>Boolean</em>) &#8211; Only write 4-fold degenerate sites.</li>
 <li><strong>__force</strong> (<em>Boolean</em>) &#8211; If set to true, skip name checks.</li>
 </ul>
 </td>
@@ -318,6 +322,12 @@ covered.</td>
 <dt id="libPoMo.cf.CountsFormatWriterError">
 <em class="property">exception </em><tt class="descclassname">libPoMo.cf.</tt><tt class="descname">CountsFormatWriterError</tt><a class="reference internal" href="_modules/libPoMo/cf.html#CountsFormatWriterError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CountsFormatWriterError" title="Permalink to this definition">¶</a></dt>
 <dd><p>General <cite>CFWriter</cite> object error.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="libPoMo.cf.NoSynBase">
+<em class="property">exception </em><tt class="descclassname">libPoMo.cf.</tt><tt class="descname">NoSynBase</tt><a class="reference internal" href="_modules/libPoMo/cf.html#NoSynBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.NoSynBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Not a 4-fold degenerate site.</p>
 </dd></dl>
 
 <dl class="function">

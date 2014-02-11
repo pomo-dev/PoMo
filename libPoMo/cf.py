@@ -89,6 +89,11 @@ class CountsFormatWriterError(sb.SequenceDataError):
     pass
 
 
+class NoSynBase(sb.NotAValidRefBase):
+    """Not a 4-fold degenerate site."""
+    pass
+
+
 class CFWriter():
     """Write a counts format file.
 
@@ -126,6 +131,11 @@ class CFWriter():
     that can be set at initialization (standard value = '-'). It is
     also possible to collapse all individuals of determined VCF files
     to a single population (cf. mergeL and nameL).
+
+    The ploidity has to be set manually if it differs from 2.
+
+    Additional filters can be set before the counts file is written
+    (e.g. only write synonymous sites).
 
     Remember to close the attached file objectsL with :func:`close`.
 
@@ -188,6 +198,7 @@ class CFWriter():
         be set manually to the correct value for non-diploids!
     :ivar char splitCh: Character that is used to split the
         individual names.
+    :ivar Boolean onlySynonymous: Only write 4-fold degenerate sites.
     :ivar Boolean __force: If set to true, skip name checks.
 
     """
@@ -215,7 +226,7 @@ class CFWriter():
         self.refSeq = None
         self.ploidy = 2
         self.splitCh = splitChar
-
+        self.onlySynonymous = False
         self.__force = False
 
         self.__init_vcfTfL()
@@ -414,6 +425,16 @@ class CFWriter():
             return self.refSeq.data[self.pos].lower()
 
         self.__purge_cD()
+
+        # If we check for synonymous bases, do not do anything if base
+        # is not 4-fold degenerate.
+        if self.onlySynonymous is True:
+            if self.refSeq.is_synonymous(self.pos) is False:
+                if self.v is not None:
+                    print("Rejection;", self.refSeq.data[self.pos],
+                          "at position", self.pos, "is not a synonymous base.")
+                raise NoSynBase()
+
         refBase = get_refBase()
         try:
             r = dna[refBase]
@@ -561,6 +582,10 @@ class CFWriter():
             try:
                 self.__fill_cD(iL, snpL)
             except sb.NotAValidRefBase:
+                # Do nothing if reference base is not valid.
+                pass
+            except NoSynBase:
+                # Do nothing if base is not 4-fold degenerate.
                 pass
             else:
                 self.__write_Ln()

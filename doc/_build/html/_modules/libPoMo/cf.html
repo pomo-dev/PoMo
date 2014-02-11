@@ -139,6 +139,11 @@
     <span class="k">pass</span>
 
 </div>
+<div class="viewcode-block" id="NoSynBase"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.NoSynBase">[docs]</a><span class="k">class</span> <span class="nc">NoSynBase</span><span class="p">(</span><span class="n">sb</span><span class="o">.</span><span class="n">NotAValidRefBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Not a 4-fold degenerate site.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+</div>
 <div class="viewcode-block" id="CFWriter"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.CFWriter">[docs]</a><span class="k">class</span> <span class="nc">CFWriter</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;Write a counts format file.</span>
 
@@ -176,6 +181,11 @@
 <span class="sd">    that can be set at initialization (standard value = &#39;-&#39;). It is</span>
 <span class="sd">    also possible to collapse all individuals of determined VCF files</span>
 <span class="sd">    to a single population (cf. mergeL and nameL).</span>
+
+<span class="sd">    The ploidity has to be set manually if it differs from 2.</span>
+
+<span class="sd">    Additional filters can be set before the counts file is written</span>
+<span class="sd">    (e.g. only write synonymous sites).</span>
 
 <span class="sd">    Remember to close the attached file objectsL with :func:`close`.</span>
 
@@ -238,6 +248,7 @@
 <span class="sd">        be set manually to the correct value for non-diploids!</span>
 <span class="sd">    :ivar char splitCh: Character that is used to split the</span>
 <span class="sd">        individual names.</span>
+<span class="sd">    :ivar Boolean onlySynonymous: Only write 4-fold degenerate sites.</span>
 <span class="sd">    :ivar Boolean __force: If set to true, skip name checks.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -265,7 +276,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">refSeq</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ploidy</span> <span class="o">=</span> <span class="mi">2</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">splitCh</span> <span class="o">=</span> <span class="n">splitChar</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">onlySynonymous</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__force</span> <span class="o">=</span> <span class="bp">False</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">__init_vcfTfL</span><span class="p">()</span>
@@ -464,6 +475,16 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">refSeq</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">__purge_cD</span><span class="p">()</span>
+
+        <span class="c"># If we check for synonymous bases, do not do anything if base</span>
+        <span class="c"># is not 4-fold degenerate.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">onlySynonymous</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">refSeq</span><span class="o">.</span><span class="n">is_synonymous</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Rejection;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">refSeq</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">],</span>
+                          <span class="s">&quot;at position&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span> <span class="s">&quot;is not a synonymous base.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">NoSynBase</span><span class="p">()</span>
+
         <span class="n">refBase</span> <span class="o">=</span> <span class="n">get_refBase</span><span class="p">()</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">r</span> <span class="o">=</span> <span class="n">dna</span><span class="p">[</span><span class="n">refBase</span><span class="p">]</span>
@@ -611,6 +632,10 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">__fill_cD</span><span class="p">(</span><span class="n">iL</span><span class="p">,</span> <span class="n">snpL</span><span class="p">)</span>
             <span class="k">except</span> <span class="n">sb</span><span class="o">.</span><span class="n">NotAValidRefBase</span><span class="p">:</span>
+                <span class="c"># Do nothing if reference base is not valid.</span>
+                <span class="k">pass</span>
+            <span class="k">except</span> <span class="n">NoSynBase</span><span class="p">:</span>
+                <span class="c"># Do nothing if base is not 4-fold degenerate.</span>
                 <span class="k">pass</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">__write_Ln</span><span class="p">()</span>

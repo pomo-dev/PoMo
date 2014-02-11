@@ -226,7 +226,7 @@ than <cite>maxGapLength</cite> (defaults to 30) bases.</li>
 <li><strong>check_nonsense_codon</strong> (<em>Boolean</em>) &#8211; Check if there is no
 premature stop codon).</li>
 <li><strong>check_gene_length</strong> (<em>Boolean</em>) &#8211; Check that the gene is
-longer than <cite>minGeneLength</cite> (defaults to 21).</li>
+longer than <cite>minExonLen</cite> (defaults to 21).</li>
 <li><strong>check_exon_numbers</strong> (<em>Boolean</em>) &#8211; Check if exon number match
 for all sequences in the alignment.</li>
 </ul>
@@ -250,9 +250,7 @@ file, checks if it is in fasta format and reads the first
 alignment.  The end of an alignment is reached when a line only
 contains the newline character.  This object can later be used to
 parse the whole multiple alignment fasta file.</p>
-<p>The future idea is to provide filters before the file is streamed.
-Thus, only alignments that fulfill all the given criteria will be
-returned (yielded).  This feature is NOT implemented yet.  TODO.</p>
+<p>Alignments can be filtered with <a class="reference internal" href="#libPoMo.fasta.filter_mfa_str" title="libPoMo.fasta.filter_mfa_str"><tt class="xref py py-func docutils literal"><span class="pre">filter_mfa_str()</span></tt></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -280,12 +278,6 @@ the next sequence.</li>
 </table>
 <p>Please close the associated file object with
 <a class="reference internal" href="#libPoMo.fasta.FaStream.close" title="libPoMo.fasta.FaStream.close"><tt class="xref py py-func docutils literal"><span class="pre">FaStream.close()</span></tt></a> when you don&#8217;t need it anymore.</p>
-<dl class="method">
-<dt id="libPoMo.fasta.MFaStream.check_msa">
-<tt class="descname">check_msa</tt><big>(</big><em>filterObject</em><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#MFaStream.check_msa"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.MFaStream.check_msa" title="Permalink to this definition">¶</a></dt>
-<dd><p>ToDo. FilterObject! Wie mache ich das?</p>
-</dd></dl>
-
 <dl class="method">
 <dt id="libPoMo.fasta.MFaStream.close">
 <tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#MFaStream.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.MFaStream.close" title="Permalink to this definition">¶</a></dt>
@@ -317,17 +309,26 @@ maximum of <cite>maxB</cite> bases (defaults to 50).</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="libPoMo.fasta.MFaStream.print_msa">
+<tt class="descname">print_msa</tt><big>(</big><em>fo=&lt;_io.TextIOWrapper name='&lt;stdout&gt;' mode='w' encoding='ANSI_X3.4-1968'&gt;</em><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#MFaStream.print_msa"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.MFaStream.print_msa" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print multiple sequence alignment at point.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Variables:</th><td class="field-body"><strong>fo</strong> (<em>fileObject</em>) &#8211; Print to file object fo. Defaults to
+stdout.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="libPoMo.fasta.MFaStream.read_next_align">
 <tt class="descname">read_next_align</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#MFaStream.read_next_align"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.MFaStream.read_next_align" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read next alignment in fasta file.</p>
 <p>The return value is the name of the newly saved alignment or
 None if no next alignment is found.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="libPoMo.fasta.MFaStream.write_msa">
-<tt class="descname">write_msa</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/fasta.html#MFaStream.write_msa"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.fasta.MFaStream.write_msa" title="Permalink to this definition">¶</a></dt>
-<dd><p>Print multiple sequence alignment at point.</p>
 </dd></dl>
 
 </dd></dl>

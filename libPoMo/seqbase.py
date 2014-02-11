@@ -27,6 +27,7 @@ __docformat__ = 'restructuredtext'
 
 import os
 import gzip
+import sys
 
 
 class SequenceDataError(Exception):
@@ -93,9 +94,14 @@ class Seq:
 
         self.__lowered = False
 
-    def print_fa_header(self):
-        """Print the sequence header line in fasta format."""
-        print('>', self.name, ' ', self.descr, sep='')
+    def print_fa_header(self, fo=sys.stdout):
+        """Print the sequence header line in fasta format.
+
+        :ivar fileObject fo: Print to file object fo. Defaults to
+          stdout.
+
+        """
+        print('>', self.name, ' ', self.descr, sep='', file=fo)
         return
 
     def print_fa_entry(self, maxB=None):
@@ -113,9 +119,14 @@ class Seq:
             print(self.data[:maxB])
         return
 
-    def print_data(self):
-        """Print the sequence data."""
-        print(self.data)
+    def print_data(self, fo=sys.stdout):
+        """Print the sequence data.
+
+        :ivar fileObject fo: Print to file object fo. Defaults to
+          stdout.
+
+        """
+        print(self.data, file=fo)
         return
 
     def get_base(self, pos):
@@ -219,7 +230,70 @@ class Seq:
             raise SequenceDataError("Exon information not valid.")
         return (nEx, nExTot)
 
+    def get_in_frame(self):
+        """Try to find the `inFrame` of the gene.
+
+        `inFrame`: the frame number of the first nucleotide in the
+        exon. Frame numbers can be 0, 1, or 2 depending on what
+        position that nucleotide takes in the codon which contains it.
+        This function gets the `inFrame`, if the description of the
+        sequence is of the form (cf. `UCSC Table Browser
+        <http://genome.ucsc.edu/goldenPath/help/hgTablesHelp.html#FASTA>`_)::
+
+          918 0 0 chr1:58954-59871+
+
+        :rtype: int
+
+        :raises: :class:`SequenceDataError`, if format of description
+          is invalid.
+
+        """
+        descrL = self.descr[:-1].split(maxsplit=2)
+        if len(descrL) >= 2:
+            try:
+                inFrame = int(descrL[1])
+            except ValueError:
+                raise SequenceDataError("Description format is invalid.")
+        else:
+            raise SequenceDataError("Description format is invalid.")
+        return inFrame
+
+    def is_synonymous(self, pos):
+        """Return True if the base at `pos` is 4-fold degenerate.
+
+        This function checks if the base at `pos` is a synonymous one.
+        The description of the sequence has to be of the form
+        (cf. `UCSC Table Browser
+        <http://genome.ucsc.edu/goldenPath/help/hgTablesHelp.html#FASTA>`_)::
+
+          918 0 0 chr1:58954-59871+
+
+        :ivar int pos: Position of the base in the sequence (0 to
+          self.dataLen).
+
+        :rtype Boolean: True if base is 4-fold degenerate.
+
+        :raises: :class:`SequenceDataError`, if format of description
+          is invalid.
+
+        """
+        degTriplets = ["tc", "ct", "cc", "cg", "ac", "gt", "gc", "gg"]
+        inFr = self.get_in_frame()
+        if pos < 2:
+            # Degeneracy can not be determined.
+            return False
+        elif (pos + 1 + inFr) % 3 != 0:
+            # Position within a Frame is not the third one.
+            return False
+        else:
+            triplet = self.data[pos-2:pos+1]
+            triplet = triplet.lower()
+            if triplet[0:2] in degTriplets:
+                return True
+        return False
+
     def get_region(self):
+
         """Try to find the :class:`Region` that the sequence spans.
 
         The sequence might not physically start at position 1 but at

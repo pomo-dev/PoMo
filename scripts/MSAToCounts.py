@@ -55,21 +55,30 @@ parser.add_argument("output",
                     help="name of (gzipped) outputfile in counts format")
 parser.add_argument("-m", "--merge", action="count",
                     help="merge individuals within all given VCFFiles")
+parser.add_argument("-s", "--synonymous", action="count",
+                    help="only print position with a synonymous base")
+parser.add_argument("-v", "--verbosity", action="count",
+                    help="turn on verbosity")
 args = parser.parse_args()
 
 MFaRefFN = args.reference
 vcfFnL = args.VCFFiles
 output = args.output
+vb = args.verbosity
 
 if args.merge is None:
-    cfw = cf.CFWriter(vcfFnL, output)
+    cfw = cf.CFWriter(vcfFnL, output, verb=vb)
 else:
     mergeList = []
     nameList = []
     for fn in vcfFnL:
         mergeList.append(True)
         nameList.append(fn.split('.', maxsplit=1)[0])
-    cfw = cf.CFWriter(vcfFnL, output, mergeL=mergeList, nameL=nameList)
+    cfw = cf.CFWriter(vcfFnL, output, mergeL=mergeList,
+                      nameL=nameList, verb=vb)
+
+if args.synonymous is not None:
+    cfw.onlySynonymous = True
 
 mFaStr = fa.MFaStream(MFaRefFN)
 
