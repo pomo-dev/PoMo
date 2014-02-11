@@ -12,6 +12,7 @@ analysis).
 """
 
 import argparse
+import os
 import libPoMo.fasta as fa
 import libPoMo.cf as cf  # noqa
 
@@ -73,7 +74,8 @@ else:
     nameList = []
     for fn in vcfFnL:
         mergeList.append(True)
-        nameList.append(fn.split('.', maxsplit=1)[0])
+        strippedFn = os.path.basename(fn)
+        nameList.append(strippedFn.split('.', maxsplit=1)[0])
     cfw = cf.CFWriter(vcfFnL, output, mergeL=mergeList,
                       nameL=nameList, verb=vb)
 
