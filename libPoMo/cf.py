@@ -224,6 +224,7 @@ class CFWriter():
         self.nPop = 0
         # Variables that have to be set manually.
         self.refSeq = None
+        # Variables that may need to be set manually.
         self.ploidy = 2
         self.splitCh = splitChar
         self.onlySynonymous = False

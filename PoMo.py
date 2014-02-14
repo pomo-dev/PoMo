@@ -11,8 +11,8 @@ import os
 import random
 import argparse
 import re
-# from libPoMo.main import probability_matrix, a, mutModel, selModel, dsRatio
-import libPoMo.main as pm
+import libPoMo as lp
+import pdb
 
 # PoMo version
 ver = '1.0.2'
@@ -37,7 +37,7 @@ parser.add_argument('-m', '--molecular-clock', type=int,
                     you want the molecular clock constraint (and
                     therefore also look for a root) or not. Default is
                     yes. Type `-m 0` to specify no molecular clock.""")
-parser.add_argument('-u', '--MM', type=pm.mutModel, default="HKY",
+parser.add_argument('-u', '--MM', type=lp.main.mutModel, default="HKY",
                     help="""Allows to choose a mutation model
                     different from the HKY (default option). `GTR`
                     corresponds to the general time reversible,
@@ -46,7 +46,7 @@ parser.add_argument('-u', '--MM', type=pm.mutModel, default="HKY",
                     nonreversible model (all substitution rates are
                     independent). To change, type for example `--MM
                     GTR`.""")
-parser.add_argument('-s', '--SM', type=pm.selModel, default="NoSel",
+parser.add_argument('-s', '--SM', type=lp.main.selModel, default="NoSel",
                     help="""Allows to choose fixation rates.  `-s
                     NoSel`: fixation rates are equal for all
                     nucleotides; default.  `-s GCvsAT`: one parameter
@@ -66,7 +66,7 @@ parser.add_argument('-f', '--GS', type=int, default=0, help="""Allows
 to set a variable fixation bias over sites, gamma-distributed,
 approximated with a number of classes as specified by the
 user. Default: uniform fixation rate (`f 0`).""")
-parser.add_argument('-d', '--ds-ratio', type=pm.dsRatio, default=0.66,
+parser.add_argument('-d', '--ds-ratio', type=lp.main.dsRatio, default=0.66,
                     help="""Determines which proportion of the data is
                     kept after downsampling. Downsampling is done when
                     sites do not have the same coverage along the
@@ -96,26 +96,27 @@ elif args.molecular_clock == 0:
     noMC = 1
 
 # mutation model
-muts = pm.mutmod[args.MM]
+muts = lp.main.mutmod[args.MM]
 
 # variable mutation rate (+Gamma)
-mutgamma = pm.setGM(args.GM)
+mutgamma = lp.main.setGM(args.GM)
 
 # fixation bias
-selgamma = pm.setGS(args.GS)
+selgamma = lp.main.setGS(args.GS)
 
 # selection model
-sels = pm.selmod[args.SM]
+sels = lp.main.selmod[args.SM]
 
 # Verbosity
 verbosity = args.verbose
+vb = verbosity
 
 # Threshold of data discard for downsampling
 thresh = args.ds_ratio
 
 # define paths to files
 in_name = str(args.file)
-infile = open(in_name)
+infile = lp.seqbase.gz_open(in_name)
 in_name_no_extension = in_name.rsplit(".", maxsplit=1)[0]
 in_basename_no_extension = os.path.basename(in_name)
 in_basename_no_extension = in_basename_no_extension.rsplit(".", maxsplit=1)[0]
@@ -155,12 +156,13 @@ path_HyPhy = path_HyPhy + "/"
 
 # define PoMo10 states
 codons = ["aaa", "aac", "aag", "aat", "aca", "acc", "acg", "act",
-          "aga", "agc", "agg", "agt", "ata", "atc", "atg", "att", "caa",
-          "cac", "cag", "cat", "cca", "ccc", "ccg", "cct", "cga", "cgc",
-          "cgg", "cgt", "cta", "ctc", "ctg", "ctt", "gaa", "gac", "gag",
-          "gat", "gca", "gcc", "gcg", "gct", "gga", "ggc", "ggg", "ggt",
-          "gta", "gtc", "gtg", "gtt", "taa", "tac", "tag", "tat", "tca",
-          "tcc", "tcg", "tct", "tga", "tgc"]
+          "aga", "agc", "agg", "agt", "ata", "atc", "atg", "att",
+          "caa", "cac", "cag", "cat", "cca", "ccc", "ccg", "cct",
+          "cga", "cgc", "cgg", "cgt", "cta", "ctc", "ctg", "ctt",
+          "gaa", "gac", "gag", "gat", "gca", "gcc", "gcg", "gct",
+          "gga", "ggc", "ggg", "ggt", "gta", "gtc", "gtg", "gtt",
+          "taa", "tac", "tag", "tat", "tca", "tcc", "tcg", "tct",
+          "tga", "tgc"]
 nucs = ["A", "C", "G", "T"]
 N = 10
 
@@ -171,136 +173,150 @@ n_species = 0
 sp_names = []
 # sample size of each species
 sp_samples = []
-# actual data
+# actual data; it is a 3-dimensional array sp_data[species][pos][base]
 sp_data = []
 
-# TODO
-line = infile.readline()
-while line[0] != ">":
+# Fri Feb 14 13:40:21 CET 2014
+# Depcrecated, see note to fasta file format input below.
+# line = infile.readline()
+# while line[0] != ">":
+#     line = infile.readline()
+#     if line == "":
+#         break
+
+# if line == "":
+
+# TODO use np arrays, Problem: fixed sized arrays
+# infile = lp.seqbase.gz_open(in_name)
+# for line in infile:
+
+
+if vb is not None:
+    print("Starting to read input file.")
+line = ""
+infile = lp.seqbase.gz_open(in_name)
+while len(line) > 0 and line[0] == "#":
+    line = infile.readline()
+while len(line.split()) == 0:
     line = infile.readline()
     if line == "":
-        break
-
-VCF = 0
-if line == "":
-    # input is in vcf format
-    infile.close()
-    infile = open(in_name)
-    while len(line) > 0 and line[0] == "#":
-        line = infile.readline()
-    while len(line.split()) == 0:
-        line = infile.readline()
-        if line == "":
-            print("Error: No Data.\n")
-            exit()
-    sp_names = line.split()
-    n_species = len(sp_names)
-    if n_species < 2:
-        print("Error: Not sufficiently many species (<2).\n")
+        print("Error: No Data.\n")
         exit()
-    VCF = 1
+# Assign species names (first two columns are Chrom and Pos).
+sp_names = line.split()[2:]
+n_species = len(sp_names)
+if n_species < 2:
+    print("Error: Not sufficiently many species (<2).\n")
+    exit()
+line = infile.readline()
+for i in range(n_species):
+    sp_data.append([])
+    sp_samples.append(0)
+while len(line.split()) > 1:
+    linelist = line.split()[2:]
+    if len(linelist) != n_species:
+        print("Error: input line \"" + line +
+              "\" does not fit number of species.\n")
+        exit()
+    for i in range(n_species):
+        p = linelist[i].split(",")
+        if len(p) == 1:
+            p = p[0].split("/")
+        for j in range(4):
+            p[j] = int(p[j])
+        summ = 0
+        for j in range(4):
+            summ += p[j]
+        if summ > sp_samples[i]:
+            sp_samples[i] = summ
+        sp_data[i].append(p)
     line = infile.readline()
-    for i in range(n_species):
-        sp_data.append([])
-        sp_samples.append(0)
-    while len(line.split()) > 1:
-        linelist = line.split()
-        if len(linelist) != n_species:
-            print("Error: input line \"" + line +
-                  "\" does not fit number of species.\n")
-            exit()
-        for i in range(n_species):
-            p = linelist[i].split(",")
-            if len(p) == 1:
-                p = p[0].split("/")
-            for j in range(4):
-                p[j] = int(p[j])
-            summ = 0
-            for j in range(4):
-                summ += p[j]
-            if summ > sp_samples[i]:
-                sp_samples[i] = summ
-            sp_data[i].append(p)
-        line = infile.readline()
-    line = ""
-    leng = len(sp_data[0])
+line = ""
+leng = len(sp_data[0])
+if vb is not None:
+    print("Count file has been read.")  # TODO
 
-# In case of Fasta format:
-while line != "":
-    if line[0] == ">":
-        linelist = line.split()
-        name = linelist[0].split("_")[0].replace(">", "")
-        if len(linelist) > 1:
-            init_data = linelist[len(linelist)-1]
-        else:
-            init_data = ""
-        found = 0
-        for i in range(len(sp_names)):
-            if name == sp_names[i]:
-                found = 1
-                sp_samples[i] += 1
-                sp_data[i].append("")
-                if init_data != "":
-                    line = init_data
-                else:
-                    line = infile.readline()
-                while (len(line) > 0 and line[0] != ">"):
-                    sp_data[i][len(sp_data[i])-1] += line.replace("\n", "")
-                    line = infile.readline()
-                if sp_data[i][len(sp_data[i])-1] == "":
-                    print("\n\n\nSpecies " + sp_names[i] + " sample "
-                          + linelist[0].split("_")[1] +
-                          " has no data. PoMo is stopping here."
-                          "Please check your data file.\n\n\n")
-                    exit()
-                break
-        if found == 0:
-            sp_names.append(name)
-            n_species += 1
-            sp_samples.append(1)
-            sp_data.append([""])
-            if init_data != "":
-                line = init_data
-            else:
-                line = infile.readline()
-            while (len(line) > 0 and line[0] != ">"):
-                sp_data[len(sp_data)-1][0] += line.replace("\n", "")
-                line = infile.readline()
-            if sp_data[len(sp_data)-1][0] == "":
-                print("\n\n\nSpecies " + sp_names[len(sp_data)-1] +
-                      " sample " + linelist[0].split("_")[1] +
-                      " has no data. PoMo is stopping here."
-                      " Please check your data file.\n\n\n")
-                exit()
-    if len(line) > 0 and line[0] != ">":
-        line = infile.readline()
+# Fri Feb 14 13:38:43 CET 2014
+# Support for fasta file format input has been removed.
+# Reasons: Performance and clarity.
+# Scripts for fasta to counts file format conversion are provided.
 
-# Put fasta data in counts format
-DNA = ["A", "C", "G", "T"]
-DNA2 = ["a", "c", "g", "t"]
-if VCF == 0:
-    sp_data2 = sp_data
-    sp_data = []
-    for i in range(n_species):
-        sp_data.append([])
-    leng = len(sp_data2[0][0])
-    for i in range(n_species):
-        for l in range(sp_samples[i]):
-            if len(sp_data2[i][l]) != leng:
-                print("\n\n\nError: individuals have different number "
-                      "of bases (not a proper alignment).\n\n\n")
-                exit()
-    for l in range(n_species):
-        for m in range(leng):
-            count = [0, 0, 0, 0]
-            for k in range(sp_samples[l]):
-                for d in range(4):
-                    if sp_data2[l][k][m] == DNA[d] or \
-                       sp_data2[l][k][m] == DNA2[d]:
-                        count[d] += 1
-                        break
-            p = count
-            sp_data[l].append(p)
+# # In case of Fasta format:
+# while line != "":
+#     if line[0] == ">":
+#         linelist = line.split()
+#         name = linelist[0].split("_")[0].replace(">", "")
+#         if len(linelist) > 1:
+#             init_data = linelist[len(linelist)-1]
+#         else:
+#             init_data = ""
+#         found = 0
+#         for i in range(len(sp_names)):
+#             if name == sp_names[i]:
+#                 found = 1
+#                 sp_samples[i] += 1
+#                 sp_data[i].append("")
+#                 if init_data != "":
+#                     line = init_data
+#                 else:
+#                     line = infile.readline()
+#                 while (len(line) > 0 and line[0] != ">"):
+#                     sp_data[i][len(sp_data[i])-1] += line.replace("\n", "")
+#                     line = infile.readline()
+#                 if sp_data[i][len(sp_data[i])-1] == "":
+#                     print("\n\n\nSpecies " + sp_names[i] + " sample "
+#                           + linelist[0].split("_")[1] +
+#                           " has no data. PoMo is stopping here."
+#                           "Please check your data file.\n\n\n")
+#                     exit()
+#                 break
+#         if found == 0:
+#             sp_names.append(name)
+#             n_species += 1
+#             sp_samples.append(1)
+#             sp_data.append([""])
+#             if init_data != "":
+#                 line = init_data
+#             else:
+#                 line = infile.readline()
+#             while (len(line) > 0 and line[0] != ">"):
+#                 sp_data[len(sp_data)-1][0] += line.replace("\n", "")
+#                 line = infile.readline()
+#             if sp_data[len(sp_data)-1][0] == "":
+#                 print("\n\n\nSpecies " + sp_names[len(sp_data)-1] +
+#                       " sample " + linelist[0].split("_")[1] +
+#                       " has no data. PoMo is stopping here."
+#                       " Please check your data file.\n\n\n")
+#                 exit()
+#     if len(line) > 0 and line[0] != ">":
+#         line = infile.readline()
+
+# # Put fasta data in counts format
+# DNA = ["A", "C", "G", "T"]
+# DNA2 = ["a", "c", "g", "t"]
+# if VCF == 0:
+#     sp_data2 = sp_data
+#     sp_data = []
+#     for i in range(n_species):
+#         sp_data.append([])
+#     leng = len(sp_data2[0][0])
+#     for i in range(n_species):
+#         for l in range(sp_samples[i]):
+#             if len(sp_data2[i][l]) != leng:
+#                 print("\n\n\nError: individuals have different number "
+#                       "of bases (not a proper alignment).\n\n\n")
+#                 exit()
+#     for l in range(n_species):
+#         for m in range(leng):
+#             count = [0, 0, 0, 0]
+#             for k in range(sp_samples[l]):
+#                 for d in range(4):
+#                     if sp_data2[l][k][m] == DNA[d] or \
+#                        sp_data2[l][k][m] == DNA2[d]:
+#                         count[d] += 1
+#                         break
+#             p = count
+#             sp_data[l].append(p)
 
 # Sites where some species have coverage 0 are removed
 to_remove = []
@@ -472,7 +488,7 @@ while line != "/*Find Root*/\n":
 samples_num = []
 for i in range(n_species):
     if not (sp_samples[i] in samples_num):
-        newsamfile.write(pm.probability_matrix(sp_samples[i]))
+        newsamfile.write(lp.main.probability_matrix(sp_samples[i]))
         samples_num.append(sp_samples[i])
         newsamfile.write("\n\n\n")
 line = "\n"
@@ -522,7 +538,7 @@ while line != "/*pre-ML*/\n":
 samples_num = []
 for i in range(n_species):
     if not (sp_samples[i] in samples_num):
-        newsamfile.write(pm.probability_matrix(sp_samples[i]))
+        newsamfile.write(lp.main.probability_matrix(sp_samples[i]))
         samples_num.append(sp_samples[i])
         newsamfile.write("\n\n\n")
 line = "\n"
@@ -610,6 +626,8 @@ for l in range(n_species):
     PoModatafile_cons.write("\n")
 PoModatafile.close()
 PoModatafile_cons.close()
+
+pdb.set_trace()
 
 print("\nRunning 1: NJ consensus\n")
 # Run HyPhy concatenation, NJ and root positioning, on consensus data
@@ -712,9 +730,9 @@ if n_species > 3:
     else:
         a_total = 0.0
         for i in range(n_species):
-            a_total += pm.a(sp_samples[i])
+            a_total += lp.main.a(sp_samples[i])
         a_total = a_total/n_species
-        HPfile2.write("scale_Ppol:=" + str(pm.a(N)/a_total)+";\n")
+        HPfile2.write("scale_Ppol:=" + str(lp.main.a(N)/a_total)+";\n")
     HPfile2.write("sample:=0;\n")
     NJtree2 = consetree
     NJtree2Samp = NJtree2
@@ -812,7 +830,7 @@ elif n_species <= 3 and noMC == 1:
     samples_num = []
     for i in range(n_species):
         if not (sp_samples[i] in samples_num):
-            newsamfile.write(pm.probability_matrix(sp_samples[i]))
+            newsamfile.write(lp.main.probability_matrix(sp_samples[i]))
             samples_num.append(sp_samples[i])
             newsamfile.write("\n\n\n")
     line = "\n"
@@ -851,9 +869,9 @@ elif n_species <= 3 and noMC == 1:
     else:
         a_total = 0.0
         for i in range(n_species):
-            a_total += pm.a(sp_samples[i])
+            a_total += lp.main.a(sp_samples[i])
         a_total = a_total/n_species
-        HPfile2.write("scale_Ppol:="+str(pm.a(N)/a_total)+";\n")
+        HPfile2.write("scale_Ppol:="+str(lp.main.a(N)/a_total)+";\n")
     HPfile2.write("sample:=0;\n")
     NJtree2 = NucNJtree_cons
     NJtree2Samp = NJtree2
@@ -921,9 +939,9 @@ else:
     else:
         a_total = 0.0
         for i in range(n_species):
-            a_total += pm.a(sp_samples[i])
+            a_total += lp.main.a(sp_samples[i])
         a_total = a_total/n_species
-        HPfile2.write("scale_Ppol:="+str(pm.a(N)/a_total)+";\n")
+        HPfile2.write("scale_Ppol:="+str(lp.main.a(N)/a_total)+";\n")
 
     NJtree2 = NNItreesamp
     while line != "":

@@ -7,7 +7,8 @@ Contains modules used by PoMo.
 
 """
 
+import libPoMo.main
 import libPoMo.seqbase
 import libPoMo.fasta
 import libPoMo.vcf
-import libPoMo.cf  # noqa
+import libPoMo.cf

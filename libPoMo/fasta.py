@@ -384,7 +384,7 @@ class MFaStrFilterProps():
       than `maxGapLength` (defaults to 30) bases.
     :ivar Boolean check_nonsense_codon: Check if there is no
       premature stop codon).
-    :ivar Boolean check_gene_length: Check that the gene is
+    :ivar Boolean check_exon_length: Check that the exon is
       longer than `minExonLen` (defaults to 21).
     :ivar Boolean check_exon_numbers: Check if exon number match
       for all sequences in the alignment.
@@ -402,7 +402,7 @@ class MFaStrFilterProps():
         self.check_for_long_gaps = True
         self.maxGapLength = 30
         self.check_nonsense_codon = True
-        self.check_gene_length = True
+        self.check_exon_length = True
         self.minExonLen = 21
         self.check_exon_numbers = True
 
@@ -524,7 +524,7 @@ def filter_mfa_str(mfaStr, fp, verb=None):
                     return False
         return True
 
-    def check_gene_length():
+    def check_exon_length():
         dataStr = mfaStr.seqL[0].data
         if len(dataStr) < fp.minExonLen:
             if verb is not None:
@@ -567,8 +567,8 @@ def filter_mfa_str(mfaStr, fp, verb=None):
     if fp.check_nonsense_codon:
         if not check_nonsense_codon():
             return False
-    if fp.check_gene_length:
-        if not check_gene_length():
+    if fp.check_exon_length:
+        if not check_exon_length():
             return False
     if fp.check_exon_numbers:
         if not check_exon_numbers():
