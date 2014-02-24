@@ -1,89 +1,89 @@
-Wolf
-3,0,0,0
-0,0,3,0
-0,1,2,0
-3,0,0,0
-0,0,3,0
-0,0,0,3
-0,0,0,3
-3,0,0,0
-0,0,3,0
-1,2,0,0
-0,3,0,0
-3,0,0,0
-0,0,3,0
-0,3,0,0
-3,0,0,0
-0,0,3,0
-0,0,0,3
-0,0,0,3
-3,0,0,0
-0,0,3,0
-0,3,0,0
-0,3,0,0
-3,0,0,0
-0,0,3,0
-0,3,0,0
-3,0,0,0
-0,0,3,0
-0,0,0,3
-0,0,0,3
-3,0,0,0
-0,0,3,0
-0,3,0,0
-0,3,0,0
-3,0,0,0
-0,0,3,0
-0,3,0,0
-3,0,0,0
-0,0,2,1
-0,0,0,3
-0,0,0,3
-2,0,1,0
-0,0,3,0
-0,3,0,0
-0,3,0,0
-3,0,0,0
-0,0,3,0
-0,3,0,0
-3,0,0,0
-0,0,3,0
-0,0,0,3
-0,0,0,3
-3,0,0,0
-0,0,3,0
-0,3,0,0
-0,3,0,0
-3,0,0,0
-0,0,3,0
-0,3,0,0
-3,0,0,0
-0,0,3,0
-0,0,0,3
-0,0,0,3
-3,0,0,0
-0,0,3,0
-0,3,0,0
-0,3,0,0
-3,0,0,0
-0,0,3,0
-0,3,0,0
-3,0,0,0
-0,0,3,0
-0,0,0,3
-0,0,0,3
-3,0,0,0
-0,0,3,0
-0,3,0,0
-0,3,0,0
-3,0,0,0
-0,0,3,0
-0,3,0,0
-3,0,0,0
-0,0,3,0
-0,0,0,3
-0,0,0,3
-3,0,0,0
-0,0,3,0
-0,3,0,0
-0,3,0,0
+Chrom	Pos	Wolf
+Chrom	Pos	3,0,0,0
+Chrom	Pos	0,0,3,0
+Chrom	Pos	0,1,2,0
+Chrom	Pos	3,0,0,0
+Chrom	Pos	0,0,3,0
+Chrom	Pos	0,0,0,3
+Chrom	Pos	0,0,0,3
+Chrom	Pos	3,0,0,0
+Chrom	Pos	0,0,3,0
+Chrom	Pos	1,2,0,0
+Chrom	Pos	0,3,0,0
+Chrom	Pos	3,0,0,0
+Chrom	Pos	0,0,3,0
+Chrom	Pos	0,3,0,0
+Chrom	Pos	3,0,0,0
+Chrom	Pos	0,0,3,0
+Chrom	Pos	0,0,0,3
+Chrom	Pos	0,0,0,3
+Chrom	Pos	3,0,0,0
+Chrom	Pos	0,0,3,0
+Chrom	Pos	0,3,0,0
+Chrom	Pos	0,3,0,0
+Chrom	Pos	3,0,0,0
+Chrom	Pos	0,0,3,0
+Chrom	Pos	0,3,0,0
+Chrom	Pos	3,0,0,0
+Chrom	Pos	0,0,3,0
+Chrom	Pos	0,0,0,3
+Chrom	Pos	0,0,0,3
+Chrom	Pos	3,0,0,0
+Chrom	Pos	0,0,3,0
+Chrom	Pos	0,3,0,0
+Chrom	Pos	0,3,0,0
+Chrom	Pos	3,0,0,0
+Chrom	Pos	0,0,3,0
+Chrom	Pos	0,3,0,0
+Chrom	Pos	3,0,0,0
+Chrom	Pos	0,0,2,1
+Chrom	Pos	0,0,0,3
+Chrom	Pos	0,0,0,3
+Chrom	Pos	2,0,1,0
+Chrom	Pos	0,0,3,0
+Chrom	Pos	0,3,0,0
+Chrom	Pos	0,3,0,0
+Chrom	Pos	3,0,0,0
+Chrom	Pos	0,0,3,0
+Chrom	Pos	0,3,0,0
+Chrom	Pos	3,0,0,0
+Chrom	Pos	0,0,3,0
+Chrom	Pos	0,0,0,3
+Chrom	Pos	0,0,0,3
+Chrom	Pos	3,0,0,0
+Chrom	Pos	0,0,3,0
+Chrom	Pos	0,3,0,0
+Chrom	Pos	0,3,0,0
+Chrom	Pos	3,0,0,0
+Chrom	Pos	0,0,3,0
+Chrom	Pos	0,3,0,0
+Chrom	Pos	3,0,0,0
+Chrom	Pos	0,0,3,0
+Chrom	Pos	0,0,0,3
+Chrom	Pos	0,0,0,3
+Chrom	Pos	3,0,0,0
+Chrom	Pos	0,0,3,0
+Chrom	Pos	0,3,0,0
+Chrom	Pos	0,3,0,0
+Chrom	Pos	3,0,0,0
+Chrom	Pos	0,0,3,0
+Chrom	Pos	0,3,0,0
+Chrom	Pos	3,0,0,0
+Chrom	Pos	0,0,3,0
+Chrom	Pos	0,0,0,3
+Chrom	Pos	0,0,0,3
+Chrom	Pos	3,0,0,0
+Chrom	Pos	0,0,3,0
+Chrom	Pos	0,3,0,0
+Chrom	Pos	0,3,0,0
+Chrom	Pos	3,0,0,0
+Chrom	Pos	0,0,3,0
+Chrom	Pos	0,3,0,0
+Chrom	Pos	3,0,0,0
+Chrom	Pos	0,0,3,0
+Chrom	Pos	0,0,0,3
+Chrom	Pos	0,0,0,3
+Chrom	Pos	3,0,0,0
+Chrom	Pos	0,0,3,0
+Chrom	Pos	0,3,0,0
+Chrom	Pos	0,3,0,0

@@ -23,6 +23,7 @@ Functions:
     string
   - :func:`get_indiv_from_field_header()`, extract list of individuals
     from header
+  - :func:`get_header_line_string()`, print vcf header line
 
 ----
 
@@ -476,3 +477,16 @@ def open_seq(VCFFileName, maxskip=100, name=None):
     VCFFile.close()
     test_sequence(seq)
     return seq
+
+
+def get_header_line_string(indiv):
+    """Return a standard VCF File header string with individuals *indiv*.
+
+    """
+    string = ''
+    for s in hdList:
+        string += s + '\t'
+    for i in indiv:
+        string += i + '\t'
+    # we added one tab at the end that we do not need
+    return string[:-1]

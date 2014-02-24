@@ -2,8 +2,10 @@
 
 """Test libPoMo.cf.CFWriter object."""
 
+import os
 import libPoMo.fasta as fa
 import libPoMo.cf as cf  # noqa
+import libPoMo.seqbase as sb
 
 vcfFL = ["/home/dominik/PopGen/Data/Great-Ape-Genome-Project/SNPs/Gorilla.vcf.gz",          # noqa
          "/home/dominik/PopGen/Data/Great-Ape-Genome-Project/SNPs/Homo.vcf.gz",             # noqa
@@ -12,10 +14,22 @@ vcfFL = ["/home/dominik/PopGen/Data/Great-Ape-Genome-Project/SNPs/Gorilla.vcf.gz
          "/home/dominik/PopGen/Data/Great-Ape-Genome-Project/SNPs/Pongo_abelii.vcf.gz",     # noqa
          "/home/dominik/PopGen/Data/Great-Ape-Genome-Project/SNPs/Pongo_pygmaeus.vcf.gz"]   # noqa
 
-cfw = cf.CFWriter(vcfFL, "test-out.gz")
-mFaStr = fa.MFaStream("/home/dominik/PopGen/Data/CCDC-Alignments-Exons-Human-Chimp-Gorilla-Orang/chrY-exons.fa.gz")  # noqa
+outfile = ".test-out.gz"
+
+cfw = cf.CFWriter(vcfFL, outfile)
+mFaStr = fa.MFaStream("/home/dominik/PopGen/Data/hg18-CCDS-Alignments-Exons-Human-Chimp-Gorilla-Orang/hg18-chrY-exons.fa.gz")  # noqa
 
 cfw.write_HLn()
 cf.write_cf_from_MFaStream(mFaStr, cfw)
 
 cfw.close()
+
+fo = sb.gz_open(outfile)
+i = 0
+for line in fo:
+    print(line)
+    i += 1
+    if i > 100:
+        break
+fo.close()
+os.remove(outfile)
