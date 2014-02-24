@@ -11,7 +11,7 @@ import os
 import argparse
 import re
 import libPoMo as lp
-# import pdb
+import pdb
 
 # PoMo version
 ver = '1.0.2'
@@ -154,6 +154,7 @@ path_HyPhy = path_HyPhy + "/"
 # Define virtual population size.
 N = 10
 
+# Read in the data and write the HyPhy batch and input files.
 (n_species, sp_names, sp_samples, all_one, usr_def) \
     = lp.main.read_data_write_HyPhy_input(in_name, N, thresh, path_bf,
                                           muts, mutgamma,
@@ -161,7 +162,9 @@ N = 10
                                           PoModatafile, PoModatafile_cons,
                                           vb)
 
-######################################################################
+# Debugging point if necessary.
+# print(n_species, sp_names, sp_samples)
+# pdb.set_trace()
 
 print("\nRunning 1: NJ consensus\n")
 # Run HyPhy concatenation, NJ and root positioning, on consensus data

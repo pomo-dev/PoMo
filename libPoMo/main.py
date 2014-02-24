@@ -11,7 +11,7 @@ import argparse
 import random
 from scipy.misc import comb as choose
 import libPoMo as lp
-# import pdb
+import pdb
 
 
 # define PoMo10 states
@@ -205,6 +205,63 @@ def probability_matrix(n):
     return s
 
 
+def get_species_from_cf_headerline(line):
+    """Get the number of species and the names fom a counts format header line.
+
+    :param str line: The header line.
+
+    :rtype: (int n_species, [str] sp_names)
+
+    """
+    sp_names = line.split()[2:]
+    n_species = len(sp_names)
+
+    if n_species < 2:
+        print("Error: Not sufficiently many species (<2).\n")
+        raise ValueError()
+
+    return (n_species, sp_names)
+
+
+def get_data_from_cf_line(l, n_species):
+    """Read in the data of a single counts format line.
+
+    The return type is a list with the number of samples and a two
+    dimensional array of the form data[species][nucleotide], where
+    species is the index of the species and nucleotide is the index of
+    the nucleotide (0,1,2 or 3 for a,c,g and t, respectively).
+
+    :param str l: The line that contains the data.
+    :param int n_species: Number of species to be expected.
+
+    :rtype: ([int] n_samples, [[int]] data)
+
+    """
+    linelist = l.split()[2:]
+
+    if len(linelist) != n_species:
+        print("Error: input line \"" + l +
+              "\" does not fit number of species.\n")
+        raise ValueError()
+
+    n_samples = []
+    data = []
+    for i in range(n_species):
+        p = linelist[i].split(",")
+        q = []
+        summ = 0
+        if len(p) == 1:
+            p = p[0].split("/")
+        for j in range(4):
+            q.append(int(p[j]))
+            summ += q[j]
+
+        n_samples.append(summ)
+        data.append(q)
+
+    return (n_samples, data)
+
+
 def read_data_write_HyPhy_input(fn, N, thresh, path_bf,
                                 muts, mutgamma,
                                 sels, selgamma,
@@ -222,9 +279,9 @@ def read_data_write_HyPhy_input(fn, N, thresh, path_bf,
     :param int N: Virtual population size.
     :param float thresh: Trheshold of data discard for downsampling.
     :param str path_bf: Path to the HyPhy batch files
-    :param str muts: Mutation model (:func:`mutmod`).
+    :param str muts: Mutation model (:func:`mutModel`).
     :param str mutgamma: Gamma of the mutation model (:func:`setGM`).
-    :param str sels: Selection model (:func:`selmod`).
+    :param str sels: Selection model (:func:`selModel`).
     :param str selgamma: Gamma of selection model (:func:`setGS`).
     :param str PoModatafile: Path to HyPhy input file.
     :param str PoModatafile_cons: Path to HyPhy input file.
@@ -261,7 +318,7 @@ def read_data_write_HyPhy_input(fn, N, thresh, path_bf,
 
     if vb is not None:
         print("Starting to read input file.")
-    line = ""
+    line = ''
     infile = lp.seqbase.gz_open(fn)
     while len(line) > 0 and line[0] == "#":
         line = infile.readline()
@@ -270,39 +327,29 @@ def read_data_write_HyPhy_input(fn, N, thresh, path_bf,
         if line == "":
             print("Error: No Data.\n")
             exit()
+
     # Assign species names (first two columns are Chrom and Pos).
-    sp_names = line.split()[2:]
-    n_species = len(sp_names)
-    if n_species < 2:
-        print("Error: Not sufficiently many species (<2).\n")
-        exit()
-    line = infile.readline()
+    (n_species, sp_names) = get_species_from_cf_headerline(line)
+    # Initialize the number of species samples to 0.
     for i in range(n_species):
         sp_data.append([])
         sp_samples.append(0)
-    while len(line.split()) > 1:
-        linelist = line.split()[2:]
-        if len(linelist) != n_species:
-            print("Error: input line \"" + line +
-                  "\" does not fit number of species.\n")
-            exit()
+
+    # Read in the data.
+    leng = 0
+    for l in infile:
+        leng += 1
+        (n_samples, data) = get_data_from_cf_line(l, n_species)
+        # Update sp_data and the number of samples.
         for i in range(n_species):
-            p = linelist[i].split(",")
-            if len(p) == 1:
-                p = p[0].split("/")
-            for j in range(4):
-                p[j] = int(p[j])
-            summ = 0
-            for j in range(4):
-                summ += p[j]
-            if summ > sp_samples[i]:
-                sp_samples[i] = summ
-            sp_data[i].append(p)
-        line = infile.readline()
-    line = ""
-    leng = len(sp_data[0])
+            sp_data[i].append(data[i])
+            if n_samples[i] > sp_samples[i]:
+                sp_samples[i] = n_samples[i]
+
     if vb is not None:
-        print("Count file has been read.")  # TODO
+        print("Count file has been read.")
+
+    # pdb.set_trace()
 
     # Fri Feb 14 13:38:43 CET 2014
     # Support for fasta file format input has been removed.
@@ -403,8 +450,11 @@ def read_data_write_HyPhy_input(fn, N, thresh, path_bf,
     summ = 0
     for i in range(len(to_remove)):
         for s in range(n_species):
-            rem = sp_data[s].pop(to_remove[i]-summ)
+            sp_data[s].pop(to_remove[i]-summ)
         summ += 1
+
+    # Debugging point to improve memory.
+    # pdb.set_trace()
 
     # Now, downsample if necessary
     print("Doing downsampling\n")
@@ -494,8 +544,7 @@ def read_data_write_HyPhy_input(fn, N, thresh, path_bf,
     summ = 0
     for i in range(len(to_remove)):
         for s in range(n_species):
-            # TODO Why is this never used?
-            rem = sp_data[s].pop(to_remove[i]-summ)  # noqa
+            sp_data[s].pop(to_remove[i]-summ)
         summ += 1
     leng = len(sp_data[0])
 
@@ -530,9 +579,9 @@ def read_data_write_HyPhy_input(fn, N, thresh, path_bf,
 
     # default options
     # TODO Why are they not needed
-    sampling = 1  # noqa
-    onlysampling = 1  # noqa
-    mbin = 0  # noqa
+    # sampling = 1  # noqa
+    # onlysampling = 1  # noqa
+    # mbin = 0  # noqa
 
     # Writing the HyPhy batch file for PoMo
     newsamfile = open("PoMo10_root_only_sampling_preliminary_used.bf",
@@ -654,7 +703,7 @@ def read_data_write_HyPhy_input(fn, N, thresh, path_bf,
                     maxcount = p[j2]
             if i2 == -1:
                 refs = codons[i1]
-                refs2 = codons[i1]
+                # refs2 = codons[i1]
             else:
                 if p[i1]+p[i2] > sp_samples[l]:
                     count1 = p[i1]
@@ -681,11 +730,10 @@ def read_data_write_HyPhy_input(fn, N, thresh, path_bf,
                     newcount2 = newcount3
                 if newcount1 == sp_samples[l]:
                     refs = codons[i1]
-                    refs2 = codons[i1]
+                    # refs2 = codons[i1]
                 elif newcount2 == sp_samples[l]:
                     refs = codons[i2]
-                    # TODO Why is this not needed?
-                    refs2 = codons[i2]  # noqa
+                    # refs2 = codons[i2]
                 else:
                     pol = 0
                     if i1 == 1:
@@ -703,6 +751,6 @@ def read_data_write_HyPhy_input(fn, N, thresh, path_bf,
     PoModatafile.close()
     PoModatafile_cons.close()
 
-    # TODO free memory of sp_data and so on
+    # Debugging point if necessary.
     # pdb.set_trace()
     return (n_species, sp_names, sp_samples, all_one, usr_def)
