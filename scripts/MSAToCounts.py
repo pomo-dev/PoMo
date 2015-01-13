@@ -13,6 +13,7 @@ analysis).
 
 import argparse
 import os
+import logging
 import libPoMo.fasta as fa
 import libPoMo.cf as cf  # noqa
 
@@ -58,17 +59,29 @@ parser.add_argument("-m", "--merge", action="count",
                     help="merge individuals within all given VCFFiles")
 parser.add_argument("-s", "--synonymous", action="count",
                     help="only print position with a synonymous base")
-parser.add_argument("-v", "--verbosity", action="count",
-                    help="turn on verbosity")
+parser.add_argument("-v", "--verbose", action="count",
+                    help="turn on verbosity (-v or -vv)")
+parser.add_argument("-i", "--one-indiv", action="store_true",
+                    help="randomly choose one indivual per population")
 args = parser.parse_args()
 
 MFaRefFN = args.reference
 vcfFnL = args.VCFFiles
 output = args.output
-vb = args.verbosity
+vb = args.verbose
+oneI = args.one_indiv
+
+logging.basicConfig(format='%(levelname)s: %(message)s')
+logger = logging.getLogger()
+if args.verbose == 0:
+    logger.setLevel(logging.WARN)
+elif args.verbose == 1:
+    logger.setLevel(logging.INFO)
+elif args.verbose == 2:
+    logger.setLevel(logging.DEBUG)
 
 if args.merge is None:
-    cfw = cf.CFWriter(vcfFnL, output, verb=vb)
+    cfw = cf.CFWriter(vcfFnL, output, oneIndividual=oneI)
 else:
     mergeList = []
     nameList = []
@@ -77,7 +90,7 @@ else:
         strippedFn = os.path.basename(fn)
         nameList.append(strippedFn.split('.', maxsplit=1)[0])
     cfw = cf.CFWriter(vcfFnL, output, mergeL=mergeList,
-                      nameL=nameList, verb=vb)
+                      nameL=nameList, oneIndividual=oneI)
 
 if args.synonymous is not None:
     cfw.onlySynonymous = True

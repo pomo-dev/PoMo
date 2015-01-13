@@ -1,17 +1,17 @@
-#!/usr/bin/env python
-
 """Execute PoMo10.
 
 This script executes PoMo. Run this script with `--help` to print help
 information and exit.
 
 """
+import argparse
 import sys
 import os
-import argparse
+import logging
 import re
 import libPoMo as lp
 import pdb
+import time
 
 # PoMo version
 ver = '1.0.2'
@@ -21,16 +21,21 @@ parser = argparse.ArgumentParser(prog='PoMo',
                                  description="PoMo10 script version "+ver)
 parser.add_argument('hyphy_bin', help="""Path of the HYPHY binary used
 to maximize the likelihood.""")
-parser.add_argument('file', help="""Name of the fasta file containing
-the alignment. Each individual's name must be species_n where
-\"species\" is the name of its species, without underscores, and \"n\"
-is a number identifying the individual among the other samples of the
-same population/species (it actually does not matter which number is
-given to which individual). As now, no gaps or Ns are allowed, which
-means, you have to remove columns where one of the individuals has
-missing characters or unknowns. It does not matter from which
-individual each base comes, so you can sub-sample and randomly assign
-to individuals within a species.""")
+
+parser.add_argument('file', help="""
+Name of the counts or fasta file containing the alignment.  Each
+individual's name must be \"species-n\" where \"species\" is the name
+of its species, and \"n\" is a number identifying the individual among
+the other samples of the same population/species (it actually does not
+matter which number is given to which individual).  No gaps or Ns are
+allowed, which means, you have to remove columns where one of the
+individuals has missing characters or unknowns. It does not matter
+from which individual each base comes, so you can sub-sample and
+randomly assign to individuals within a species.""")
+
+# TODO Check with Nicola, if this is still true (no gaps or Ns are
+# allowed ...)
+
 parser.add_argument('-m', '--molecular-clock', type=int,
                     choices=[0, 1], default=1, help="""Determines if
                     you want the molecular clock constraint (and
@@ -77,41 +82,69 @@ parser.add_argument('-d', '--ds-ratio', type=lp.main.dsRatio, default=0.66,
                     above the specified threshold.  By default, sample
                     sizes are decreased until at least 2 thirds of the
                     sites are included (`-d 0.66`).""")
+parser.add_argument('-t', "--theta", type=float, default=None,
+                    help="""Manyally set population diversity theta.
+                    This value can only be set, if all species have a
+                    sample size of 1.  If no value is specified, PoMo
+                    will ask the user for theta on the command line if
+                    necessary.""")
 parser.add_argument('-v', '--verbose', action='count',
-                    help="""turn on verbosity""")
+                    help="""turn on verbosity (-v or -vv)""")
 parser.add_argument('--version', action='version', version='%(prog)s '+ver)
-args = parser.parse_args()
 
-print("""PoMo version 1.0 Created by Nicola De Maio. For a reference, please
-see and cite: De Maio, Schlotterer, Kosiol (MBE, 2013), and/or: De
-Maio, Kosiol (in preparation). You can use this software for
-non-commercial purposes, but please, always acknowledge the
-authors. For suggestions, doubts, bugs, etc., please contact
-nicola.de.maio.85@gmail.com\n""")
+args = parser.parse_args()
 
 if args.molecular_clock == 1:
     noMC = 0
 elif args.molecular_clock == 0:
     noMC = 1
 
-# Mutation model
+# Mutation model.
 muts = lp.main.mutmod[args.MM]
 
-# Variable mutation rate (+Gamma)
+# Variable mutation rate (+Gamma).
 mutgamma = lp.main.setGM(args.GM)
 
-# Fixation bias
+# Fixation bias.
 selgamma = lp.main.setGS(args.GS)
 
-# Selection model
+# Selection model.
 sels = lp.main.selmod[args.SM]
 
-# Verbosity
+# Population diversity theta.
+theta = args.theta
+
+# Verbosity and logger.
 vb = args.verbose
+# Verbose HYPHY output only with -vv or more.
+if (vb is None) or (vb == 1):
+    vbHyphy = None
+
+logging.basicConfig(format='%(levelname)s: %(message)s')
+logger = logging.getLogger()
+if args.verbose == 0:
+    logger.setLevel(logging.WARN)
+elif args.verbose == 1:
+    logger.setLevel(logging.INFO)
+elif args.verbose == 2:
+    logger.setLevel(logging.DEBUG)
 
 # Threshold of data discard for downsampling
 thresh = args.ds_ratio
+print("============================================================")
+print("""PoMo version 1.0.2 Created by Nicola De Maio; maintained by Dominik
+Schrempf. For a reference, please see and cite: De Maio, Schlotterer,
+Kosiol (MBE, 2013), and/or: De Maio, Schrempf, Kosiol (in
+preparation). You can use this software for non-commercial purposes,
+but please, always acknowledge the authors. For suggestions, doubts,
+bugs, etc., please contact nicola.de.maio.85@gmail.com""")
 
+print("===========================================================")
+print("Start Time:", lp.main.timeStr())
+start_time = time.time()
+if (vb is not None):
+    print("Verbose mode.")
+    print("===========================================================")
 # Define paths to files.
 in_name = str(args.file)
 in_name_no_extension = in_name.rsplit(".", maxsplit=1)[0]
@@ -160,12 +193,13 @@ N = 10
                                           muts, mutgamma,
                                           sels, selgamma,
                                           PoModatafile, PoModatafile_cons,
-                                          vb)
+                                          theta, vb)
 
 # Debugging point if necessary.
 # print(n_species, sp_names, sp_samples)
 # pdb.set_trace()
 
+print("============================================================")
 print("\nRunning 1: NJ consensus\n")
 # Run HyPhy concatenation, NJ and root positioning, on consensus data
 HPfile = open(path_bf + "Nuc_NJandRoot.bf")
@@ -181,7 +215,7 @@ while line != "":
     if len(linelist) > 0 and linelist[0] == "ExecuteAFile":
         HPfile2.write(line.replace("pairwise", path_bf + "pairwise"))
     elif len(linelist) > 1 and linelist[0] == "fprintf" \
-         and linelist[1] == "(stdout," and vb is None:  # noqa
+         and linelist[1] == "(stdout," and vbHyphy is None:  # noqa
         HPfile2.write("/*" + line.replace("\n", "") + "*/\n")
     else:
         HPfile2.write(line)
@@ -203,6 +237,7 @@ NucNJtree_cons = lasttree
 file.close()
 
 if n_species > 3:
+    print("============================================================")
     print("\nRunning 2: NNI consensus\n")
     # Running HyPhy concatenation, finding topology and root altogether
     # with NNI and rooting, on consensus data
@@ -223,7 +258,7 @@ if n_species > 3:
         elif len(linelist) > 0 and linelist[0] == "#include":
             HPfile3.write(line.replace("heuristic", path_bf + "heuristic"))
         elif len(linelist) > 1 and linelist[0] == "fprintf" \
-             and linelist[1] == "(stdout," and vb is None:  # noqa
+             and linelist[1] == "(stdout," and vbHyphy is None:  # noqa
             HPfile3.write("/*" + line.replace("\n", "") + "*/\n")
         else:
             HPfile3.write(line)
@@ -243,6 +278,7 @@ if n_species > 3:
     consetree = lasttree
     HPofile.close()
 
+    print("============================================================")
     print("\nRunning 3: NNI PoMo\n")
     # Running PoMo10, finding the topology with NNI
     HPfile = open("PoMo10_NNI_sampling_preliminary_used.bf")
@@ -360,7 +396,7 @@ elif n_species <= 3 and noMC == 1:
         line = samfile.readline()
         linelist = line.split()
         if len(linelist) > 1 and linelist[0] == "fprintf" \
-           and linelist[1] == "(stdout," and vb is None:
+           and linelist[1] == "(stdout," and vbHyphy is None:
             newsamfile.write("/*" + line.replace("\n", "") + "*/\n")
         else:
             newsamfile.write(line)
@@ -375,13 +411,14 @@ elif n_species <= 3 and noMC == 1:
         line = samfile.readline()
         linelist = line.split()
         if len(linelist) > 1 and linelist[0] == "fprintf" \
-           and linelist[1] == "(stdout," and vb is None:
+           and linelist[1] == "(stdout," and vbHyphy is None:
             newsamfile.write("/*" + line.replace("\n", "") + "*/\n")
         else:
             newsamfile.write(line)
     samfile.close()
     newsamfile.close()
 
+    print("============================================================")
     print("\nRunning PoMo without Molecular clock\n")
     # Running PoMo10, finding the topology with NNI
     HPfile = open("PoMo10_NoMolClock_preliminary.bf")
@@ -454,6 +491,7 @@ elif n_species <= 3 and noMC == 1:
     HPofile.close()
 
 else:
+    print("============================================================")
     print("\nRunning 4: Rooting PoMo\n")
     # Running PoMo10, finding root from the topology estimated with NNI
     # and PoMo10
@@ -548,4 +586,9 @@ os.system("rm -f PoMo10_NoMolClock_out.txt")
 os.system("rm -f PoMo10_NoMolClock_preliminary.bf")
 os.system("rm -f PoMo10_NoMolClock_used.bf")
 print("Done!")
+print("===========================================================")
+print("End Time:", lp.main.timeStr())
+end_time = time.time()
+print("Runtime in seconds:", end_time - start_time)
+print("============================================================")
 exit()

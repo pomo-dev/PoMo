@@ -23,6 +23,8 @@ Functions:
     string
   - :func:`get_indiv_from_field_header()`, extract list of individuals
     from header
+  - :func:`init_seq()`, open VCF file and initialize `VCFStream`
+  - :func:`open_seq()`, open VCF file and save it to a `VCFSeq`
   - :func:`get_header_line_string()`, print vcf header line
 
 ----
@@ -32,6 +34,9 @@ Functions:
 __docformat__ = 'restructuredtext'
 
 import libPoMo.seqbase as sb
+
+dna2ind = {'a': 0, 'c': 1, 'g': 2, 't': 3}
+ind2dna = ['a', 'c', 'g', 't']
 
 
 class NotAVariantCallFormatFileError(sb.SequenceDataError):
@@ -132,6 +137,16 @@ class NucBase():
         self.speciesData = []
         self.ploidy = None
 
+    def get_info(self):
+        """Return nucleotide base information string."""
+        msg1 = '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t' % \
+               (self.chrom,
+                self.pos, self.id, self.ref,
+                self.alt, self.qual, self.filter,
+                self.info, self.format)
+        msg2 = '\t'.join(self.speciesData)
+        return msg1 + msg2
+
     def print_info(self):
         """Print nucleotide base information.
 
@@ -139,11 +154,12 @@ class NucBase():
         information from the VCF file.
 
         """
-        print(self.chrom, self.pos, self.id, self.ref,
-              self.alt, self.qual, self.filter,
-              self.info, self.format,
-              sep='\t', end='\t')
-        print('\t'.join(self.speciesData))
+        print(self.get_info())
+        # print(self.chrom, self.pos, self.id, self.ref,
+        #       self.alt, self.qual, self.filter,
+        #       self.info, self.format,
+        #       sep='\t', end='\t')
+        # print('\t'.join(self.speciesData))
         return
 
     def get_ref_base(self):
@@ -202,7 +218,27 @@ class NucBase():
                 data.append(baseInfoL)
         return data
 
+    def get_base_ind(self, iI, iC):
+        """Return the base of a specific individual.
+
+        :param int indiv: 0-based index of individual.
+        :param int chrom: 0-based index of chromosome (for n-ploid
+            individuals).
+
+        :rtype: character with nucleotide base.
+        """
+        data = self.get_speciesData()
+        altBases = self.get_alt_base_list()
+
+        if data[iI][iC] is None:
+            return None
+        elif data[iI][iC] == 0:
+            return self.ref
+        else:
+            return altBases[data[iI][iC]-1]
+
     def purge(self):
+
         """Purge the data associated with this :class:`NucBase`."""
         self.__init__()
 
@@ -402,10 +438,10 @@ def init_seq(VCFFileName, maxskip=100, name=None):
     """
     flag = False
     VCFFile = sb.gz_open(VCFFileName)
-    # set the vcf sequence name
+    # Set the vcf sequence name.
     if name is None:
         name = sb.stripFName(VCFFileName)
-    # Find the start of the first base
+    # Find the start of the first base.
     for i in range(0, maxskip):
         line = VCFFile.readline()
         if line == '':

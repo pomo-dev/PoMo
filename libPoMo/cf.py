@@ -8,26 +8,34 @@ in counts format.
 
 The Counts Format
 -----------------
+
 This file format is used by PoMo and lists the base
 counts for every position.
 
 It contains:
+  - 1 line that specifies the file as counts file and states the
+    number of populations as well as the number of sites
   - 1 headerline with tab separated sequence names
   - N lines with counts of A, C, G and T bases at position n
 
+It can contain:
+  - any number of lines that start with a #, these are treated as
+    comments; There are no more comments allowed after the headerline.
+
 ::
 
-  CHROM \t Pos   \t Sheep   \t BlackSheep \t RedSheep \t Wolf    \t RedWolf
-  chrA  \t s     \t 0,0,1,0 \t 0,0,1,0    \t 0,0,1,0  \t 0,0,5,0 \t 0,0,0,1
-  chrA  \t s + 1 \t 0,0,0,1 \t 0,0,0,1    \t 0,0,0,1  \t 0,0,0,5 \t 0,0,0,1
+  COUNTSFILE \t NPOP 5 \t NSITES N
+  CHROM \t POS   \t Sheep   \t BlackSheep \t RedSheep \t Wolf    \t RedWolf
+  1  \t s     \t 0,0,1,0 \t 0,0,1,0    \t 0,0,1,0  \t 0,0,5,0 \t 0,0,0,1
+  1  \t s + 1 \t 0,0,0,1 \t 0,0,0,1    \t 0,0,0,1  \t 0,0,0,5 \t 0,0,0,1
   .
   .
   .
-  chrF  \t 8373  \t 0,0,0,1 \t 1,0,0,0    \t 0,1,0,0  \t 0,1,4,0 \t 0,0,1,0
+  9  \t 8373  \t 0,0,0,1 \t 1,0,0,0    \t 0,1,0,0  \t 0,1,4,0 \t 0,0,1,0
   .
   .
   .
-  chrE  \t end   \t 0,0,0,1 \t 0,1,0,0    \t 0,1,0,0  \t 0,5,0,0 \t 0,0,1,0
+  Y  \t end   \t 0,0,0,1 \t 0,1,0,0    \t 0,1,0,0  \t 0,5,0,0 \t 0,0,1,0
 
 Convert to Counts Format
 ------------------------
@@ -61,14 +69,21 @@ A code example is::
 Objects
 -------
 Classes:
+  - :class:`CFStream`
   - :class:`CFWriter`, write a counts format file
 
 Exception Classes:
+  - :class:`NotACountsFormatFileError`
   - :class:`CountsFormatWriterError`
+  - :class:`NoSynBase`
 
 Functions:
+  - :func:`interpret_cf_line()`, get data of a line in counts format
+  - :func:`faseq_append_base_of_cfS()`, append CFStream line to FaSeq
+  - :func:`cf_to_fasta()`, convert counts file to fasta file
   - :func:`write_cf_from_MFaStream()`, write counts file using the
     given MFaStream and CFWriter
+  - :func:`fasta_to_cf()`, convert fasta to counts format
 
 ----
 
@@ -77,11 +92,24 @@ Functions:
 __docformat__ = 'restructuredtext'
 
 import pysam as ps
+import logging
+import random
+import pdb
+import os
+import copy
 
 import libPoMo.seqbase as sb
+import libPoMo.fasta as fasta
 import libPoMo.vcf as vcf
+import numpy as np
 
 dna = {'a': 0, 'c': 1, 'g': 2, 't': 3}
+ind2dna = ['a', 'c', 'g', 't']
+
+
+class NotACountsFormatFileError(sb.SequenceDataError):
+    """CF file not valid."""
+    pass
 
 
 class CountsFormatWriterError(sb.SequenceDataError):
@@ -89,10 +117,311 @@ class CountsFormatWriterError(sb.SequenceDataError):
     pass
 
 
-class NoSynBase(sb.NotAValidRefBase):
+class NoSynBase(sb.SequenceDataError):
     """Not a 4-fold degenerate site."""
     pass
 
+
+def interpret_cf_line(ln):
+    """Interpret a counts file line.
+
+    Return type is a tuple containing the chromosome name, the
+    position and a list with nucleotide counts (cf. counts file).
+
+    :param str ln: Line in counts format.
+
+    :rtype: (str, int, [[int]])
+
+    """
+    lnL = ln.split('\t')
+    l = len(lnL)
+    if (l <= 2):
+        raise NotACountsFormatFileError("Line contains no data.")
+
+    chrom = lnL[0]
+    pos = lnL[1]
+    countsLStr = [eL.split(',') for eL in lnL[2:]]
+    le = len(countsLStr)
+    countsL = np.empty((le, 4), int)
+    for i in range(le):
+        countsL[i] = [int(el) for el in countsLStr[i]]
+    return (chrom, pos, countsL)
+
+
+class CFStream():
+    """Store data of a CF file line per line.
+
+    Open a (gzipped) CF file. The file can be read line per line with
+    :func:`read_next_pos()`.
+
+    :param str CFFileName: Counts format file name to be read.
+    :param str name: Optional; stream name, defaults to stripped
+        filename.
+
+    :ivar str name: Stream name.
+    :ivar str chrom: Chromosome name.
+    :ivar str pos: Positional string.
+    :ivar fo fo: Fileobject.
+    :ivar [str] indivL: List of names of individuals (populations).
+    :ivar [[int]] countsL: Numpy array of nucleotide counts.
+    :ivar int nIndiv: Number of individuals (populations).
+
+    """
+
+    def __init__(self, CFFileName, name=None):
+        CFFile = sb.gz_open(CFFileName)
+        # Set the cf sequence name.
+        if name is None:
+            name = sb.stripFName(CFFileName)
+        # Find the start of the first base.
+        ln = CFFile.readline()
+        if ln == '':
+            raise NotACountsFormatFileError("File contains no data.")
+
+        # Skip comments.
+        while ln[0] == '#':
+            ln = CFFile.readline()
+
+        # Read in first line.
+        lnL = ln.split()
+        l = len(lnL)
+        if (lnL[0] != "COUNTSFILE") or (l != 5):
+            raise NotACountsFormatFileError("First line is corrupt.")
+        # TODO: The first line is needed by IQ-Tree, but not by
+        # libPoMo.  Maybe I should use this information here!
+
+        ln = CFFile.readline()
+
+        # Skip comments.
+        while ln[0] == '#':
+            ln = CFFile.readline()
+
+        # Read in headerline.
+        lnL = ln.split('\t')
+        l = len(lnL)
+        indivL = []
+        if (lnL[0] in ["CHROM", "Chrom"]) and (lnL[1] in ["POS", "Pos"]):
+            for i in range(2, l):
+                indivL.append(lnL[i].strip())
+        else:
+            raise NotACountsFormatFileError("Header line is corrupt.")
+        ln = CFFile.readline()
+        (chrom, pos, countsL) = interpret_cf_line(ln)
+        if (len(countsL) != len(indivL)):
+            raise NotACountsFormatFileError("Line doesn't fit nr. of species.")
+
+        self.name = name
+        self.chrom = chrom
+        self.pos = pos
+        self.fo = CFFile
+        self.indivL = indivL
+        self.countsL = countsL
+        self.nIndiv = len(countsL)
+
+    def __update_base(self, ln):
+        """Read CF line into :class:`CFStream`."""
+        (self.chrom, self.pos, self.countsL) = interpret_cf_line(ln)
+        if (len(self.countsL) != self.nIndiv):
+            raise NotACountsFormatFileError("Line doesn't fit nr. of species.")
+
+    def read_next_pos(self):
+        """Get next base.
+
+        Return position of next base.  Raises `ValueError` if there is
+        no next base.
+
+        :rtype: int
+
+        """
+        ln = self.fo.readline()
+        if ln != '':
+            self.__update_base(ln)
+            return self.pos
+        else:
+            raise ValueError("End of CFStream.")
+            return None
+
+    def close(self):
+        self.fo.close()
+
+
+def fasta_to_cf(fastaFN, countsFN, splitChar='-', chromName="NA"):
+    """Convert fasta to counts format.
+
+    The (aligned) sequences in the fasta file are read in and the data
+    is written to a counts format file.
+
+    Sequence names are stripped at the first dash.  If the strupped
+    sequence name coincide, individuals are put into the same
+    population.
+
+    E.g., homo_sapiens-XXX and homo_sapiens-YYY will be in the same
+    population homo_sapiens.
+
+    Take care with large files, this uses a lot of memory.
+
+    The input as well as the output files can additionally be gzipped
+    (indicated by a .gz file ending).
+
+    """
+
+    FaStr = fasta.init_seq(fastaFN)
+    logging.info("Read in fasta file.")
+    seqL = [copy.deepcopy(FaStr.seq)]
+
+    while (FaStr.read_next_seq() is not None):
+        seqL.append(copy.deepcopy(FaStr.seq))
+
+    nSeqs = len(seqL)
+    logging.info("Number of sequences: %s", nSeqs)
+
+    for s in seqL:
+        newName = s.name.rsplit(splitChar, maxsplit=1)[0]
+        s.name = newName
+        # s.print_info()
+
+    logging.info("Checking sequence lengths")
+    nSites = seqL[0].dataLen
+    for s in seqL[1:]:
+        if (nSites != s.dataLen):
+            raise sb.SequenceDataError("Sequences do not have equal length.")
+
+    logging.info("Creating assignment list.")
+    assL = []
+    nameL = [seqL[0].name]
+    i = 0
+    for s in seqL:
+        try:
+            i = nameL.index(s.name)
+            assL.append(i)
+        except ValueError:
+            nameL.append(s.name)
+            assL.append(len(nameL)-1)
+    nPops = len(nameL)
+
+    logging.info("Number of Populations: %s", nPops)
+    logging.info("Number of Sites: %s", nSites)
+    logging.info("Populations: %s", nameL)
+    logging.info("Assignment list: %s", assL)
+
+    cfw = CFWriter([], countsFN)
+    logging.warning("Manually initializing CFWriter.")
+    cfw.nL = nameL
+    cfw.nPop = len(nameL)
+    cfw.write_HLn()
+
+    # Loop over sites.
+    for i in range(0, nSites):
+        cfw.purge_cD()
+        cfw.pos = i
+        cfw.chrom = chromName
+        # Loop over sequences / individuals.
+        for s in range(0, nSeqs):
+            base = seqL[s].data[i].lower()
+            try:
+                baseI = dna[base]
+            except KeyError:
+                raise sb.NotAValidRefBase()
+            cfw.cD[assL[s]][baseI] += 1
+        cfw.write_Ln()
+    cfw.close()
+
+
+def weighted_choice(lst):
+    """Choose element in integer list according to its value.
+
+    E.g., in [1,10], the second element will be chosen 10 times as
+    often as the first one.  Returns the index of the chosen element.
+
+    :ivar [int] lst: List of integers.
+
+    :rtype: int
+
+    """
+    total = sum(c for c in lst)
+    r = random.uniform(0, total)
+    upto = 0
+    # Loop over list and pick one element.
+    for i in range(len(lst)):
+        c = lst[i]
+        if upto + c >= r:
+            return i
+        upto += c
+    assert False, "Shouldn't get here"
+
+
+def faseq_append_base_of_cfS(faS, cfS, consensus=False):
+    """Append a :class:`CFStream` line to an :class:`libPoMo.fasta.FaSeq`.
+
+    Randomly chooses bases for each position according to their
+    abundance.
+
+    :param FaSeq faS: Fasta sequence to append base to.
+    :param CFStream cfS: CFStream containing the base.
+
+    """
+
+    if consensus is True:
+        for i in range(cfS.nIndiv):
+            max_index = np.argmax(cfS.countsL[i])
+            # print("base:", ind2dna[max_index])
+            faS.seqL[i].data += ind2dna[max_index]
+    else:
+        for i in range(cfS.nIndiv):
+            j = weighted_choice(cfS.countsL[i])
+            faS.seqL[i].data += ind2dna[j]
+
+
+def cf_to_fasta(cfS, outname, consensus=False):
+    """Convert a :class:`CFStream` to a fasta file.
+
+    Extracts the sequences of a counts file that has been initialized
+    with an :class:`CFStream`.  The conversion starts at the line
+    pointed to by the :class:`CFStream`.
+
+    If more than one base is present at a single site, one base is
+    sampled out of all present ones according to its abundance.
+
+    If consensus is set to True, the consensus sequence is extracted
+    (e.g., no sampling but the bases with highest counts for each
+    individual or population are chosen).
+
+    :param CFStream cfS: Counts format file stream.
+    :param str outname: Fasta output file name.
+    :param Boolean consensus: Optional; Extract consensus sequence?
+      Defaults to False.
+
+    """
+    logging.info("Convert counts file to fasta.")
+    logging.info("Counts file stream to be converted: %s", cfS.name)
+    logging.info("Fasta output file: %s", outname)
+    logging.info("Consensus is set to %s.", consensus)
+    faS = fasta.FaSeq()
+
+    faS.name = cfS.name
+
+    for ind in cfS.indivL:
+        seq = sb.Seq()
+        seq.name = ind
+        faS.seqL.append(seq)
+
+    # print(cfS.chrom, cfS.pos)
+    faseq_append_base_of_cfS(faS, cfS)
+
+    while True:
+        try:
+            cfS.read_next_pos()
+        except ValueError:
+            break
+        else:
+            # print(cfS.chrom, cfS.pos)
+            faseq_append_base_of_cfS(faS, cfS, consensus)
+
+    of = open(outname, mode='w')
+    for i in range(cfS.nIndiv):
+        faS.seqL[i].print_fa_entry(fo=of)
+        print('', file=of)
+    of.close()
 
 class CFWriter():
     """Write a counts format file.
@@ -137,7 +466,9 @@ class CFWriter():
     Additional filters can be set before the counts file is written
     (e.g. only write synonymous sites).
 
-    Remember to close the attached file objectsL with :func:`close`.
+    Important: Remember to close the attached file objectsL with
+    :func:`close()`.  If the CFWriter is not closed, the counts file
+    is not usable because the first line is missing!
 
     :param [str] vcfFileNameL: List with names of vcf files.
     :param str outFileName: Output file name.
@@ -151,6 +482,8 @@ class CFWriter():
       name of the summed sequence will be *self.nL[i]*.  If not, the
       name of the first individual in *vcfL[i]* will be used.
     :param [str] nameL: Optional; a list of names. Cf. *self.mL*.
+    :param Boolean oneIndividual: Optional; pick one individual out
+      of each population.
 
     :ivar str refFN: Name of reference fasta file.
     :ivar [str] vcfL: List with names of vcf files.
@@ -188,7 +521,7 @@ class CFWriter():
     :ivar [int] nIndL: List with number of individuals in
         *self.vcfL[i]*.
     :ivar assM: Assignment matrix that connects the individuals from
-        the vcf files to the correct *self.cd* index.  Cf. *self.cD*
+        the vcf files to the correct *self.cD* index.  Cf. *self.cD*
     :ivar int nPop: Number of different populations in count format
         output file (e.g. number of populations).  Filled by
         *self.__init_assM()* during initialization.
@@ -199,15 +532,16 @@ class CFWriter():
     :ivar char splitCh: Character that is used to split the
         individual names.
     :ivar Boolean onlySynonymous: Only write 4-fold degenerate sites.
+    :ivar int baseCounter: Counts the total number of bases.
     :ivar Boolean __force: If set to true, skip name checks.
 
     """
-    def __init__(self, vcfFileNameL, outFileName, verb=None,
-                 splitChar='-', mergeL=None, nameL=None):
+    def __init__(self, vcfFileNameL, outFileName,
+                 splitChar='-', mergeL=None, nameL=None,
+                 oneIndividual=False):
         # Passed variables.
         self.vcfL = vcfFileNameL
         self.outFN = outFileName
-        self.v = verb
         self.mL = mergeL
         self.nL = nameL
         # Variables that are filled during initialization.
@@ -228,6 +562,8 @@ class CFWriter():
         self.ploidy = 2
         self.splitCh = splitChar
         self.onlySynonymous = False
+        self.oneIndiv = oneIndividual
+        self.baseCounter = 0
         self.__force = False
 
         self.__init_vcfTfL()
@@ -249,6 +585,9 @@ class CFWriter():
         """
         for fn in self.vcfL:
             self.vcfTfL.append(ps.Tabixfile(fn))
+        if (len(self.vcfTfL) < 1):
+            logging.warning("No VCF file given, "
+                            "CFWriter has to be initialized manually.")
 
     def __init_outFO(self):
         """Open *self.outFN*.
@@ -274,6 +613,7 @@ class CFWriter():
         for indL in self.indM:
             self.nIndL.append(len(indL))
 
+    # TODO: Check if this works, when individuals are mixed.
     def __init_assM(self):
         """Fill assignment matrix *self.assM*."""
         def collapse_and_append(n, dN):
@@ -322,6 +662,33 @@ class CFWriter():
         else:
             raise CountsFormatWriterError("`mergeL` is not valid.")
         self.nPop = i + dI + 1
+
+        # Sometimes not all the information is used from the VCF
+        # files.  E.g., if I only want to consider one individual per
+        # populstion (cf. *self.oneIndiv*).
+
+        # If individual j from VCF file i is not used, assM[i][j] is
+        # set to -1.
+        if self.oneIndiv is True:
+            print("# One individual per population only.", file=self.outFO)
+            print("# Picked individuals:", file=self.outFO)
+            indivStr = "# "
+            n = 0
+            for i in range(self.nV):
+                dI = 0
+                while True:
+                    nI = self.assM[i].count(n)
+                    if nI == 0:
+                        break
+                    pickN = random.randint(0, nI-1)
+                    indivStr += self.indM[i][dI+pickN]
+                    indivStr += '\t'
+                    for j in range(dI, dI+nI):
+                        if j - dI != pickN:
+                            self.assM[i][j] = -1
+                    dI += nI
+                    n += 1
+            print(indivStr, file=self.outFO)
 
     def __init_nL(self):
         """Fill *self.nL*."""
@@ -388,7 +755,7 @@ class CFWriter():
             except StopIteration:
                 snpL[minI] = None
 
-    def __purge_cD(self):
+    def purge_cD(self):
         self.__init_cD()
 
     def __fill_cD(self, iL=None, snpL=None):
@@ -396,7 +763,7 @@ class CFWriter():
 
         Fill *self.cF* with data from reference at chromosome
         *self.chrom* and position *self.pos*. Possible SNPs in
-        *slef.vcfL* at this position are considered.
+        *self.vcfL* at this position are considered.
 
         :param [int] iL: List with vcf indices of the SNPs in *snpL*,
             must be sorted.
@@ -415,25 +782,35 @@ class CFWriter():
         is raised if the chromosome names do not match.
 
         """
-        if self.v is not None:
-            if snpL is not None:
-                print("Next SNP(s):")
-                for s in snpL:
-                    s.print_info()
+        if snpL is not None:
+            logging.info("Next SNP(s):")
+            for s in snpL:
+                logging.info(s.get_info())
 
         def get_refBase():
             """Get reference base on *chrom* at *pos*."""
             return self.refSeq.data[self.pos].lower()
 
-        self.__purge_cD()
+        def update_cD(pop, baseI, delta=self.ploidy):
+            """Add counts to the countsDictionary cD."""
+            if pop in range(0, self.nPop):
+                self.cD[pop][baseI] += delta
+                logging.debug("Updating counts dictionary; population %s, "
+                              "base index %s.", pop, baseI)
+            else:
+                logging.debug("Ignoring data because population index %s is "
+                              "out of range.", pop)
+
+        self.purge_cD()
 
         # If we check for synonymous bases, do not do anything if base
         # is not 4-fold degenerate.
         if self.onlySynonymous is True:
             if self.refSeq.is_synonymous(self.pos) is False:
-                if self.v is not None:
-                    print("Rejection;", self.refSeq.data[self.pos],
-                          "at position", self.pos, "is not a synonymous base.")
+                logging.debug("Rejection; %s at position %s "
+                              "is not a synonymous base.",
+                              self.refSeq.data[self.pos],
+                              self.pos)
                 raise NoSynBase()
 
         refBase = get_refBase()
@@ -444,14 +821,14 @@ class CFWriter():
         # If there are no SNPS, fill *self.cD* with data from reference.
         if iL is None:
             for i in range(self.nV):
-                for sp in self.assM[i]:
-                    self.cD[sp][r] += self.ploidy
+                for pop in self.assM[i]:
+                    update_cD(pop, r)
         elif (snpL is not None) and (len(iL) == len(snpL)):
             # Else, only fill *self.cD* where the individual has no SNP.
             for i in range(self.nV):
                 if i not in iL:
-                    for sp in self.assM[i]:
-                        self.cD[sp][r] += self.ploidy
+                    for pop in self.assM[i]:
+                        update_cD(pop, r)
             # Now traverse the SNPs.
             for sI in range(len(iL)):
                 # Check if the reference bases match.
@@ -470,16 +847,18 @@ class CFWriter():
                 vI = iL[sI]
                 # Loop over individuals.
                 for i in range(0, len(spData)):
-                # Loop over chromatides (e.g. diploid).
+                    # Loop over chromatides (e.g. diploid).
                     for d in range(0, self.ploidy):
                         if spData[i][d] is None:
                             pass
                         elif spData[i][d] == 0:
                             bI = r
-                            self.cD[self.assM[vI][i]][bI] += 1
+                            update_cD(self.assM[vI][i], bI, delta=1)
                         else:
                             bI = dna[altBases[spData[i][d]-1]]
-                            self.cD[self.assM[vI][i]][bI] += 1
+                            logging.debug("Use SNP of %s, population %s",
+                                          self.indM[vI][i], self.assM[vI][i])
+                            update_cD(self.assM[vI][i], bI, delta=1)
         else:
             raise sb.SequenceDataError("SNP information is not correct.")
 
@@ -534,10 +913,9 @@ class CFWriter():
 
         """
         self.offset = offset
-        if self.v is not None:
-            print('Offset in CFWriter:', self.offset)
+        logging.info('Offset in CFWriter: %s.', self.offset)
 
-    def __write_Ln(self):
+    def write_Ln(self):
         """Write a line in counts format to *self.outFN*."""
         print(self.__get_Ln(), file=self.outFO)
 
@@ -582,20 +960,37 @@ class CFWriter():
             self.pos = rPos - self.offset
             try:
                 self.__fill_cD(iL, snpL)
-            except sb.NotAValidRefBase:
-                # Do nothing if reference base is not valid.
-                pass
             except NoSynBase:
                 # Do nothing if base is not 4-fold degenerate.
-                pass
+                logging.debug("Ignoring synonymous base.")
+            except sb.NotAValidRefBase:
+                # Do nothing if reference base is not valid.
+                logging.debug("Ignoring invalid reference base.")
             else:
-                self.__write_Ln()
+                # Increment counter and write line.
+                self.baseCounter += 1
+                self.write_Ln()
 
     def close(self):
-        """Close fileobjects."""
+        """Write file type specifier, number of populations and number of
+           sites to the beginning of the output file.  Close
+           fileobjects.
+
+        """
         for tf in self.vcfTfL:
             tf.close()
         self.outFO.close()
+
+        # Insert the first line.  The whole file needs to be copied,
+        # maybe there is a better method?
+        fo = sb.gz_open("temp_"+self.outFN, mode='w')
+        print("COUNTSFILE\tNPOP ", self.nPop, "\tNSITES ",
+              self.baseCounter, sep='', file=fo)
+        with sb.gz_open(self.outFN, mode='r') as f:
+            for ln in f:
+                print(ln, file=fo, end='')
+        fo.close()
+        os.rename("temp_"+self.outFN, self.outFN)
 
 
 def write_cf_from_MFaStream(refMFaStr, cfWr):

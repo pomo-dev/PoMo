@@ -11,7 +11,9 @@ import argparse
 import random
 from scipy.misc import comb as choose
 import libPoMo as lp
+import os
 import pdb
+import time
 
 
 # define PoMo10 states
@@ -223,7 +225,7 @@ def get_species_from_cf_headerline(line):
     return (n_species, sp_names)
 
 
-def get_data_from_cf_line(l, n_species):
+def get_data_from_cf_line(cfStr):
     """Read in the data of a single counts format line.
 
     The return type is a list with the number of samples and a two
@@ -231,31 +233,20 @@ def get_data_from_cf_line(l, n_species):
     species is the index of the species and nucleotide is the index of
     the nucleotide (0,1,2 or 3 for a,c,g and t, respectively).
 
-    :param str l: The line that contains the data.
-    :param int n_species: Number of species to be expected.
+    :param cfStr CFStream: The CFStream pointing to the line to be
+      read in.
 
     :rtype: ([int] n_samples, [[int]] data)
 
     """
-    linelist = l.split()[2:]
-
-    if len(linelist) != n_species:
-        print("Error: input line \"" + l +
-              "\" does not fit number of species.\n")
-        raise ValueError()
-
     n_samples = []
     data = []
-    for i in range(n_species):
-        p = linelist[i].split(",")
+    for i in range(cfStr.nIndiv):
         q = []
         summ = 0
-        if len(p) == 1:
-            p = p[0].split("/")
         for j in range(4):
-            q.append(int(p[j]))
+            q.append(int(cfStr.countsL[i][j]))
             summ += q[j]
-
         n_samples.append(summ)
         data.append(q)
 
@@ -266,7 +257,7 @@ def read_data_write_HyPhy_input(fn, N, thresh, path_bf,
                                 muts, mutgamma,
                                 sels, selgamma,
                                 PoModatafile, PoModatafile_cons,
-                                vb=None):
+                                theta=None, vb=None):
     """Read the count data and write the HyPhy input file.
 
     The provided filename has to point to a data file in counts format
@@ -302,34 +293,41 @@ def read_data_write_HyPhy_input(fn, N, thresh, path_bf,
     # actual data; it is a 3-dimensional array sp_data[species][pos][base]
     sp_data = []
 
-    # Fri Feb 14 13:40:21 CET 2014
-    # Depcrecated, see note to fasta file format input below.
-    # line = infile.readline()
-    # while line[0] != ">":
-    #     line = infile.readline()
-    #     if line == "":
-    #         break
+    # Check input file format.  If format is not counts file, convert
+    # the file to counts format.  I have decided to do this because
+    # for large files, a lot of memory is needed to traverse fasta
+    # files and the counts file type seems to be better.
 
-    # if line == "":
-
-    # TODO use np arrays, Problem: fixed sized arrays
-    # infile = lp.seqbase.gz_open(in_name)
-    # for line in infile:
+    # Verbose HYPHY output only with -vv or more.
+    if (vb is None) or (vb == 1):
+        vbHyphy = None
 
     if vb is not None:
         print("Starting to read input file.")
-    line = ''
-    infile = lp.seqbase.gz_open(fn)
-    while len(line) > 0 and line[0] == "#":
-        line = infile.readline()
-    while len(line.split()) == 0:
-        line = infile.readline()
-        if line == "":
-            print("Error: No Data.\n")
-            exit()
+
+    try:
+        cfStr = lp.cf.CFStream(fn)
+    except lp.cf.NotACountsFormatFileError:
+        print(fn + " is not in counts format.")
+        print("Assuming fasta file format.")
+        print("Convert fasta to counts.")
+        outFN = os.path.basename(fn).split(".")[0] + ".cf"
+        # absOutFN = os.path.abspath(fn).split(".")[0] + ".cf"
+        # pdb.set_trace()
+        lp.cf.fasta_to_cf(fn, outFN)
+        print("Created counts file:", outFN)
+        print("""This file will not be deleted after the run.  If you want to avoid
+        repeated file conversions, please run PoMo with counts
+        files. File conversion scripts are provided with PoMo in the
+        scripts folder.""")
+        print("")
+        fn = outFN
+        cfStr = lp.cf.CFStream(fn)
 
     # Assign species names (first two columns are Chrom and Pos).
-    (n_species, sp_names) = get_species_from_cf_headerline(line)
+    # (n_species, sp_names) = get_species_from_cf_headerline(line)
+    n_species = cfStr.nIndiv
+    sp_names = cfStr.indivL
     # Initialize the number of species samples to 0.
     for i in range(n_species):
         sp_data.append([])
@@ -337,102 +335,21 @@ def read_data_write_HyPhy_input(fn, N, thresh, path_bf,
 
     # Read in the data.
     leng = 0
-    for l in infile:
+    while True:
         leng += 1
-        (n_samples, data) = get_data_from_cf_line(l, n_species)
+        (n_samples, data) = get_data_from_cf_line(cfStr)
         # Update sp_data and the number of samples.
         for i in range(n_species):
             sp_data[i].append(data[i])
             if n_samples[i] > sp_samples[i]:
                 sp_samples[i] = n_samples[i]
+        try:
+            cfStr.read_next_pos()
+        except ValueError:
+            break
 
     if vb is not None:
         print("Count file has been read.")
-
-    # pdb.set_trace()
-
-    # Fri Feb 14 13:38:43 CET 2014
-    # Support for fasta file format input has been removed.
-    # Reasons: Performance and clarity.
-    # Scripts for fasta to counts file format conversion are provided.
-
-    # # In case of Fasta format:
-    # while line != "":
-    #     if line[0] == ">":
-    #         linelist = line.split()
-    #         name = linelist[0].split("_")[0].replace(">", "")
-    #         if len(linelist) > 1:
-    #             init_data = linelist[len(linelist)-1]
-    #         else:
-    #             init_data = ""
-    #         found = 0
-    #         for i in range(len(sp_names)):
-    #             if name == sp_names[i]:
-    #                 found = 1
-    #                 sp_samples[i] += 1
-    #                 sp_data[i].append("")
-    #                 if init_data != "":
-    #                     line = init_data
-    #                 else:
-    #                     line = infile.readline()
-    #                 while (len(line) > 0 and line[0] != ">"):
-    #                     sp_data[i][len(sp_data[i])-1] += \
-    #                         line.replace("\n", "")
-    #                     line = infile.readline()
-    #                 if sp_data[i][len(sp_data[i])-1] == "":
-    #                     print("\n\n\nSpecies " + sp_names[i] + " sample "
-    #                           + linelist[0].split("_")[1] +
-    #                           " has no data. PoMo is stopping here."
-    #                           "Please check your data file.\n\n\n")
-    #                     exit()
-    #                 break
-    #         if found == 0:
-    #             sp_names.append(name)
-    #             n_species += 1
-    #             sp_samples.append(1)
-    #             sp_data.append([""])
-    #             if init_data != "":
-    #                 line = init_data
-    #             else:
-    #                 line = infile.readline()
-    #             while (len(line) > 0 and line[0] != ">"):
-    #                 sp_data[len(sp_data)-1][0] += line.replace("\n", "")
-    #                 line = infile.readline()
-    #             if sp_data[len(sp_data)-1][0] == "":
-    #                 print("\n\n\nSpecies " + sp_names[len(sp_data)-1] +
-    #                       " sample " + linelist[0].split("_")[1] +
-    #                       " has no data. PoMo is stopping here."
-    #                       " Please check your data file.\n\n\n")
-    #                 exit()
-    #     if len(line) > 0 and line[0] != ">":
-    #         line = infile.readline()
-
-    # # Put fasta data in counts format
-    # DNA = ["A", "C", "G", "T"]
-    # DNA2 = ["a", "c", "g", "t"]
-    # if VCF == 0:
-    #     sp_data2 = sp_data
-    #     sp_data = []
-    #     for i in range(n_species):
-    #         sp_data.append([])
-    #     leng = len(sp_data2[0][0])
-    #     for i in range(n_species):
-    #         for l in range(sp_samples[i]):
-    #             if len(sp_data2[i][l]) != leng:
-    #                 print("\n\n\nError: individuals have different number "
-    #                       "of bases (not a proper alignment).\n\n\n")
-    #                 exit()
-    #     for l in range(n_species):
-    #         for m in range(leng):
-    #             count = [0, 0, 0, 0]
-    #             for k in range(sp_samples[l]):
-    #                 for d in range(4):
-    #                     if sp_data2[l][k][m] == DNA[d] or \
-    #                        sp_data2[l][k][m] == DNA2[d]:
-    #                         count[d] += 1
-    #                         break
-    #             p = count
-    #             sp_data[l].append(p)
 
     # Sites where some species have coverage 0 are removed
     to_remove = []
@@ -457,12 +374,15 @@ def read_data_write_HyPhy_input(fn, N, thresh, path_bf,
     # pdb.set_trace()
 
     # Now, downsample if necessary
-    print("Doing downsampling\n")
     sp_samples2 = []
     for i in range(n_species):
         if sp_samples[i] > N:
             sp_samples2.append(N)
+            if (vb is not None):
+                print("Downsampling ", cfStr.indivL[i], ".", sep="")
         else:
+            if (vb is not None):
+                print(cfStr.indivL[i], "does not need to be downsampled.")
             sp_samples2.append(sp_samples[i])
 
     advantages = {}
@@ -548,9 +468,10 @@ def read_data_write_HyPhy_input(fn, N, thresh, path_bf,
         summ += 1
     leng = len(sp_data[0])
 
-    print("Number of species: ", str(n_species))
-    print("Sample sizes effectively used: ", sp_samples)
-    # print(sp_data)
+    print("Number of species: ", str(n_species), ".", sep="")
+    print("Sample sizes effectively used: ", sp_samples, ".", sep="")
+    if (vb is not None):
+        print("Names of species: ", cfStr.indivL, ".", sep="")
     all_one = True
     for i in range(n_species):
         if sp_samples[i] != 1:
@@ -565,13 +486,21 @@ def read_data_write_HyPhy_input(fn, N, thresh, path_bf,
                   "if possible please increase the virtual population size."
                   "\n\n\n")
     if all_one is True:
-        usr_def = float(input("""\n\n\nAll species have a sample size of
-        1, therefore there is no information at the population level,
-        which is required by PoMo. So, please enter a guessed or otherwise
-        estimated value for theta (population diversity):\n"""))
+        # Check if theta was given on command line and set it
+        # accordingly.
+        if (theta is None):
+            usr_def = float(input("""\n\n\nAll species have a sample size of
+            1, therefore there is no information at the population level,
+            which is required by PoMo. So, please enter a guessed or otherwise
+            estimated value for theta (population diversity):\n"""))
+        else:
+            usr_def = theta
     else:
         usr_def = 0.01
-    infile.close()
+
+    if (vb is not None):
+        print("Theta has been set to be ", usr_def, ".", sep="")
+    cfStr.close()
 
     if n_species < 2:
         print("Error: cannot calculate a tree with fewer than 2 species.")
@@ -606,7 +535,7 @@ def read_data_write_HyPhy_input(fn, N, thresh, path_bf,
         line = samfile.readline()
         linelist = line.split()
         if len(linelist) > 1 and linelist[0] == "fprintf" \
-           and linelist[1] == "(stdout," and vb is None:
+           and linelist[1] == "(stdout," and vbHyphy is None:
             newsamfile.write("/*"+line.replace("\n", "")+"*/\n")
         else:
             newsamfile.write(line)
@@ -626,7 +555,7 @@ def read_data_write_HyPhy_input(fn, N, thresh, path_bf,
                 newsamfile.write(str(sp_samples[i])+"\"}{\"")
             newsamfile.write(str(sp_samples[n_species-1])+"\"}};\n")
         elif len(linelist) > 1 and linelist[0] == "fprintf" \
-             and linelist[1] == "(stdout," and vb is None:  # noqa
+             and linelist[1] == "(stdout," and vbHyphy is None:  # noqa
             newsamfile.write("/*"+line.replace("\n", "")+"*/\n")
         else:
             newsamfile.write(line)
@@ -655,7 +584,7 @@ def read_data_write_HyPhy_input(fn, N, thresh, path_bf,
         line = samfile.readline()
         linelist = line.split()
         if len(linelist) > 1 and linelist[0] == "fprintf" \
-           and linelist[1] == "(stdout," and vb is None:
+           and linelist[1] == "(stdout," and vbHyphy is None:
             newsamfile.write("/*" + line.replace("\n", "") + "*/\n")
         else:
             newsamfile.write(line)
@@ -675,7 +604,7 @@ def read_data_write_HyPhy_input(fn, N, thresh, path_bf,
                 newsamfile.write(str(sp_samples[i])+"\"}{\"")
             newsamfile.write(str(sp_samples[n_species-1])+"\"}};\n")
         elif len(linelist) > 1 and linelist[0] == "fprintf" \
-             and linelist[1] == "(stdout," and vb is None:  # noqa
+             and linelist[1] == "(stdout," and vbHyphy is None:  # noqa
             newsamfile.write("/*"+line.replace("\n", "")+"*/\n")
         else:
             newsamfile.write(line)
@@ -754,3 +683,8 @@ def read_data_write_HyPhy_input(fn, N, thresh, path_bf,
     # Debugging point if necessary.
     # pdb.set_trace()
     return (n_species, sp_names, sp_samples, all_one, usr_def)
+
+
+def timeStr():
+    """Time in human readable format."""
+    return time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())

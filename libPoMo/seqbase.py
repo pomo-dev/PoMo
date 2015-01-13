@@ -104,19 +104,19 @@ class Seq:
         print('>', self.name, ' ', self.descr, sep='', file=fo)
         return
 
-    def print_fa_entry(self, maxB=None):
+    def print_fa_entry(self, maxB=None, fo=sys.stdout):
         """Print a fasta file entry with header and sequence data.
 
         :ivar int maxB: Print a maximum of maxB bases. Default: print
           all bases.
 
         """
-        self.print_fa_header()
+        self.print_fa_header(fo)
         if maxB is None:
-            print(self.data)
+            print(self.data, file=fo)
         else:
-            print("First", maxB, "bases: ", end='')
-            print(self.data[:maxB])
+            print("First", maxB, "bases: ", end='', file=fo)
+            print(self.data[:maxB], file=fo)
         return
 
     def print_data(self, fo=sys.stdout):
