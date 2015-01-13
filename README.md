@@ -1,9 +1,9 @@
-DEVELOPMENT REPOSITORY
+DEVELOPMENT BRANCH
 ====
 
-This repository has been created for developmental reasons.  If you
+This branch has been created for developmental reasons.  If you
 want to use PoMo, please have a look at the
-[stable PoMo version](https://github.com/fazky/PoMo) and the
+[stable PoMo version](https://github.com/pomo-dev/PoMo) and the
 [library documentation](http://pomo.readthedocs.org).
 
 PoMo 1.0.2
