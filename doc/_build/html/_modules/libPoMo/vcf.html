@@ -73,6 +73,9 @@
 <span class="sd">    string</span>
 <span class="sd">  - :func:`get_indiv_from_field_header()`, extract list of individuals</span>
 <span class="sd">    from header</span>
+<span class="sd">  - :func:`init_seq()`, open VCF file and initialize `VCFStream`</span>
+<span class="sd">  - :func:`open_seq()`, open VCF file and save it to a `VCFSeq`</span>
+<span class="sd">  - :func:`get_header_line_string()`, print vcf header line</span>
 
 <span class="sd">----</span>
 
@@ -81,6 +84,9 @@
 <span class="n">__docformat__</span> <span class="o">=</span> <span class="s">&#39;restructuredtext&#39;</span>
 
 <span class="kn">import</span> <span class="nn">libPoMo.seqbase</span> <span class="kn">as</span> <span class="nn">sb</span>
+
+<span class="n">dna2ind</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;a&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s">&#39;g&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&#39;t&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span>
+<span class="n">ind2dna</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">,</span> <span class="s">&#39;g&#39;</span><span class="p">,</span> <span class="s">&#39;t&#39;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="NotAVariantCallFormatFileError"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.NotAVariantCallFormatFileError">[docs]</a><span class="k">class</span> <span class="nc">NotAVariantCallFormatFileError</span><span class="p">(</span><span class="n">sb</span><span class="o">.</span><span class="n">SequenceDataError</span><span class="p">):</span>
@@ -181,6 +187,16 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">speciesData</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ploidy</span> <span class="o">=</span> <span class="bp">None</span>
 
+<div class="viewcode-block" id="NucBase.get_info"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.NucBase.get_info">[docs]</a>    <span class="k">def</span> <span class="nf">get_info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return nucleotide base information string.&quot;&quot;&quot;</span>
+        <span class="n">msg1</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%s</span><span class="se">\t</span><span class="si">%s</span><span class="se">\t</span><span class="si">%s</span><span class="se">\t</span><span class="si">%s</span><span class="se">\t</span><span class="si">%s</span><span class="se">\t</span><span class="si">%s</span><span class="se">\t</span><span class="si">%s</span><span class="se">\t</span><span class="si">%s</span><span class="se">\t</span><span class="si">%s</span><span class="se">\t</span><span class="s">&#39;</span> <span class="o">%</span> \
+               <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chrom</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">alt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">qual</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">)</span>
+        <span class="n">msg2</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">speciesData</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">msg1</span> <span class="o">+</span> <span class="n">msg2</span>
+</div>
 <div class="viewcode-block" id="NucBase.print_info"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.NucBase.print_info">[docs]</a>    <span class="k">def</span> <span class="nf">print_info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Print nucleotide base information.</span>
 
@@ -188,11 +204,12 @@
 <span class="sd">        information from the VCF file.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chrom</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span>
-              <span class="bp">self</span><span class="o">.</span><span class="n">alt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">qual</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">,</span>
-              <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">,</span>
-              <span class="n">sep</span><span class="o">=</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="p">)</span>
-        <span class="k">print</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">speciesData</span><span class="p">))</span>
+        <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_info</span><span class="p">())</span>
+        <span class="c"># print(self.chrom, self.pos, self.id, self.ref,</span>
+        <span class="c">#       self.alt, self.qual, self.filter,</span>
+        <span class="c">#       self.info, self.format,</span>
+        <span class="c">#       sep=&#39;\t&#39;, end=&#39;\t&#39;)</span>
+        <span class="c"># print(&#39;\t&#39;.join(self.speciesData))</span>
         <span class="k">return</span>
 </div>
 <div class="viewcode-block" id="NucBase.get_ref_base"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.NucBase.get_ref_base">[docs]</a>    <span class="k">def</span> <span class="nf">get_ref_base</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -251,7 +268,27 @@
                 <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">baseInfoL</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">data</span>
 </div>
+<div class="viewcode-block" id="NucBase.get_base_ind"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.NucBase.get_base_ind">[docs]</a>    <span class="k">def</span> <span class="nf">get_base_ind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iI</span><span class="p">,</span> <span class="n">iC</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the base of a specific individual.</span>
+
+<span class="sd">        :param int indiv: 0-based index of individual.</span>
+<span class="sd">        :param int chrom: 0-based index of chromosome (for n-ploid</span>
+<span class="sd">            individuals).</span>
+
+<span class="sd">        :rtype: character with nucleotide base.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_speciesData</span><span class="p">()</span>
+        <span class="n">altBases</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_alt_base_list</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="n">iI</span><span class="p">][</span><span class="n">iC</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="k">elif</span> <span class="n">data</span><span class="p">[</span><span class="n">iI</span><span class="p">][</span><span class="n">iC</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ref</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">altBases</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="n">iI</span><span class="p">][</span><span class="n">iC</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</div>
 <div class="viewcode-block" id="NucBase.purge"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.NucBase.purge">[docs]</a>    <span class="k">def</span> <span class="nf">purge</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
         <span class="sd">&quot;&quot;&quot;Purge the data associated with this :class:`NucBase`.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
 
@@ -451,10 +488,10 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">flag</span> <span class="o">=</span> <span class="bp">False</span>
     <span class="n">VCFFile</span> <span class="o">=</span> <span class="n">sb</span><span class="o">.</span><span class="n">gz_open</span><span class="p">(</span><span class="n">VCFFileName</span><span class="p">)</span>
-    <span class="c"># set the vcf sequence name</span>
+    <span class="c"># Set the vcf sequence name.</span>
     <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
         <span class="n">name</span> <span class="o">=</span> <span class="n">sb</span><span class="o">.</span><span class="n">stripFName</span><span class="p">(</span><span class="n">VCFFileName</span><span class="p">)</span>
-    <span class="c"># Find the start of the first base</span>
+    <span class="c"># Find the start of the first base.</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxskip</span><span class="p">):</span>
         <span class="n">line</span> <span class="o">=</span> <span class="n">VCFFile</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">line</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
@@ -525,7 +562,20 @@
 
     <span class="n">VCFFile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
     <span class="n">test_sequence</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">seq</span></div>
+    <span class="k">return</span> <span class="n">seq</span>
+
+</div>
+<div class="viewcode-block" id="get_header_line_string"><a class="viewcode-back" href="../../vcf.html#libPoMo.vcf.get_header_line_string">[docs]</a><span class="k">def</span> <span class="nf">get_header_line_string</span><span class="p">(</span><span class="n">indiv</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return a standard VCF File header string with individuals *indiv*.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">string</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">hdList</span><span class="p">:</span>
+        <span class="n">string</span> <span class="o">+=</span> <span class="n">s</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indiv</span><span class="p">:</span>
+        <span class="n">string</span> <span class="o">+=</span> <span class="n">i</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span>
+    <span class="c"># we added one tab at the end that we do not need</span>
+    <span class="k">return</span> <span class="n">string</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
 </pre></div>
 
           </div>
@@ -565,7 +615,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2013, Dominik Schrempf.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

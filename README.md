@@ -1,17 +1,13 @@
-DEVELOPMENT BRANCH
-====
+PoMo 1.1.0
+==========
 
-This branch has been created for developmental reasons.  If you
-want to use PoMo, please have a look at the
-[stable PoMo version](https://github.com/pomo-dev/PoMo) and the
-[library documentation](http://pomo.readthedocs.org).
-
-PoMo 1.0.2
-====
 Implementation of a polymorphism aware phylogenetic model using HYPHY.
 
-Created by: Nicola De Maio
-Contributors: Carolin Kosiol and Dominik Schrempf
+Created by:
+- Nicola De Maio
+Contributors:
+- Dominik Schrempf
+- Carolin Kosiol
 
 For a reference, please see and cite: De Maio, Schlotterer, Kosiol
 (MBE, 2013), and/or: De Maio, Schrempf and Kosiol (ms. in
@@ -21,7 +17,7 @@ but please always acknowledge the authors.
 Feel free to post any suggestions, doubts and bugs.
 
 libPoMo
-====
+=======
 
 PoMo comes with a small python package `libPoMo`. It contains several
 modules that ease the handling of data files in fasta, variant call
@@ -34,9 +30,9 @@ However, it is highly probable, that you only need to consider the
 [file conversion scripts](#file-conversion) to prepare counts files to
 be analyzed with PoMo.
 
-
 Installation Requirements
-====
+=========================
+
 Before installing, check the following requirements:
 - `git` (https://github.com/)
 - `python3` (https://www.python.org/)
@@ -47,32 +43,31 @@ separately:
 - [pysam](http://code.google.com/p/pysam/)
 
 Installation
-====
+============
 
 Download PoMo with:
 ```sh
-git clone git://github.com/fazky/PoMo-Development
+git clone git://github.com/pomo-dev/PoMo
 ```
 
-This will create a folder `PoMo-Development`.
+This will create a folder `PoMo`.
 
-PoMo heavily relies on HYPHY.  It comes with its own, patched version
+PoMo heavily relies on HyPhy.  It comes with its own, patched version
 that can be found in the folder created above.  To build this version
-of HYPHY, extract the `HYPHY.tar.gz` and do
+of HyPhy, extract the `HYPHY.tar.gz` (this archive is part of the git
+repo; PoMo will not work if you use another version of HyPhy) and do
 ```sh
-cd path_to_HYPHY/
-cmake ./
-make MP2
+cd path_to_HYPHY/ cmake ./ make MP2
 ```
 
 Running PoMo
-====
+============
 To run PoMo, execute with `python3`
 ```sh
 python path_to_PoMo/PoMo.py  path_to_HYPHY/HYPHYMP path_to_data/data.txt
 ```
 
-The data file must either be in fasta format, or in allele count format (see
+The data file must either be in fasta format, or in counts format (see
 example files in `./sample-data/`).
 
 If your dataset is called "data.txt" the final output of PoMo will be
@@ -80,16 +75,14 @@ called "data_PoMo_output.txt". It will contain the log-likelihood, the
 estimated parameters, and the estimated species tree. The output will
 be placed in the folder that you run PoMo from.
 
-
 Command Line Arguments
-====
+======================
 PoMo supports various command line arguments. Run `python PoMo.py
 --help` or visit [PoMo-help](PoMo-help.txt "PoMo-help") for a detailed
 help message about the different flags that are available.
 
-
 File Conversion
-====
+===============
 Various scripts for file conversion are provided in the folder
 `./scripts/`. Run `python scriptXY.py --help` for detailed help
 messages. These scripts use `libPoMo` that has to be in the python
@@ -103,11 +96,13 @@ path.
   variant call format.
 * [FastaVCFToCounts.py](./scripts/FastaVCFToCounts.py): Convert a
   fasta reference with VCF files to counts format.
+* [FilterMSA.py](./scripts/FilterMSA.py): Filter a multiple sequence
+  alignment file (apply standard filters; cf. `libPoMo`).
 * [MSAToCounts.py](./scripts/MSAToCounts.py): Convert multiple
   sequence alignments with VCF files to counts format.
 
 Notes
-====
+=====
 PoMo works best if data about within-population variation is
 provided. So, in case you do only have a single sample per species,
 you need to provide PoMo with some meaningful estimate of theta. In

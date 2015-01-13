@@ -14,7 +14,7 @@ import pdb
 import time
 
 # PoMo version
-ver = '1.0.2'
+ver = '1.1.0'
 
 # Parse command line arguments.
 parser = argparse.ArgumentParser(prog='PoMo',
@@ -132,12 +132,13 @@ elif args.verbose == 2:
 # Threshold of data discard for downsampling
 thresh = args.ds_ratio
 print("============================================================")
-print("""PoMo version 1.0.2 Created by Nicola De Maio; maintained by Dominik
-Schrempf. For a reference, please see and cite: De Maio, Schlotterer,
-Kosiol (MBE, 2013), and/or: De Maio, Schrempf, Kosiol (in
-preparation). You can use this software for non-commercial purposes,
-but please, always acknowledge the authors. For suggestions, doubts,
-bugs, etc., please contact nicola.de.maio.85@gmail.com""")
+print("PoMo", ver)
+print(""" Created by Nicola De Maio; maintained by Dominik Schrempf. For a
+reference, please see and cite: De Maio, Schlotterer, Kosiol (MBE,
+2013), and/or: De Maio, Schrempf, Kosiol (in preparation). You can use
+this software for non-commercial purposes, but please, always
+acknowledge the authors. For suggestions, doubts, bugs, etc., please
+contact nicola.de.maio.85@gmail.com""")
 
 print("===========================================================")
 print("Start Time:", lp.main.timeStr())

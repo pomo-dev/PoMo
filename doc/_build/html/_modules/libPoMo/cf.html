@@ -58,26 +58,34 @@
 
 <span class="sd">The Counts Format</span>
 <span class="sd">-----------------</span>
+
 <span class="sd">This file format is used by PoMo and lists the base</span>
 <span class="sd">counts for every position.</span>
 
 <span class="sd">It contains:</span>
+<span class="sd">  - 1 line that specifies the file as counts file and states the</span>
+<span class="sd">    number of populations as well as the number of sites</span>
 <span class="sd">  - 1 headerline with tab separated sequence names</span>
 <span class="sd">  - N lines with counts of A, C, G and T bases at position n</span>
 
+<span class="sd">It can contain:</span>
+<span class="sd">  - any number of lines that start with a #, these are treated as</span>
+<span class="sd">    comments; There are no more comments allowed after the headerline.</span>
+
 <span class="sd">::</span>
 
-<span class="sd">  CHROM \t Pos   \t Sheep   \t BlackSheep \t RedSheep \t Wolf    \t RedWolf</span>
-<span class="sd">  chrA  \t s     \t 0,0,1,0 \t 0,0,1,0    \t 0,0,1,0  \t 0,0,5,0 \t 0,0,0,1</span>
-<span class="sd">  chrA  \t s + 1 \t 0,0,0,1 \t 0,0,0,1    \t 0,0,0,1  \t 0,0,0,5 \t 0,0,0,1</span>
+<span class="sd">  COUNTSFILE \t NPOP 5 \t NSITES N</span>
+<span class="sd">  CHROM \t POS   \t Sheep   \t BlackSheep \t RedSheep \t Wolf    \t RedWolf</span>
+<span class="sd">  1  \t s     \t 0,0,1,0 \t 0,0,1,0    \t 0,0,1,0  \t 0,0,5,0 \t 0,0,0,1</span>
+<span class="sd">  1  \t s + 1 \t 0,0,0,1 \t 0,0,0,1    \t 0,0,0,1  \t 0,0,0,5 \t 0,0,0,1</span>
 <span class="sd">  .</span>
 <span class="sd">  .</span>
 <span class="sd">  .</span>
-<span class="sd">  chrF  \t 8373  \t 0,0,0,1 \t 1,0,0,0    \t 0,1,0,0  \t 0,1,4,0 \t 0,0,1,0</span>
+<span class="sd">  9  \t 8373  \t 0,0,0,1 \t 1,0,0,0    \t 0,1,0,0  \t 0,1,4,0 \t 0,0,1,0</span>
 <span class="sd">  .</span>
 <span class="sd">  .</span>
 <span class="sd">  .</span>
-<span class="sd">  chrE  \t end   \t 0,0,0,1 \t 0,1,0,0    \t 0,1,0,0  \t 0,5,0,0 \t 0,0,1,0</span>
+<span class="sd">  Y  \t end   \t 0,0,0,1 \t 0,1,0,0    \t 0,1,0,0  \t 0,5,0,0 \t 0,0,1,0</span>
 
 <span class="sd">Convert to Counts Format</span>
 <span class="sd">------------------------</span>
@@ -111,14 +119,21 @@
 <span class="sd">Objects</span>
 <span class="sd">-------</span>
 <span class="sd">Classes:</span>
+<span class="sd">  - :class:`CFStream`</span>
 <span class="sd">  - :class:`CFWriter`, write a counts format file</span>
 
 <span class="sd">Exception Classes:</span>
+<span class="sd">  - :class:`NotACountsFormatFileError`</span>
 <span class="sd">  - :class:`CountsFormatWriterError`</span>
+<span class="sd">  - :class:`NoSynBase`</span>
 
 <span class="sd">Functions:</span>
+<span class="sd">  - :func:`interpret_cf_line()`, get data of a line in counts format</span>
+<span class="sd">  - :func:`faseq_append_base_of_cfS()`, append CFStream line to FaSeq</span>
+<span class="sd">  - :func:`cf_to_fasta()`, convert counts file to fasta file</span>
 <span class="sd">  - :func:`write_cf_from_MFaStream()`, write counts file using the</span>
 <span class="sd">    given MFaStream and CFWriter</span>
+<span class="sd">  - :func:`fasta_to_cf()`, convert fasta to counts format</span>
 
 <span class="sd">----</span>
 
@@ -127,22 +142,336 @@
 <span class="n">__docformat__</span> <span class="o">=</span> <span class="s">&#39;restructuredtext&#39;</span>
 
 <span class="kn">import</span> <span class="nn">pysam</span> <span class="kn">as</span> <span class="nn">ps</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">pdb</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">copy</span>
 
 <span class="kn">import</span> <span class="nn">libPoMo.seqbase</span> <span class="kn">as</span> <span class="nn">sb</span>
+<span class="kn">import</span> <span class="nn">libPoMo.fasta</span> <span class="kn">as</span> <span class="nn">fasta</span>
 <span class="kn">import</span> <span class="nn">libPoMo.vcf</span> <span class="kn">as</span> <span class="nn">vcf</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
 <span class="n">dna</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;a&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s">&#39;g&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&#39;t&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span>
+<span class="n">ind2dna</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">,</span> <span class="s">&#39;g&#39;</span><span class="p">,</span> <span class="s">&#39;t&#39;</span><span class="p">]</span>
 
 
+<div class="viewcode-block" id="NotACountsFormatFileError"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.NotACountsFormatFileError">[docs]</a><span class="k">class</span> <span class="nc">NotACountsFormatFileError</span><span class="p">(</span><span class="n">sb</span><span class="o">.</span><span class="n">SequenceDataError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;CF file not valid.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+</div>
 <div class="viewcode-block" id="CountsFormatWriterError"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.CountsFormatWriterError">[docs]</a><span class="k">class</span> <span class="nc">CountsFormatWriterError</span><span class="p">(</span><span class="n">sb</span><span class="o">.</span><span class="n">SequenceDataError</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;General `CFWriter` object error.&quot;&quot;&quot;</span>
     <span class="k">pass</span>
 
 </div>
-<div class="viewcode-block" id="NoSynBase"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.NoSynBase">[docs]</a><span class="k">class</span> <span class="nc">NoSynBase</span><span class="p">(</span><span class="n">sb</span><span class="o">.</span><span class="n">NotAValidRefBase</span><span class="p">):</span>
+<div class="viewcode-block" id="NoSynBase"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.NoSynBase">[docs]</a><span class="k">class</span> <span class="nc">NoSynBase</span><span class="p">(</span><span class="n">sb</span><span class="o">.</span><span class="n">SequenceDataError</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Not a 4-fold degenerate site.&quot;&quot;&quot;</span>
     <span class="k">pass</span>
 
+</div>
+<div class="viewcode-block" id="interpret_cf_line"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.interpret_cf_line">[docs]</a><span class="k">def</span> <span class="nf">interpret_cf_line</span><span class="p">(</span><span class="n">ln</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Interpret a counts file line.</span>
+
+<span class="sd">    Return type is a tuple containing the chromosome name, the</span>
+<span class="sd">    position and a list with nucleotide counts (cf. counts file).</span>
+
+<span class="sd">    :param str ln: Line in counts format.</span>
+
+<span class="sd">    :rtype: (str, int, [[int]])</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lnL</span> <span class="o">=</span> <span class="n">ln</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="p">)</span>
+    <span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lnL</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">l</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">NotACountsFormatFileError</span><span class="p">(</span><span class="s">&quot;Line contains no data.&quot;</span><span class="p">)</span>
+
+    <span class="n">chrom</span> <span class="o">=</span> <span class="n">lnL</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">lnL</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">countsLStr</span> <span class="o">=</span> <span class="p">[</span><span class="n">eL</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;,&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">eL</span> <span class="ow">in</span> <span class="n">lnL</span><span class="p">[</span><span class="mi">2</span><span class="p">:]]</span>
+    <span class="n">le</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">countsLStr</span><span class="p">)</span>
+    <span class="n">countsL</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">le</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="nb">int</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">le</span><span class="p">):</span>
+        <span class="n">countsL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">countsLStr</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">chrom</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">countsL</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="CFStream"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.CFStream">[docs]</a><span class="k">class</span> <span class="nc">CFStream</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Store data of a CF file line per line.</span>
+
+<span class="sd">    Open a (gzipped) CF file. The file can be read line per line with</span>
+<span class="sd">    :func:`read_next_pos()`.</span>
+
+<span class="sd">    :param str CFFileName: Counts format file name to be read.</span>
+<span class="sd">    :param str name: Optional; stream name, defaults to stripped</span>
+<span class="sd">        filename.</span>
+
+<span class="sd">    :ivar str name: Stream name.</span>
+<span class="sd">    :ivar str chrom: Chromosome name.</span>
+<span class="sd">    :ivar str pos: Positional string.</span>
+<span class="sd">    :ivar fo fo: Fileobject.</span>
+<span class="sd">    :ivar [str] indivL: List of names of individuals (populations).</span>
+<span class="sd">    :ivar [[int]] countsL: Numpy array of nucleotide counts.</span>
+<span class="sd">    :ivar int nIndiv: Number of individuals (populations).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">CFFileName</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">CFFile</span> <span class="o">=</span> <span class="n">sb</span><span class="o">.</span><span class="n">gz_open</span><span class="p">(</span><span class="n">CFFileName</span><span class="p">)</span>
+        <span class="c"># Set the cf sequence name.</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">sb</span><span class="o">.</span><span class="n">stripFName</span><span class="p">(</span><span class="n">CFFileName</span><span class="p">)</span>
+        <span class="c"># Find the start of the first base.</span>
+        <span class="n">ln</span> <span class="o">=</span> <span class="n">CFFile</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">ln</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotACountsFormatFileError</span><span class="p">(</span><span class="s">&quot;File contains no data.&quot;</span><span class="p">)</span>
+
+        <span class="c"># Skip comments.</span>
+        <span class="k">while</span> <span class="n">ln</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;#&#39;</span><span class="p">:</span>
+            <span class="n">ln</span> <span class="o">=</span> <span class="n">CFFile</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+
+        <span class="c"># Read in first line.</span>
+        <span class="n">lnL</span> <span class="o">=</span> <span class="n">ln</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lnL</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">lnL</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&quot;COUNTSFILE&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">l</span> <span class="o">!=</span> <span class="mi">5</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">NotACountsFormatFileError</span><span class="p">(</span><span class="s">&quot;First line is corrupt.&quot;</span><span class="p">)</span>
+        <span class="c"># TODO: The first line is needed by IQ-Tree, but not by</span>
+        <span class="c"># libPoMo.  Maybe I should use this information here!</span>
+
+        <span class="n">ln</span> <span class="o">=</span> <span class="n">CFFile</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+
+        <span class="c"># Skip comments.</span>
+        <span class="k">while</span> <span class="n">ln</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;#&#39;</span><span class="p">:</span>
+            <span class="n">ln</span> <span class="o">=</span> <span class="n">CFFile</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+
+        <span class="c"># Read in headerline.</span>
+        <span class="n">lnL</span> <span class="o">=</span> <span class="n">ln</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lnL</span><span class="p">)</span>
+        <span class="n">indivL</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">lnL</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&quot;CHROM&quot;</span><span class="p">,</span> <span class="s">&quot;Chrom&quot;</span><span class="p">])</span> <span class="ow">and</span> <span class="p">(</span><span class="n">lnL</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&quot;POS&quot;</span><span class="p">,</span> <span class="s">&quot;Pos&quot;</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">l</span><span class="p">):</span>
+                <span class="n">indivL</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lnL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotACountsFormatFileError</span><span class="p">(</span><span class="s">&quot;Header line is corrupt.&quot;</span><span class="p">)</span>
+        <span class="n">ln</span> <span class="o">=</span> <span class="n">CFFile</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="p">(</span><span class="n">chrom</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">countsL</span><span class="p">)</span> <span class="o">=</span> <span class="n">interpret_cf_line</span><span class="p">(</span><span class="n">ln</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">countsL</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">indivL</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">NotACountsFormatFileError</span><span class="p">(</span><span class="s">&quot;Line doesn&#39;t fit nr. of species.&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chrom</span> <span class="o">=</span> <span class="n">chrom</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pos</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fo</span> <span class="o">=</span> <span class="n">CFFile</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">indivL</span> <span class="o">=</span> <span class="n">indivL</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">countsL</span> <span class="o">=</span> <span class="n">countsL</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nIndiv</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">countsL</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__update_base</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ln</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read CF line into :class:`CFStream`.&quot;&quot;&quot;</span>
+        <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chrom</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">countsL</span><span class="p">)</span> <span class="o">=</span> <span class="n">interpret_cf_line</span><span class="p">(</span><span class="n">ln</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">countsL</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nIndiv</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">NotACountsFormatFileError</span><span class="p">(</span><span class="s">&quot;Line doesn&#39;t fit nr. of species.&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CFStream.read_next_pos"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.CFStream.read_next_pos">[docs]</a>    <span class="k">def</span> <span class="nf">read_next_pos</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get next base.</span>
+
+<span class="sd">        Return position of next base.  Raises `ValueError` if there is</span>
+<span class="sd">        no next base.</span>
+
+<span class="sd">        :rtype: int</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ln</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fo</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">ln</span> <span class="o">!=</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__update_base</span><span class="p">(</span><span class="n">ln</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;End of CFStream.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">None</span>
+</div>
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fo</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="fasta_to_cf"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.fasta_to_cf">[docs]</a><span class="k">def</span> <span class="nf">fasta_to_cf</span><span class="p">(</span><span class="n">fastaFN</span><span class="p">,</span> <span class="n">countsFN</span><span class="p">,</span> <span class="n">splitChar</span><span class="o">=</span><span class="s">&#39;-&#39;</span><span class="p">,</span> <span class="n">chromName</span><span class="o">=</span><span class="s">&quot;NA&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert fasta to counts format.</span>
+
+<span class="sd">    The (aligned) sequences in the fasta file are read in and the data</span>
+<span class="sd">    is written to a counts format file.</span>
+
+<span class="sd">    Sequence names are stripped at the first dash.  If the strupped</span>
+<span class="sd">    sequence name coincide, individuals are put into the same</span>
+<span class="sd">    population.</span>
+
+<span class="sd">    E.g., homo_sapiens-XXX and homo_sapiens-YYY will be in the same</span>
+<span class="sd">    population homo_sapiens.</span>
+
+<span class="sd">    Take care with large files, this uses a lot of memory.</span>
+
+<span class="sd">    The input as well as the output files can additionally be gzipped</span>
+<span class="sd">    (indicated by a .gz file ending).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">FaStr</span> <span class="o">=</span> <span class="n">fasta</span><span class="o">.</span><span class="n">init_seq</span><span class="p">(</span><span class="n">fastaFN</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Read in fasta file.&quot;</span><span class="p">)</span>
+    <span class="n">seqL</span> <span class="o">=</span> <span class="p">[</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">FaStr</span><span class="o">.</span><span class="n">seq</span><span class="p">)]</span>
+
+    <span class="k">while</span> <span class="p">(</span><span class="n">FaStr</span><span class="o">.</span><span class="n">read_next_seq</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="n">seqL</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">FaStr</span><span class="o">.</span><span class="n">seq</span><span class="p">))</span>
+
+    <span class="n">nSeqs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">seqL</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Number of sequences: </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">nSeqs</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">seqL</span><span class="p">:</span>
+        <span class="n">newName</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="n">splitChar</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">newName</span>
+        <span class="c"># s.print_info()</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Checking sequence lengths&quot;</span><span class="p">)</span>
+    <span class="n">nSites</span> <span class="o">=</span> <span class="n">seqL</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dataLen</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">seqL</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">nSites</span> <span class="o">!=</span> <span class="n">s</span><span class="o">.</span><span class="n">dataLen</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">sb</span><span class="o">.</span><span class="n">SequenceDataError</span><span class="p">(</span><span class="s">&quot;Sequences do not have equal length.&quot;</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Creating assignment list.&quot;</span><span class="p">)</span>
+    <span class="n">assL</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">nameL</span> <span class="o">=</span> <span class="p">[</span><span class="n">seqL</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">seqL</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">nameL</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">assL</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="n">nameL</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">assL</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nameL</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">nPops</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">nameL</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Number of Populations: </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">nPops</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Number of Sites: </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">nSites</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Populations: </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">nameL</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Assignment list: </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">assL</span><span class="p">)</span>
+
+    <span class="n">cfw</span> <span class="o">=</span> <span class="n">CFWriter</span><span class="p">([],</span> <span class="n">countsFN</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Manually initializing CFWriter.&quot;</span><span class="p">)</span>
+    <span class="n">cfw</span><span class="o">.</span><span class="n">nL</span> <span class="o">=</span> <span class="n">nameL</span>
+    <span class="n">cfw</span><span class="o">.</span><span class="n">nPop</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">nameL</span><span class="p">)</span>
+    <span class="n">cfw</span><span class="o">.</span><span class="n">write_HLn</span><span class="p">()</span>
+
+    <span class="c"># Loop over sites.</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nSites</span><span class="p">):</span>
+        <span class="n">cfw</span><span class="o">.</span><span class="n">purge_cD</span><span class="p">()</span>
+        <span class="n">cfw</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="n">cfw</span><span class="o">.</span><span class="n">chrom</span> <span class="o">=</span> <span class="n">chromName</span>
+        <span class="c"># Loop over sequences / individuals.</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nSeqs</span><span class="p">):</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="n">seqL</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">baseI</span> <span class="o">=</span> <span class="n">dna</span><span class="p">[</span><span class="n">base</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">sb</span><span class="o">.</span><span class="n">NotAValidRefBase</span><span class="p">()</span>
+            <span class="n">cfw</span><span class="o">.</span><span class="n">cD</span><span class="p">[</span><span class="n">assL</span><span class="p">[</span><span class="n">s</span><span class="p">]][</span><span class="n">baseI</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">cfw</span><span class="o">.</span><span class="n">write_Ln</span><span class="p">()</span>
+    <span class="n">cfw</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="weighted_choice"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.weighted_choice">[docs]</a><span class="k">def</span> <span class="nf">weighted_choice</span><span class="p">(</span><span class="n">lst</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Choose element in integer list according to its value.</span>
+
+<span class="sd">    E.g., in [1,10], the second element will be chosen 10 times as</span>
+<span class="sd">    often as the first one.  Returns the index of the chosen element.</span>
+
+<span class="sd">    :ivar [int] lst: List of integers.</span>
+
+<span class="sd">    :rtype: int</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">lst</span><span class="p">)</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">total</span><span class="p">)</span>
+    <span class="n">upto</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c"># Loop over list and pick one element.</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lst</span><span class="p">)):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">lst</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">upto</span> <span class="o">+</span> <span class="n">c</span> <span class="o">&gt;=</span> <span class="n">r</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">i</span>
+        <span class="n">upto</span> <span class="o">+=</span> <span class="n">c</span>
+    <span class="k">assert</span> <span class="bp">False</span><span class="p">,</span> <span class="s">&quot;Shouldn&#39;t get here&quot;</span>
+
+</div>
+<div class="viewcode-block" id="faseq_append_base_of_cfS"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.faseq_append_base_of_cfS">[docs]</a><span class="k">def</span> <span class="nf">faseq_append_base_of_cfS</span><span class="p">(</span><span class="n">faS</span><span class="p">,</span> <span class="n">cfS</span><span class="p">,</span> <span class="n">consensus</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Append a :class:`CFStream` line to an :class:`libPoMo.fasta.FaSeq`.</span>
+
+<span class="sd">    Randomly chooses bases for each position according to their</span>
+<span class="sd">    abundance.</span>
+
+<span class="sd">    :param FaSeq faS: Fasta sequence to append base to.</span>
+<span class="sd">    :param CFStream cfS: CFStream containing the base.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">consensus</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cfS</span><span class="o">.</span><span class="n">nIndiv</span><span class="p">):</span>
+            <span class="n">max_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">cfS</span><span class="o">.</span><span class="n">countsL</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="c"># print(&quot;base:&quot;, ind2dna[max_index])</span>
+            <span class="n">faS</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">data</span> <span class="o">+=</span> <span class="n">ind2dna</span><span class="p">[</span><span class="n">max_index</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cfS</span><span class="o">.</span><span class="n">nIndiv</span><span class="p">):</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="n">weighted_choice</span><span class="p">(</span><span class="n">cfS</span><span class="o">.</span><span class="n">countsL</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">faS</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">data</span> <span class="o">+=</span> <span class="n">ind2dna</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+
+</div>
+<div class="viewcode-block" id="cf_to_fasta"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.cf_to_fasta">[docs]</a><span class="k">def</span> <span class="nf">cf_to_fasta</span><span class="p">(</span><span class="n">cfS</span><span class="p">,</span> <span class="n">outname</span><span class="p">,</span> <span class="n">consensus</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert a :class:`CFStream` to a fasta file.</span>
+
+<span class="sd">    Extracts the sequences of a counts file that has been initialized</span>
+<span class="sd">    with an :class:`CFStream`.  The conversion starts at the line</span>
+<span class="sd">    pointed to by the :class:`CFStream`.</span>
+
+<span class="sd">    If more than one base is present at a single site, one base is</span>
+<span class="sd">    sampled out of all present ones according to its abundance.</span>
+
+<span class="sd">    If consensus is set to True, the consensus sequence is extracted</span>
+<span class="sd">    (e.g., no sampling but the bases with highest counts for each</span>
+<span class="sd">    individual or population are chosen).</span>
+
+<span class="sd">    :param CFStream cfS: Counts format file stream.</span>
+<span class="sd">    :param str outname: Fasta output file name.</span>
+<span class="sd">    :param Boolean consensus: Optional; Extract consensus sequence?</span>
+<span class="sd">      Defaults to False.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Convert counts file to fasta.&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Counts file stream to be converted: </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">cfS</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Fasta output file: </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">outname</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Consensus is set to </span><span class="si">%s</span><span class="s">.&quot;</span><span class="p">,</span> <span class="n">consensus</span><span class="p">)</span>
+    <span class="n">faS</span> <span class="o">=</span> <span class="n">fasta</span><span class="o">.</span><span class="n">FaSeq</span><span class="p">()</span>
+
+    <span class="n">faS</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">cfS</span><span class="o">.</span><span class="n">name</span>
+
+    <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">cfS</span><span class="o">.</span><span class="n">indivL</span><span class="p">:</span>
+        <span class="n">seq</span> <span class="o">=</span> <span class="n">sb</span><span class="o">.</span><span class="n">Seq</span><span class="p">()</span>
+        <span class="n">seq</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">ind</span>
+        <span class="n">faS</span><span class="o">.</span><span class="n">seqL</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+
+    <span class="c"># print(cfS.chrom, cfS.pos)</span>
+    <span class="n">faseq_append_base_of_cfS</span><span class="p">(</span><span class="n">faS</span><span class="p">,</span> <span class="n">cfS</span><span class="p">)</span>
+
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cfS</span><span class="o">.</span><span class="n">read_next_pos</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># print(cfS.chrom, cfS.pos)</span>
+            <span class="n">faseq_append_base_of_cfS</span><span class="p">(</span><span class="n">faS</span><span class="p">,</span> <span class="n">cfS</span><span class="p">,</span> <span class="n">consensus</span><span class="p">)</span>
+
+    <span class="n">of</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">outname</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cfS</span><span class="o">.</span><span class="n">nIndiv</span><span class="p">):</span>
+        <span class="n">faS</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">print_fa_entry</span><span class="p">(</span><span class="n">fo</span><span class="o">=</span><span class="n">of</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="nb">file</span><span class="o">=</span><span class="n">of</span><span class="p">)</span>
+    <span class="n">of</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 </div>
 <div class="viewcode-block" id="CFWriter"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.CFWriter">[docs]</a><span class="k">class</span> <span class="nc">CFWriter</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;Write a counts format file.</span>
@@ -187,7 +516,9 @@
 <span class="sd">    Additional filters can be set before the counts file is written</span>
 <span class="sd">    (e.g. only write synonymous sites).</span>
 
-<span class="sd">    Remember to close the attached file objectsL with :func:`close`.</span>
+<span class="sd">    Important: Remember to close the attached file objectsL with</span>
+<span class="sd">    :func:`close()`.  If the CFWriter is not closed, the counts file</span>
+<span class="sd">    is not usable because the first line is missing!</span>
 
 <span class="sd">    :param [str] vcfFileNameL: List with names of vcf files.</span>
 <span class="sd">    :param str outFileName: Output file name.</span>
@@ -201,6 +532,8 @@
 <span class="sd">      name of the summed sequence will be *self.nL[i]*.  If not, the</span>
 <span class="sd">      name of the first individual in *vcfL[i]* will be used.</span>
 <span class="sd">    :param [str] nameL: Optional; a list of names. Cf. *self.mL*.</span>
+<span class="sd">    :param Boolean oneIndividual: Optional; pick one individual out</span>
+<span class="sd">      of each population.</span>
 
 <span class="sd">    :ivar str refFN: Name of reference fasta file.</span>
 <span class="sd">    :ivar [str] vcfL: List with names of vcf files.</span>
@@ -238,7 +571,7 @@
 <span class="sd">    :ivar [int] nIndL: List with number of individuals in</span>
 <span class="sd">        *self.vcfL[i]*.</span>
 <span class="sd">    :ivar assM: Assignment matrix that connects the individuals from</span>
-<span class="sd">        the vcf files to the correct *self.cd* index.  Cf. *self.cD*</span>
+<span class="sd">        the vcf files to the correct *self.cD* index.  Cf. *self.cD*</span>
 <span class="sd">    :ivar int nPop: Number of different populations in count format</span>
 <span class="sd">        output file (e.g. number of populations).  Filled by</span>
 <span class="sd">        *self.__init_assM()* during initialization.</span>
@@ -249,15 +582,16 @@
 <span class="sd">    :ivar char splitCh: Character that is used to split the</span>
 <span class="sd">        individual names.</span>
 <span class="sd">    :ivar Boolean onlySynonymous: Only write 4-fold degenerate sites.</span>
+<span class="sd">    :ivar int baseCounter: Counts the total number of bases.</span>
 <span class="sd">    :ivar Boolean __force: If set to true, skip name checks.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vcfFileNameL</span><span class="p">,</span> <span class="n">outFileName</span><span class="p">,</span> <span class="n">verb</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-                 <span class="n">splitChar</span><span class="o">=</span><span class="s">&#39;-&#39;</span><span class="p">,</span> <span class="n">mergeL</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">nameL</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vcfFileNameL</span><span class="p">,</span> <span class="n">outFileName</span><span class="p">,</span>
+                 <span class="n">splitChar</span><span class="o">=</span><span class="s">&#39;-&#39;</span><span class="p">,</span> <span class="n">mergeL</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">nameL</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">oneIndividual</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
         <span class="c"># Passed variables.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vcfL</span> <span class="o">=</span> <span class="n">vcfFileNameL</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">outFN</span> <span class="o">=</span> <span class="n">outFileName</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="n">verb</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mL</span> <span class="o">=</span> <span class="n">mergeL</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nL</span> <span class="o">=</span> <span class="n">nameL</span>
         <span class="c"># Variables that are filled during initialization.</span>
@@ -274,9 +608,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">nPop</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="c"># Variables that have to be set manually.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refSeq</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="c"># Variables that may need to be set manually.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ploidy</span> <span class="o">=</span> <span class="mi">2</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">splitCh</span> <span class="o">=</span> <span class="n">splitChar</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">onlySynonymous</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">oneIndiv</span> <span class="o">=</span> <span class="n">oneIndividual</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">baseCounter</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__force</span> <span class="o">=</span> <span class="bp">False</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">__init_vcfTfL</span><span class="p">()</span>
@@ -298,6 +635,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vcfL</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">vcfTfL</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ps</span><span class="o">.</span><span class="n">Tabixfile</span><span class="p">(</span><span class="n">fn</span><span class="p">))</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vcfTfL</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;No VCF file given, &quot;</span>
+                            <span class="s">&quot;CFWriter has to be initialized manually.&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__init_outFO</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Open *self.outFN*.</span>
@@ -323,6 +663,7 @@
         <span class="k">for</span> <span class="n">indL</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">indM</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">nIndL</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">indL</span><span class="p">))</span>
 
+    <span class="c"># TODO: Check if this works, when individuals are mixed.</span>
     <span class="k">def</span> <span class="nf">__init_assM</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Fill assignment matrix *self.assM*.&quot;&quot;&quot;</span>
         <span class="k">def</span> <span class="nf">collapse_and_append</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dN</span><span class="p">):</span>
@@ -371,6 +712,33 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">CountsFormatWriterError</span><span class="p">(</span><span class="s">&quot;`mergeL` is not valid.&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nPop</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="n">dI</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="c"># Sometimes not all the information is used from the VCF</span>
+        <span class="c"># files.  E.g., if I only want to consider one individual per</span>
+        <span class="c"># populstion (cf. *self.oneIndiv*).</span>
+
+        <span class="c"># If individual j from VCF file i is not used, assM[i][j] is</span>
+        <span class="c"># set to -1.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">oneIndiv</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;# One individual per population only.&quot;</span><span class="p">,</span> <span class="nb">file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">outFO</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;# Picked individuals:&quot;</span><span class="p">,</span> <span class="nb">file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">outFO</span><span class="p">)</span>
+            <span class="n">indivStr</span> <span class="o">=</span> <span class="s">&quot;# &quot;</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nV</span><span class="p">):</span>
+                <span class="n">dI</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                    <span class="n">nI</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assM</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">nI</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">break</span>
+                    <span class="n">pickN</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nI</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="n">indivStr</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">indM</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">dI</span><span class="o">+</span><span class="n">pickN</span><span class="p">]</span>
+                    <span class="n">indivStr</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span>
+                    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dI</span><span class="p">,</span> <span class="n">dI</span><span class="o">+</span><span class="n">nI</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">j</span> <span class="o">-</span> <span class="n">dI</span> <span class="o">!=</span> <span class="n">pickN</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">assM</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                    <span class="n">dI</span> <span class="o">+=</span> <span class="n">nI</span>
+                    <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">print</span><span class="p">(</span><span class="n">indivStr</span><span class="p">,</span> <span class="nb">file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">outFO</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__init_nL</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Fill *self.nL*.&quot;&quot;&quot;</span>
@@ -437,7 +805,7 @@
             <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
                 <span class="n">snpL</span><span class="p">[</span><span class="n">minI</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
 
-    <span class="k">def</span> <span class="nf">__purge_cD</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">purge_cD</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__init_cD</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">__fill_cD</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iL</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">snpL</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
@@ -445,7 +813,7 @@
 
 <span class="sd">        Fill *self.cF* with data from reference at chromosome</span>
 <span class="sd">        *self.chrom* and position *self.pos*. Possible SNPs in</span>
-<span class="sd">        *slef.vcfL* at this position are considered.</span>
+<span class="sd">        *self.vcfL* at this position are considered.</span>
 
 <span class="sd">        :param [int] iL: List with vcf indices of the SNPs in *snpL*,</span>
 <span class="sd">            must be sorted.</span>
@@ -464,25 +832,35 @@
 <span class="sd">        is raised if the chromosome names do not match.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">snpL</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-                <span class="k">print</span><span class="p">(</span><span class="s">&quot;Next SNP(s):&quot;</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">snpL</span><span class="p">:</span>
-                    <span class="n">s</span><span class="o">.</span><span class="n">print_info</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">snpL</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Next SNP(s):&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">snpL</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">get_info</span><span class="p">())</span>
 
         <span class="k">def</span> <span class="nf">get_refBase</span><span class="p">():</span>
             <span class="sd">&quot;&quot;&quot;Get reference base on *chrom* at *pos*.&quot;&quot;&quot;</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">refSeq</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">__purge_cD</span><span class="p">()</span>
+        <span class="k">def</span> <span class="nf">update_cD</span><span class="p">(</span><span class="n">pop</span><span class="p">,</span> <span class="n">baseI</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ploidy</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Add counts to the countsDictionary cD.&quot;&quot;&quot;</span>
+            <span class="k">if</span> <span class="n">pop</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPop</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cD</span><span class="p">[</span><span class="n">pop</span><span class="p">][</span><span class="n">baseI</span><span class="p">]</span> <span class="o">+=</span> <span class="n">delta</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Updating counts dictionary; population </span><span class="si">%s</span><span class="s">, &quot;</span>
+                              <span class="s">&quot;base index </span><span class="si">%s</span><span class="s">.&quot;</span><span class="p">,</span> <span class="n">pop</span><span class="p">,</span> <span class="n">baseI</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Ignoring data because population index </span><span class="si">%s</span><span class="s"> is &quot;</span>
+                              <span class="s">&quot;out of range.&quot;</span><span class="p">,</span> <span class="n">pop</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">purge_cD</span><span class="p">()</span>
 
         <span class="c"># If we check for synonymous bases, do not do anything if base</span>
         <span class="c"># is not 4-fold degenerate.</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">onlySynonymous</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">refSeq</span><span class="o">.</span><span class="n">is_synonymous</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Rejection;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">refSeq</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">],</span>
-                          <span class="s">&quot;at position&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span> <span class="s">&quot;is not a synonymous base.&quot;</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Rejection; </span><span class="si">%s</span><span class="s"> at position </span><span class="si">%s</span><span class="s"> &quot;</span>
+                              <span class="s">&quot;is not a synonymous base.&quot;</span><span class="p">,</span>
+                              <span class="bp">self</span><span class="o">.</span><span class="n">refSeq</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">],</span>
+                              <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">)</span>
                 <span class="k">raise</span> <span class="n">NoSynBase</span><span class="p">()</span>
 
         <span class="n">refBase</span> <span class="o">=</span> <span class="n">get_refBase</span><span class="p">()</span>
@@ -493,14 +871,14 @@
         <span class="c"># If there are no SNPS, fill *self.cD* with data from reference.</span>
         <span class="k">if</span> <span class="n">iL</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nV</span><span class="p">):</span>
-                <span class="k">for</span> <span class="n">sp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">assM</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">cD</span><span class="p">[</span><span class="n">sp</span><span class="p">][</span><span class="n">r</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ploidy</span>
+                <span class="k">for</span> <span class="n">pop</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">assM</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                    <span class="n">update_cD</span><span class="p">(</span><span class="n">pop</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
         <span class="k">elif</span> <span class="p">(</span><span class="n">snpL</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">iL</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">snpL</span><span class="p">)):</span>
             <span class="c"># Else, only fill *self.cD* where the individual has no SNP.</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nV</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">iL</span><span class="p">:</span>
-                    <span class="k">for</span> <span class="n">sp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">assM</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">cD</span><span class="p">[</span><span class="n">sp</span><span class="p">][</span><span class="n">r</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ploidy</span>
+                    <span class="k">for</span> <span class="n">pop</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">assM</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                        <span class="n">update_cD</span><span class="p">(</span><span class="n">pop</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
             <span class="c"># Now traverse the SNPs.</span>
             <span class="k">for</span> <span class="n">sI</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">iL</span><span class="p">)):</span>
                 <span class="c"># Check if the reference bases match.</span>
@@ -519,16 +897,18 @@
                 <span class="n">vI</span> <span class="o">=</span> <span class="n">iL</span><span class="p">[</span><span class="n">sI</span><span class="p">]</span>
                 <span class="c"># Loop over individuals.</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">spData</span><span class="p">)):</span>
-                <span class="c"># Loop over chromatides (e.g. diploid).</span>
+                    <span class="c"># Loop over chromatides (e.g. diploid).</span>
                     <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ploidy</span><span class="p">):</span>
                         <span class="k">if</span> <span class="n">spData</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">d</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
                             <span class="k">pass</span>
                         <span class="k">elif</span> <span class="n">spData</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">d</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                             <span class="n">bI</span> <span class="o">=</span> <span class="n">r</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">cD</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">assM</span><span class="p">[</span><span class="n">vI</span><span class="p">][</span><span class="n">i</span><span class="p">]][</span><span class="n">bI</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                            <span class="n">update_cD</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">assM</span><span class="p">[</span><span class="n">vI</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="n">bI</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
                         <span class="k">else</span><span class="p">:</span>
                             <span class="n">bI</span> <span class="o">=</span> <span class="n">dna</span><span class="p">[</span><span class="n">altBases</span><span class="p">[</span><span class="n">spData</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">d</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">cD</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">assM</span><span class="p">[</span><span class="n">vI</span><span class="p">][</span><span class="n">i</span><span class="p">]][</span><span class="n">bI</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Use SNP of </span><span class="si">%s</span><span class="s">, population </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">indM</span><span class="p">[</span><span class="n">vI</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">assM</span><span class="p">[</span><span class="n">vI</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+                            <span class="n">update_cD</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">assM</span><span class="p">[</span><span class="n">vI</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="n">bI</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">sb</span><span class="o">.</span><span class="n">SequenceDataError</span><span class="p">(</span><span class="s">&quot;SNP information is not correct.&quot;</span><span class="p">)</span>
 
@@ -583,13 +963,12 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="k">print</span><span class="p">(</span><span class="s">&#39;Offset in CFWriter:&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Offset in CFWriter: </span><span class="si">%s</span><span class="s">.&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">)</span>
 </div>
-    <span class="k">def</span> <span class="nf">__write_Ln</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="CFWriter.write_Ln"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.CFWriter.write_Ln">[docs]</a>    <span class="k">def</span> <span class="nf">write_Ln</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Write a line in counts format to *self.outFN*.&quot;&quot;&quot;</span>
         <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__get_Ln</span><span class="p">(),</span> <span class="nb">file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">outFO</span><span class="p">)</span>
-
+</div>
 <div class="viewcode-block" id="CFWriter.write_HLn"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.CFWriter.write_HLn">[docs]</a>    <span class="k">def</span> <span class="nf">write_HLn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Write the counts format header line to *self.outFN*.&quot;&quot;&quot;</span>
         <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__get_HLn</span><span class="p">(),</span> <span class="nb">file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">outFO</span><span class="p">)</span>
@@ -631,20 +1010,37 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">rPos</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">__fill_cD</span><span class="p">(</span><span class="n">iL</span><span class="p">,</span> <span class="n">snpL</span><span class="p">)</span>
-            <span class="k">except</span> <span class="n">sb</span><span class="o">.</span><span class="n">NotAValidRefBase</span><span class="p">:</span>
-                <span class="c"># Do nothing if reference base is not valid.</span>
-                <span class="k">pass</span>
             <span class="k">except</span> <span class="n">NoSynBase</span><span class="p">:</span>
                 <span class="c"># Do nothing if base is not 4-fold degenerate.</span>
-                <span class="k">pass</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Ignoring synonymous base.&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">sb</span><span class="o">.</span><span class="n">NotAValidRefBase</span><span class="p">:</span>
+                <span class="c"># Do nothing if reference base is not valid.</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Ignoring invalid reference base.&quot;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">__write_Ln</span><span class="p">()</span>
+                <span class="c"># Increment counter and write line.</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">baseCounter</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">write_Ln</span><span class="p">()</span>
 </div>
 <div class="viewcode-block" id="CFWriter.close"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.CFWriter.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Close fileobjects.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Write file type specifier, number of populations and number of</span>
+<span class="sd">           sites to the beginning of the output file.  Close</span>
+<span class="sd">           fileobjects.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">tf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vcfTfL</span><span class="p">:</span>
             <span class="n">tf</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">outFO</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="c"># Insert the first line.  The whole file needs to be copied,</span>
+        <span class="c"># maybe there is a better method?</span>
+        <span class="n">fo</span> <span class="o">=</span> <span class="n">sb</span><span class="o">.</span><span class="n">gz_open</span><span class="p">(</span><span class="s">&quot;temp_&quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">outFN</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;COUNTSFILE</span><span class="se">\t</span><span class="s">NPOP &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPop</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\t</span><span class="s">NSITES &quot;</span><span class="p">,</span>
+              <span class="bp">self</span><span class="o">.</span><span class="n">baseCounter</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="nb">file</span><span class="o">=</span><span class="n">fo</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">sb</span><span class="o">.</span><span class="n">gz_open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outFN</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+                <span class="k">print</span><span class="p">(</span><span class="n">ln</span><span class="p">,</span> <span class="nb">file</span><span class="o">=</span><span class="n">fo</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">fo</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s">&quot;temp_&quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">outFN</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">outFN</span><span class="p">)</span>
 
 </div></div>
 <div class="viewcode-block" id="write_cf_from_MFaStream"><a class="viewcode-back" href="../../cf.html#libPoMo.cf.write_cf_from_MFaStream">[docs]</a><span class="k">def</span> <span class="nf">write_cf_from_MFaStream</span><span class="p">(</span><span class="n">refMFaStr</span><span class="p">,</span> <span class="n">cfWr</span><span class="p">):</span>
@@ -708,7 +1104,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2013, Dominik Schrempf.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

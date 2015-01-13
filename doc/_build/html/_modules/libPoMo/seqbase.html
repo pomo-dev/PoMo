@@ -154,19 +154,19 @@
         <span class="k">print</span><span class="p">(</span><span class="s">&#39;&gt;&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&#39; &#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="nb">file</span><span class="o">=</span><span class="n">fo</span><span class="p">)</span>
         <span class="k">return</span>
 </div>
-<div class="viewcode-block" id="Seq.print_fa_entry"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.print_fa_entry">[docs]</a>    <span class="k">def</span> <span class="nf">print_fa_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxB</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Seq.print_fa_entry"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.print_fa_entry">[docs]</a>    <span class="k">def</span> <span class="nf">print_fa_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxB</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">fo</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Print a fasta file entry with header and sequence data.</span>
 
 <span class="sd">        :ivar int maxB: Print a maximum of maxB bases. Default: print</span>
 <span class="sd">          all bases.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">print_fa_header</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">print_fa_header</span><span class="p">(</span><span class="n">fo</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">maxB</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="nb">file</span><span class="o">=</span><span class="n">fo</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">print</span><span class="p">(</span><span class="s">&quot;First&quot;</span><span class="p">,</span> <span class="n">maxB</span><span class="p">,</span> <span class="s">&quot;bases: &quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">)</span>
-            <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[:</span><span class="n">maxB</span><span class="p">])</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;First&quot;</span><span class="p">,</span> <span class="n">maxB</span><span class="p">,</span> <span class="s">&quot;bases: &quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="nb">file</span><span class="o">=</span><span class="n">fo</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[:</span><span class="n">maxB</span><span class="p">],</span> <span class="nb">file</span><span class="o">=</span><span class="n">fo</span><span class="p">)</span>
         <span class="k">return</span>
 </div>
 <div class="viewcode-block" id="Seq.print_data"><a class="viewcode-back" href="../../seqbase.html#libPoMo.seqbase.Seq.print_data">[docs]</a>    <span class="k">def</span> <span class="nf">print_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fo</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">):</span>
@@ -466,7 +466,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2013, Dominik Schrempf.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

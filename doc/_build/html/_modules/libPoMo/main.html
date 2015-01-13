@@ -58,7 +58,25 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">random</span>
 <span class="kn">from</span> <span class="nn">scipy.misc</span> <span class="kn">import</span> <span class="n">comb</span> <span class="k">as</span> <span class="n">choose</span>
+<span class="kn">import</span> <span class="nn">libPoMo</span> <span class="kn">as</span> <span class="nn">lp</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pdb</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+
+<span class="c"># define PoMo10 states</span>
+<span class="n">codons</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;aaa&quot;</span><span class="p">,</span> <span class="s">&quot;aac&quot;</span><span class="p">,</span> <span class="s">&quot;aag&quot;</span><span class="p">,</span> <span class="s">&quot;aat&quot;</span><span class="p">,</span> <span class="s">&quot;aca&quot;</span><span class="p">,</span> <span class="s">&quot;acc&quot;</span><span class="p">,</span> <span class="s">&quot;acg&quot;</span><span class="p">,</span> <span class="s">&quot;act&quot;</span><span class="p">,</span>
+          <span class="s">&quot;aga&quot;</span><span class="p">,</span> <span class="s">&quot;agc&quot;</span><span class="p">,</span> <span class="s">&quot;agg&quot;</span><span class="p">,</span> <span class="s">&quot;agt&quot;</span><span class="p">,</span> <span class="s">&quot;ata&quot;</span><span class="p">,</span> <span class="s">&quot;atc&quot;</span><span class="p">,</span> <span class="s">&quot;atg&quot;</span><span class="p">,</span> <span class="s">&quot;att&quot;</span><span class="p">,</span>
+          <span class="s">&quot;caa&quot;</span><span class="p">,</span> <span class="s">&quot;cac&quot;</span><span class="p">,</span> <span class="s">&quot;cag&quot;</span><span class="p">,</span> <span class="s">&quot;cat&quot;</span><span class="p">,</span> <span class="s">&quot;cca&quot;</span><span class="p">,</span> <span class="s">&quot;ccc&quot;</span><span class="p">,</span> <span class="s">&quot;ccg&quot;</span><span class="p">,</span> <span class="s">&quot;cct&quot;</span><span class="p">,</span>
+          <span class="s">&quot;cga&quot;</span><span class="p">,</span> <span class="s">&quot;cgc&quot;</span><span class="p">,</span> <span class="s">&quot;cgg&quot;</span><span class="p">,</span> <span class="s">&quot;cgt&quot;</span><span class="p">,</span> <span class="s">&quot;cta&quot;</span><span class="p">,</span> <span class="s">&quot;ctc&quot;</span><span class="p">,</span> <span class="s">&quot;ctg&quot;</span><span class="p">,</span> <span class="s">&quot;ctt&quot;</span><span class="p">,</span>
+          <span class="s">&quot;gaa&quot;</span><span class="p">,</span> <span class="s">&quot;gac&quot;</span><span class="p">,</span> <span class="s">&quot;gag&quot;</span><span class="p">,</span> <span class="s">&quot;gat&quot;</span><span class="p">,</span> <span class="s">&quot;gca&quot;</span><span class="p">,</span> <span class="s">&quot;gcc&quot;</span><span class="p">,</span> <span class="s">&quot;gcg&quot;</span><span class="p">,</span> <span class="s">&quot;gct&quot;</span><span class="p">,</span>
+          <span class="s">&quot;gga&quot;</span><span class="p">,</span> <span class="s">&quot;ggc&quot;</span><span class="p">,</span> <span class="s">&quot;ggg&quot;</span><span class="p">,</span> <span class="s">&quot;ggt&quot;</span><span class="p">,</span> <span class="s">&quot;gta&quot;</span><span class="p">,</span> <span class="s">&quot;gtc&quot;</span><span class="p">,</span> <span class="s">&quot;gtg&quot;</span><span class="p">,</span> <span class="s">&quot;gtt&quot;</span><span class="p">,</span>
+          <span class="s">&quot;taa&quot;</span><span class="p">,</span> <span class="s">&quot;tac&quot;</span><span class="p">,</span> <span class="s">&quot;tag&quot;</span><span class="p">,</span> <span class="s">&quot;tat&quot;</span><span class="p">,</span> <span class="s">&quot;tca&quot;</span><span class="p">,</span> <span class="s">&quot;tcc&quot;</span><span class="p">,</span> <span class="s">&quot;tcg&quot;</span><span class="p">,</span> <span class="s">&quot;tct&quot;</span><span class="p">,</span>
+          <span class="s">&quot;tga&quot;</span><span class="p">,</span> <span class="s">&quot;tgc&quot;</span><span class="p">]</span>
+<span class="n">nucs</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;A&quot;</span><span class="p">,</span> <span class="s">&quot;C&quot;</span><span class="p">,</span> <span class="s">&quot;G&quot;</span><span class="p">,</span> <span class="s">&quot;T&quot;</span><span class="p">]</span>
+
 
 <span class="c"># Define mutation models.</span>
 <span class="n">mutmod</span> <span class="o">=</span> <span class="p">{}</span>
@@ -236,7 +254,490 @@
     <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;};</span><span class="se">\n\n\n\n</span><span class="s">&quot;</span>
     <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;Model Mto&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">o</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; = (</span><span class="se">\&quot;</span><span class="s">matrixto&quot;</span> <span class="o">+</span> \
          <span class="nb">str</span><span class="p">(</span><span class="n">o</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\&quot;</span><span class="s">, Freqs, EXPLICIT_FORM_MATRIX_EXPONENTIAL);</span><span class="se">\n\n</span><span class="s">&quot;</span>
-    <span class="k">return</span> <span class="n">s</span></div>
+    <span class="k">return</span> <span class="n">s</span>
+
+</div>
+<div class="viewcode-block" id="get_species_from_cf_headerline"><a class="viewcode-back" href="../../main.html#libPoMo.main.get_species_from_cf_headerline">[docs]</a><span class="k">def</span> <span class="nf">get_species_from_cf_headerline</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get the number of species and the names fom a counts format header line.</span>
+
+<span class="sd">    :param str line: The header line.</span>
+
+<span class="sd">    :rtype: (int n_species, [str] sp_names)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sp_names</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">2</span><span class="p">:]</span>
+    <span class="n">n_species</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sp_names</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">n_species</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Error: Not sufficiently many species (&lt;2).</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">n_species</span><span class="p">,</span> <span class="n">sp_names</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="get_data_from_cf_line"><a class="viewcode-back" href="../../main.html#libPoMo.main.get_data_from_cf_line">[docs]</a><span class="k">def</span> <span class="nf">get_data_from_cf_line</span><span class="p">(</span><span class="n">cfStr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read in the data of a single counts format line.</span>
+
+<span class="sd">    The return type is a list with the number of samples and a two</span>
+<span class="sd">    dimensional array of the form data[species][nucleotide], where</span>
+<span class="sd">    species is the index of the species and nucleotide is the index of</span>
+<span class="sd">    the nucleotide (0,1,2 or 3 for a,c,g and t, respectively).</span>
+
+<span class="sd">    :param cfStr CFStream: The CFStream pointing to the line to be</span>
+<span class="sd">      read in.</span>
+
+<span class="sd">    :rtype: ([int] n_samples, [[int]] data)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_samples</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cfStr</span><span class="o">.</span><span class="n">nIndiv</span><span class="p">):</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">summ</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+            <span class="n">q</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">cfStr</span><span class="o">.</span><span class="n">countsL</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]))</span>
+            <span class="n">summ</span> <span class="o">+=</span> <span class="n">q</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">n_samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">summ</span><span class="p">)</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="read_data_write_HyPhy_input"><a class="viewcode-back" href="../../main.html#libPoMo.main.read_data_write_HyPhy_input">[docs]</a><span class="k">def</span> <span class="nf">read_data_write_HyPhy_input</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">thresh</span><span class="p">,</span> <span class="n">path_bf</span><span class="p">,</span>
+                                <span class="n">muts</span><span class="p">,</span> <span class="n">mutgamma</span><span class="p">,</span>
+                                <span class="n">sels</span><span class="p">,</span> <span class="n">selgamma</span><span class="p">,</span>
+                                <span class="n">PoModatafile</span><span class="p">,</span> <span class="n">PoModatafile_cons</span><span class="p">,</span>
+                                <span class="n">theta</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">vb</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read the count data and write the HyPhy input file.</span>
+
+<span class="sd">    The provided filename has to point to a data file in counts format</span>
+<span class="sd">    (cf. :doc:`cf &lt;cf&gt;`).  The data will be downsampled if necessary</span>
+<span class="sd">    and the HyPhy batch and input files will be written.  The number</span>
+<span class="sd">    of species, the species names, the number of species samples and</span>
+<span class="sd">    the theta value (usr_def) will be returned in a tuple.</span>
+
+<span class="sd">    :param str fn: Counts format file name.</span>
+<span class="sd">    :param int N: Virtual population size.</span>
+<span class="sd">    :param float thresh: Trheshold of data discard for downsampling.</span>
+<span class="sd">    :param str path_bf: Path to the HyPhy batch files</span>
+<span class="sd">    :param str muts: Mutation model (:func:`mutModel`).</span>
+<span class="sd">    :param str mutgamma: Gamma of the mutation model (:func:`setGM`).</span>
+<span class="sd">    :param str sels: Selection model (:func:`selModel`).</span>
+<span class="sd">    :param str selgamma: Gamma of selection model (:func:`setGS`).</span>
+<span class="sd">    :param str PoModatafile: Path to HyPhy input file.</span>
+<span class="sd">    :param str PoModatafile_cons: Path to HyPhy input file.</span>
+
+<span class="sd">    :param Boolean vb: Verbosity.</span>
+
+<span class="sd">    :rtype: (int n_species, [str] sp_names, [str] sp_samples, Boolean all_one,</span>
+<span class="sd">             float usr_def)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># define variables</span>
+    <span class="c"># number of species</span>
+    <span class="n">n_species</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c"># species names</span>
+    <span class="n">sp_names</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c"># sample size of each species</span>
+    <span class="n">sp_samples</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c"># actual data; it is a 3-dimensional array sp_data[species][pos][base]</span>
+    <span class="n">sp_data</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c"># Check input file format.  If format is not counts file, convert</span>
+    <span class="c"># the file to counts format.  I have decided to do this because</span>
+    <span class="c"># for large files, a lot of memory is needed to traverse fasta</span>
+    <span class="c"># files and the counts file type seems to be better.</span>
+
+    <span class="c"># Verbose HYPHY output only with -vv or more.</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">vb</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">vb</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">vbHyphy</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">if</span> <span class="n">vb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Starting to read input file.&quot;</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">cfStr</span> <span class="o">=</span> <span class="n">lp</span><span class="o">.</span><span class="n">cf</span><span class="o">.</span><span class="n">CFStream</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">lp</span><span class="o">.</span><span class="n">cf</span><span class="o">.</span><span class="n">NotACountsFormatFileError</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">fn</span> <span class="o">+</span> <span class="s">&quot; is not in counts format.&quot;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Assuming fasta file format.&quot;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Convert fasta to counts.&quot;</span><span class="p">)</span>
+        <span class="n">outFN</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s">&quot;.cf&quot;</span>
+        <span class="c"># absOutFN = os.path.abspath(fn).split(&quot;.&quot;)[0] + &quot;.cf&quot;</span>
+        <span class="c"># pdb.set_trace()</span>
+        <span class="n">lp</span><span class="o">.</span><span class="n">cf</span><span class="o">.</span><span class="n">fasta_to_cf</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">outFN</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Created counts file:&quot;</span><span class="p">,</span> <span class="n">outFN</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;&quot;&quot;This file will not be deleted after the run.  If you want to avoid</span>
+<span class="s">        repeated file conversions, please run PoMo with counts</span>
+<span class="s">        files. File conversion scripts are provided with PoMo in the</span>
+<span class="s">        scripts folder.&quot;&quot;&quot;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">fn</span> <span class="o">=</span> <span class="n">outFN</span>
+        <span class="n">cfStr</span> <span class="o">=</span> <span class="n">lp</span><span class="o">.</span><span class="n">cf</span><span class="o">.</span><span class="n">CFStream</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+
+    <span class="c"># Assign species names (first two columns are Chrom and Pos).</span>
+    <span class="c"># (n_species, sp_names) = get_species_from_cf_headerline(line)</span>
+    <span class="n">n_species</span> <span class="o">=</span> <span class="n">cfStr</span><span class="o">.</span><span class="n">nIndiv</span>
+    <span class="n">sp_names</span> <span class="o">=</span> <span class="n">cfStr</span><span class="o">.</span><span class="n">indivL</span>
+    <span class="c"># Initialize the number of species samples to 0.</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_species</span><span class="p">):</span>
+        <span class="n">sp_data</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+        <span class="n">sp_samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c"># Read in the data.</span>
+    <span class="n">leng</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">leng</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span> <span class="o">=</span> <span class="n">get_data_from_cf_line</span><span class="p">(</span><span class="n">cfStr</span><span class="p">)</span>
+        <span class="c"># Update sp_data and the number of samples.</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_species</span><span class="p">):</span>
+            <span class="n">sp_data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">n_samples</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">sp_samples</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                <span class="n">sp_samples</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_samples</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cfStr</span><span class="o">.</span><span class="n">read_next_pos</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">break</span>
+
+    <span class="k">if</span> <span class="n">vb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Count file has been read.&quot;</span><span class="p">)</span>
+
+    <span class="c"># Sites where some species have coverage 0 are removed</span>
+    <span class="n">to_remove</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">leng</span><span class="p">):</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_species</span><span class="p">):</span>
+            <span class="n">summ</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+                <span class="n">summ</span> <span class="o">+=</span> <span class="n">sp_data</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="n">d</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">summ</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="n">total</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">to_remove</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">summ</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">to_remove</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_species</span><span class="p">):</span>
+            <span class="n">sp_data</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">to_remove</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-</span><span class="n">summ</span><span class="p">)</span>
+        <span class="n">summ</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c"># Debugging point to improve memory.</span>
+    <span class="c"># pdb.set_trace()</span>
+
+    <span class="c"># Now, downsample if necessary</span>
+    <span class="n">sp_samples2</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_species</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">sp_samples</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">N</span><span class="p">:</span>
+            <span class="n">sp_samples2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">vb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">):</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&quot;Downsampling &quot;</span><span class="p">,</span> <span class="n">cfStr</span><span class="o">.</span><span class="n">indivL</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s">&quot;.&quot;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">vb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">):</span>
+                <span class="k">print</span><span class="p">(</span><span class="n">cfStr</span><span class="o">.</span><span class="n">indivL</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s">&quot;does not need to be downsampled.&quot;</span><span class="p">)</span>
+            <span class="n">sp_samples2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp_samples</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="n">advantages</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">covered</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sp_data</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+        <span class="n">summs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">newlims</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">cov</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_species</span><span class="p">):</span>
+            <span class="n">summs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">newlims</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp_samples2</span><span class="p">[</span><span class="n">s</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+                <span class="n">summs</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">+=</span> <span class="n">sp_data</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="n">d</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">summs</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">sp_samples2</span><span class="p">[</span><span class="n">s</span><span class="p">]:</span>
+                <span class="n">newlims</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="n">summs</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
+                <span class="n">cov</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">limkey</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">ne</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">newlims</span><span class="p">)):</span>
+            <span class="n">limkey</span> <span class="o">+=</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">newlims</span><span class="p">[</span><span class="n">ne</span><span class="p">])</span><span class="o">+</span><span class="s">&quot;:&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cov</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">covered</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">limkey</span> <span class="ow">in</span> <span class="n">advantages</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">advantages</span><span class="p">[</span><span class="n">limkey</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">advantages</span><span class="p">[</span><span class="n">limkey</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">ke</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">advantages</span><span class="p">)</span>
+    <span class="k">while</span> <span class="nb">float</span><span class="p">(</span><span class="n">covered</span><span class="p">)</span><span class="o">/</span><span class="n">leng</span> <span class="o">&lt;</span> <span class="n">thresh</span><span class="p">:</span>
+        <span class="n">increments</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">advs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_species</span><span class="p">):</span>
+            <span class="n">advs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">increments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">while</span> <span class="n">advs</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ke</span><span class="p">)):</span>
+                    <span class="n">kl</span> <span class="o">=</span> <span class="n">ke</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;:&quot;</span><span class="p">)</span>
+                    <span class="n">valid</span> <span class="o">=</span> <span class="mi">1</span>
+                    <span class="k">for</span> <span class="n">s2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_species</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">s2</span> <span class="o">!=</span> <span class="n">s</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">kl</span><span class="p">[</span><span class="n">s2</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">sp_samples2</span><span class="p">[</span><span class="n">s2</span><span class="p">]:</span>
+                            <span class="n">valid</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="k">if</span> <span class="n">valid</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">kl</span><span class="p">[</span><span class="n">s</span><span class="p">])</span> <span class="o">&gt;=</span> \
+                       <span class="n">sp_samples2</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">-</span> <span class="n">increments</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> \
+                       <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">kl</span><span class="p">[</span><span class="n">s</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">sp_samples2</span><span class="p">[</span><span class="n">s</span><span class="p">]:</span>
+                        <span class="n">advs</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">+=</span> <span class="n">advantages</span><span class="p">[</span><span class="n">ke</span><span class="p">[</span><span class="n">k</span><span class="p">]]</span>
+                <span class="k">if</span> <span class="n">advs</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">increments</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">sp_samples2</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">increments</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">break</span>
+        <span class="n">max_ad</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">max_ind</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_species</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">advs</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">max_ad</span><span class="p">:</span>
+                <span class="n">max_ad</span> <span class="o">=</span> <span class="n">advs</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
+                <span class="n">max_ind</span> <span class="o">=</span> <span class="n">s</span>
+        <span class="k">if</span> <span class="n">max_ad</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Downsampling with threshold &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">thresh</span><span class="p">)</span> <span class="o">+</span>
+                  <span class="s">&quot; reached an empasse. &quot;</span>
+                  <span class="s">&quot;Please lower the threshold using option &quot;</span>
+                  <span class="s">&quot;--DS, change downsampling strategy, &quot;</span>
+                  <span class="s">&quot;or ask for assistance!</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+            <span class="nb">exit</span><span class="p">()</span>
+        <span class="n">sp_samples2</span><span class="p">[</span><span class="n">max_ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">sp_samples2</span><span class="p">[</span><span class="n">max_ind</span><span class="p">]</span> <span class="o">-</span> <span class="n">increments</span><span class="p">[</span><span class="n">max_ind</span><span class="p">]</span>
+        <span class="n">covered</span> <span class="o">+=</span> <span class="n">max_ad</span>
+    <span class="n">sp_samples</span> <span class="o">=</span> <span class="n">sp_samples2</span>
+
+    <span class="c"># Sites where some species have not sufficient coverage are removed</span>
+    <span class="n">to_remove</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sp_data</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_species</span><span class="p">):</span>
+            <span class="n">summ</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+                <span class="n">summ</span> <span class="o">+=</span> <span class="n">sp_data</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="n">d</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">summ</span> <span class="o">&lt;</span> <span class="n">sp_samples</span><span class="p">[</span><span class="n">s</span><span class="p">]:</span>
+                <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="n">total</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">to_remove</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">summ</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">to_remove</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_species</span><span class="p">):</span>
+            <span class="n">sp_data</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">to_remove</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-</span><span class="n">summ</span><span class="p">)</span>
+        <span class="n">summ</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">leng</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sp_data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Number of species: &quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">n_species</span><span class="p">),</span> <span class="s">&quot;.&quot;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Sample sizes effectively used: &quot;</span><span class="p">,</span> <span class="n">sp_samples</span><span class="p">,</span> <span class="s">&quot;.&quot;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">vb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Names of species: &quot;</span><span class="p">,</span> <span class="n">cfStr</span><span class="o">.</span><span class="n">indivL</span><span class="p">,</span> <span class="s">&quot;.&quot;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">all_one</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_species</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">sp_samples</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">all_one</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="n">sp_samples</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">N</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n\n\n</span><span class="s">Warning: the number of samples &quot;</span> <span class="o">+</span>
+                  <span class="nb">str</span><span class="p">(</span><span class="n">sp_samples</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">+</span>
+                  <span class="s">&quot; is bigger than the virtual population size &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">N</span><span class="p">)</span> <span class="o">+</span>
+                  <span class="s">&quot;. The considered species will be downsampled to &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">N</span><span class="p">)</span> <span class="o">+</span>
+                  <span class="s">&quot;. This is usually not a problem, &quot;</span>
+                  <span class="s">&quot;but if you want to avoid this, &quot;</span>
+                  <span class="s">&quot;if possible please increase the virtual population size.&quot;</span>
+                  <span class="s">&quot;</span><span class="se">\n\n\n</span><span class="s">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">all_one</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="c"># Check if theta was given on command line and set it</span>
+        <span class="c"># accordingly.</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">theta</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="n">usr_def</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">input</span><span class="p">(</span><span class="s">&quot;&quot;&quot;</span><span class="se">\n\n\n</span><span class="s">All species have a sample size of</span>
+<span class="s">            1, therefore there is no information at the population level,</span>
+<span class="s">            which is required by PoMo. So, please enter a guessed or otherwise</span>
+<span class="s">            estimated value for theta (population diversity):</span><span class="se">\n</span><span class="s">&quot;&quot;&quot;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">usr_def</span> <span class="o">=</span> <span class="n">theta</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">usr_def</span> <span class="o">=</span> <span class="mf">0.01</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">vb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Theta has been set to be &quot;</span><span class="p">,</span> <span class="n">usr_def</span><span class="p">,</span> <span class="s">&quot;.&quot;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">cfStr</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">n_species</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Error: cannot calculate a tree with fewer than 2 species.&quot;</span><span class="p">)</span>
+        <span class="nb">exit</span><span class="p">()</span>
+
+    <span class="c"># default options</span>
+    <span class="c"># TODO Why are they not needed</span>
+    <span class="c"># sampling = 1  # noqa</span>
+    <span class="c"># onlysampling = 1  # noqa</span>
+    <span class="c"># mbin = 0  # noqa</span>
+
+    <span class="c"># Writing the HyPhy batch file for PoMo</span>
+    <span class="n">newsamfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">&quot;PoMo10_root_only_sampling_preliminary_used.bf&quot;</span><span class="p">,</span>
+                      <span class="s">&quot;w&quot;</span><span class="p">)</span>
+    <span class="n">samfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_bf</span> <span class="o">+</span> <span class="s">&quot;PoMo10_root_only_sampling_preliminary.bf&quot;</span><span class="p">)</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+    <span class="k">while</span> <span class="n">line</span> <span class="o">!=</span> <span class="s">&quot;/*Define global parameters*/</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">:</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">samfile</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="n">linelist</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">23</span><span class="p">):</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">samfile</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">muts</span><span class="p">)):</span>
+        <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">muts</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sels</span><span class="p">)):</span>
+        <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">sels</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mutgamma</span><span class="p">)):</span>
+        <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">mutgamma</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">selgamma</span><span class="p">)):</span>
+        <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">selgamma</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="k">while</span> <span class="n">line</span> <span class="o">!=</span> <span class="s">&quot;/*Find Root*/</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">:</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">samfile</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="n">linelist</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">linelist</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">linelist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;fprintf&quot;</span> \
+           <span class="ow">and</span> <span class="n">linelist</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;(stdout,&quot;</span> <span class="ow">and</span> <span class="n">vbHyphy</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;/*&quot;</span><span class="o">+</span><span class="n">line</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;*/</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+    <span class="n">samples_num</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_species</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">sp_samples</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">in</span> <span class="n">samples_num</span><span class="p">):</span>
+            <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">lp</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">probability_matrix</span><span class="p">(</span><span class="n">sp_samples</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+            <span class="n">samples_num</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp_samples</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n\n\n</span><span class="s">&quot;</span><span class="p">)</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+    <span class="k">while</span> <span class="n">line</span> <span class="o">!=</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">samfile</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="n">linelist</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;=&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;</span><span class="se">\t</span><span class="s">Nsamples&quot;</span><span class="p">:</span>
+            <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\t</span><span class="s">Nsamples={{</span><span class="se">\&quot;</span><span class="s">&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_species</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">sp_samples</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">+</span><span class="s">&quot;</span><span class="se">\&quot;</span><span class="s">}{</span><span class="se">\&quot;</span><span class="s">&quot;</span><span class="p">)</span>
+            <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">sp_samples</span><span class="p">[</span><span class="n">n_species</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">+</span><span class="s">&quot;</span><span class="se">\&quot;</span><span class="s">}};</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">linelist</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">linelist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;fprintf&quot;</span> \
+             <span class="ow">and</span> <span class="n">linelist</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;(stdout,&quot;</span> <span class="ow">and</span> <span class="n">vbHyphy</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>  <span class="c"># noqa</span>
+            <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;/*&quot;</span><span class="o">+</span><span class="n">line</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;*/</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+    <span class="n">samfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">newsamfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c"># Writing the HyPhy batch file for PoMo with NNI</span>
+    <span class="n">newsamfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">&quot;PoMo10_NNI_sampling_preliminary_used.bf&quot;</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">)</span>
+    <span class="n">samfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_bf</span> <span class="o">+</span> <span class="s">&quot;PoMo10_NNI_sampling.bf&quot;</span><span class="p">)</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+    <span class="k">while</span> <span class="n">line</span> <span class="o">!=</span> <span class="s">&quot;/*Define global parameters*/</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">:</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">samfile</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="n">linelist</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">23</span><span class="p">):</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">samfile</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">muts</span><span class="p">)):</span>
+        <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">muts</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sels</span><span class="p">)):</span>
+        <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">sels</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mutgamma</span><span class="p">)):</span>
+        <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">mutgamma</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">selgamma</span><span class="p">)):</span>
+        <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">selgamma</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="k">while</span> <span class="n">line</span> <span class="o">!=</span> <span class="s">&quot;/*pre-ML*/</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">:</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">samfile</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="n">linelist</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">linelist</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">linelist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;fprintf&quot;</span> \
+           <span class="ow">and</span> <span class="n">linelist</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;(stdout,&quot;</span> <span class="ow">and</span> <span class="n">vbHyphy</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;/*&quot;</span> <span class="o">+</span> <span class="n">line</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;*/</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+    <span class="n">samples_num</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_species</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">sp_samples</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">in</span> <span class="n">samples_num</span><span class="p">):</span>
+            <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">lp</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">probability_matrix</span><span class="p">(</span><span class="n">sp_samples</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+            <span class="n">samples_num</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp_samples</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n\n\n</span><span class="s">&quot;</span><span class="p">)</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+    <span class="k">while</span> <span class="n">line</span> <span class="o">!=</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">samfile</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="n">linelist</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;=&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;</span><span class="se">\t</span><span class="s">Nsamples&quot;</span><span class="p">:</span>
+            <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\t</span><span class="s">Nsamples={{</span><span class="se">\&quot;</span><span class="s">&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_species</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">sp_samples</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">+</span><span class="s">&quot;</span><span class="se">\&quot;</span><span class="s">}{</span><span class="se">\&quot;</span><span class="s">&quot;</span><span class="p">)</span>
+            <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">sp_samples</span><span class="p">[</span><span class="n">n_species</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">+</span><span class="s">&quot;</span><span class="se">\&quot;</span><span class="s">}};</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">linelist</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">linelist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;fprintf&quot;</span> \
+             <span class="ow">and</span> <span class="n">linelist</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;(stdout,&quot;</span> <span class="ow">and</span> <span class="n">vbHyphy</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>  <span class="c"># noqa</span>
+            <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;/*&quot;</span><span class="o">+</span><span class="n">line</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;*/</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">newsamfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+    <span class="n">samfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">newsamfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c"># creating HyPhy input file</span>
+    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_species</span><span class="p">):</span>
+        <span class="n">PoModatafile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;&gt;s&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="n">PoModatafile_cons</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;&gt;s&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">leng</span><span class="p">):</span>
+            <span class="n">count</span> <span class="o">=</span> <span class="n">sp_data</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="n">m</span><span class="p">]</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">count</span>
+            <span class="n">maxcount</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">i2</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">for</span> <span class="n">j2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="n">j2</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">maxcount</span><span class="p">:</span>
+                    <span class="n">i1</span> <span class="o">=</span> <span class="n">j2</span>
+                    <span class="n">maxcount</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="n">j2</span><span class="p">]</span>
+            <span class="n">refs3</span> <span class="o">=</span> <span class="n">codons</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span>
+            <span class="n">maxcount</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">j2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">j2</span> <span class="o">!=</span> <span class="n">i1</span> <span class="ow">and</span> <span class="n">p</span><span class="p">[</span><span class="n">j2</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">maxcount</span><span class="p">:</span>
+                    <span class="n">i2</span> <span class="o">=</span> <span class="n">j2</span>
+                    <span class="n">maxcount</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="n">j2</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">i2</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">refs</span> <span class="o">=</span> <span class="n">codons</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span>
+                <span class="c"># refs2 = codons[i1]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span><span class="o">+</span><span class="n">p</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">sp_samples</span><span class="p">[</span><span class="n">l</span><span class="p">]:</span>
+                    <span class="n">count1</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span>
+                    <span class="n">count2</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span>
+                    <span class="n">newcount1</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="n">newcount2</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="k">for</span> <span class="n">j5</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sp_samples</span><span class="p">[</span><span class="n">l</span><span class="p">]):</span>
+                        <span class="n">num</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="n">num</span> <span class="o">&lt;</span> <span class="nb">float</span><span class="p">(</span><span class="n">count1</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">count1</span><span class="o">+</span><span class="n">count2</span><span class="p">):</span>
+                            <span class="n">newcount1</span> <span class="o">+=</span> <span class="mi">1</span>
+                            <span class="n">count1</span> <span class="o">=</span> <span class="n">count1</span> <span class="o">-</span> <span class="mi">1</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">newcount2</span> <span class="o">+=</span> <span class="mi">1</span>
+                            <span class="n">count2</span> <span class="o">=</span> <span class="n">count2</span> <span class="o">-</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">newcount1</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span>
+                    <span class="n">newcount2</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">i1</span> <span class="o">&gt;</span> <span class="n">i2</span><span class="p">:</span>
+                    <span class="n">i3</span> <span class="o">=</span> <span class="n">i1</span>
+                    <span class="n">i1</span> <span class="o">=</span> <span class="n">i2</span>
+                    <span class="n">i2</span> <span class="o">=</span> <span class="n">i3</span>
+                    <span class="n">newcount3</span> <span class="o">=</span> <span class="n">newcount1</span>
+                    <span class="n">newcount1</span> <span class="o">=</span> <span class="n">newcount2</span>
+                    <span class="n">newcount2</span> <span class="o">=</span> <span class="n">newcount3</span>
+                <span class="k">if</span> <span class="n">newcount1</span> <span class="o">==</span> <span class="n">sp_samples</span><span class="p">[</span><span class="n">l</span><span class="p">]:</span>
+                    <span class="n">refs</span> <span class="o">=</span> <span class="n">codons</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span>
+                    <span class="c"># refs2 = codons[i1]</span>
+                <span class="k">elif</span> <span class="n">newcount2</span> <span class="o">==</span> <span class="n">sp_samples</span><span class="p">[</span><span class="n">l</span><span class="p">]:</span>
+                    <span class="n">refs</span> <span class="o">=</span> <span class="n">codons</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span>
+                    <span class="c"># refs2 = codons[i2]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">pol</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="k">if</span> <span class="n">i1</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">pol</span> <span class="o">=</span> <span class="mi">3</span>
+                    <span class="k">if</span> <span class="n">i1</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="n">pol</span> <span class="o">=</span> <span class="mi">5</span>
+                    <span class="n">pol</span> <span class="o">+=</span> <span class="p">(</span><span class="n">i2</span><span class="o">-</span><span class="p">(</span><span class="n">i1</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+                    <span class="n">p1</span> <span class="o">=</span> <span class="n">newcount2</span> <span class="o">-</span> <span class="mi">1</span>
+                    <span class="n">pos</span> <span class="o">=</span> <span class="mi">4</span><span class="o">+</span><span class="n">pol</span><span class="o">*</span><span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span><span class="n">p1</span>
+                    <span class="n">refs</span> <span class="o">=</span> <span class="n">codons</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span>
+            <span class="n">PoModatafile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">refs</span><span class="p">)</span>
+            <span class="n">PoModatafile_cons</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">refs3</span><span class="p">)</span>
+        <span class="n">PoModatafile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="n">PoModatafile_cons</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+    <span class="n">PoModatafile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">PoModatafile_cons</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c"># Debugging point if necessary.</span>
+    <span class="c"># pdb.set_trace()</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">n_species</span><span class="p">,</span> <span class="n">sp_names</span><span class="p">,</span> <span class="n">sp_samples</span><span class="p">,</span> <span class="n">all_one</span><span class="p">,</span> <span class="n">usr_def</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="timeStr"><a class="viewcode-back" href="../../main.html#libPoMo.main.timeStr">[docs]</a><span class="k">def</span> <span class="nf">timeStr</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Time in human readable format.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%Y-%m-</span><span class="si">%d</span><span class="s"> %H:%M:%S&quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">gmtime</span><span class="p">())</span></div>
 </pre></div>
 
           </div>
@@ -276,7 +777,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2013, Dominik Schrempf.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

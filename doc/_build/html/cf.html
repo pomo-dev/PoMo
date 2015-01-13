@@ -62,22 +62,31 @@ counts for every position.</p>
 <dl class="docutils">
 <dt>It contains:</dt>
 <dd><ul class="first last simple">
+<li>1 line that specifies the file as counts file and states the
+number of populations as well as the number of sites</li>
 <li>1 headerline with tab separated sequence names</li>
 <li>N lines with counts of A, C, G and T bases at position n</li>
 </ul>
 </dd>
+<dt>It can contain:</dt>
+<dd><ul class="first last simple">
+<li>any number of lines that start with a #, these are treated as
+comments; There are no more comments allowed after the headerline.</li>
+</ul>
+</dd>
 </dl>
-<div class="highlight-python"><div class="highlight"><pre>CHROM          Pos     Sheep           BlackSheep      RedSheep        Wolf            RedWolf
-chrA           s       0,0,1,0         0,0,1,0         0,0,1,0         0,0,5,0         0,0,0,1
-chrA           s + 1   0,0,0,1         0,0,0,1         0,0,0,1         0,0,0,5         0,0,0,1
+<div class="highlight-python"><div class="highlight"><pre>COUNTSFILE     NPOP 5          NSITES N
+CHROM          POS     Sheep           BlackSheep      RedSheep        Wolf            RedWolf
+1      s       0,0,1,0         0,0,1,0         0,0,1,0         0,0,5,0         0,0,0,1
+1      s + 1   0,0,0,1         0,0,0,1         0,0,0,1         0,0,0,5         0,0,0,1
 .
 .
 .
-chrF           8373    0,0,0,1         1,0,0,0         0,1,0,0         0,1,4,0         0,0,1,0
+9      8373    0,0,0,1         1,0,0,0         0,1,0,0         0,1,4,0         0,0,1,0
 .
 .
 .
-chrE           end     0,0,0,1         0,1,0,0         0,1,0,0         0,5,0,0         0,0,1,0
+Y      end     0,0,0,1         0,1,0,0         0,1,0,0         0,5,0,0         0,0,1,0
 </pre></div>
 </div>
 </div>
@@ -113,25 +122,80 @@ tabix is installed.</p>
 <dl class="docutils">
 <dt>Classes:</dt>
 <dd><ul class="first last simple">
+<li><a class="reference internal" href="#libPoMo.cf.CFStream" title="libPoMo.cf.CFStream"><tt class="xref py py-class docutils literal"><span class="pre">CFStream</span></tt></a></li>
 <li><a class="reference internal" href="#libPoMo.cf.CFWriter" title="libPoMo.cf.CFWriter"><tt class="xref py py-class docutils literal"><span class="pre">CFWriter</span></tt></a>, write a counts format file</li>
 </ul>
 </dd>
 <dt>Exception Classes:</dt>
 <dd><ul class="first last simple">
+<li><a class="reference internal" href="#libPoMo.cf.NotACountsFormatFileError" title="libPoMo.cf.NotACountsFormatFileError"><tt class="xref py py-class docutils literal"><span class="pre">NotACountsFormatFileError</span></tt></a></li>
 <li><a class="reference internal" href="#libPoMo.cf.CountsFormatWriterError" title="libPoMo.cf.CountsFormatWriterError"><tt class="xref py py-class docutils literal"><span class="pre">CountsFormatWriterError</span></tt></a></li>
+<li><a class="reference internal" href="#libPoMo.cf.NoSynBase" title="libPoMo.cf.NoSynBase"><tt class="xref py py-class docutils literal"><span class="pre">NoSynBase</span></tt></a></li>
 </ul>
 </dd>
 <dt>Functions:</dt>
 <dd><ul class="first last simple">
+<li><a class="reference internal" href="#libPoMo.cf.interpret_cf_line" title="libPoMo.cf.interpret_cf_line"><tt class="xref py py-func docutils literal"><span class="pre">interpret_cf_line()</span></tt></a>, get data of a line in counts format</li>
+<li><a class="reference internal" href="#libPoMo.cf.faseq_append_base_of_cfS" title="libPoMo.cf.faseq_append_base_of_cfS"><tt class="xref py py-func docutils literal"><span class="pre">faseq_append_base_of_cfS()</span></tt></a>, append CFStream line to FaSeq</li>
+<li><a class="reference internal" href="#libPoMo.cf.cf_to_fasta" title="libPoMo.cf.cf_to_fasta"><tt class="xref py py-func docutils literal"><span class="pre">cf_to_fasta()</span></tt></a>, convert counts file to fasta file</li>
 <li><a class="reference internal" href="#libPoMo.cf.write_cf_from_MFaStream" title="libPoMo.cf.write_cf_from_MFaStream"><tt class="xref py py-func docutils literal"><span class="pre">write_cf_from_MFaStream()</span></tt></a>, write counts file using the
 given MFaStream and CFWriter</li>
+<li><a class="reference internal" href="#libPoMo.cf.fasta_to_cf" title="libPoMo.cf.fasta_to_cf"><tt class="xref py py-func docutils literal"><span class="pre">fasta_to_cf()</span></tt></a>, convert fasta to counts format</li>
 </ul>
 </dd>
 </dl>
 <hr class="docutils" />
 <dl class="class">
+<dt id="libPoMo.cf.CFStream">
+<em class="property">class </em><tt class="descclassname">libPoMo.cf.</tt><tt class="descname">CFStream</tt><big>(</big><em>CFFileName</em>, <em>name=None</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFStream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFStream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Store data of a CF file line per line.</p>
+<p>Open a (gzipped) CF file. The file can be read line per line with
+<a class="reference internal" href="#libPoMo.cf.CFStream.read_next_pos" title="libPoMo.cf.CFStream.read_next_pos"><tt class="xref py py-func docutils literal"><span class="pre">read_next_pos()</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>CFFileName</strong> (<em>str</em>) &#8211; Counts format file name to be read.</li>
+<li><strong>name</strong> (<em>str</em>) &#8211; Optional; stream name, defaults to stripped
+filename.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) &#8211; Stream name.</li>
+<li><strong>chrom</strong> (<em>str</em>) &#8211; Chromosome name.</li>
+<li><strong>pos</strong> (<em>str</em>) &#8211; Positional string.</li>
+<li><strong>fo</strong> (<em>fo</em>) &#8211; Fileobject.</li>
+<li><strong>indivL</strong> (<em>[str]</em>) &#8211; List of names of individuals (populations).</li>
+<li><strong>countsL</strong> (<em>[[int]]</em>) &#8211; Numpy array of nucleotide counts.</li>
+<li><strong>nIndiv</strong> (<em>int</em>) &#8211; Number of individuals (populations).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="libPoMo.cf.CFStream.read_next_pos">
+<tt class="descname">read_next_pos</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFStream.read_next_pos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFStream.read_next_pos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get next base.</p>
+<p>Return position of next base.  Raises <cite>ValueError</cite> if there is
+no next base.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
 <dt id="libPoMo.cf.CFWriter">
-<em class="property">class </em><tt class="descclassname">libPoMo.cf.</tt><tt class="descname">CFWriter</tt><big>(</big><em>vcfFileNameL</em>, <em>outFileName</em>, <em>verb=None</em>, <em>splitChar='-'</em>, <em>mergeL=None</em>, <em>nameL=None</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">libPoMo.cf.</tt><tt class="descname">CFWriter</tt><big>(</big><em>vcfFileNameL</em>, <em>outFileName</em>, <em>splitChar='-'</em>, <em>mergeL=None</em>, <em>nameL=None</em>, <em>oneIndividual=False</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write a counts format file.</p>
 <p>Save information that is needed to write a CF file and use this
 information to write a CF file.  Initialize with a list of vcf
@@ -166,7 +230,9 @@ to a single population (cf. mergeL and nameL).</p>
 <p>The ploidity has to be set manually if it differs from 2.</p>
 <p>Additional filters can be set before the counts file is written
 (e.g. only write synonymous sites).</p>
-<p>Remember to close the attached file objectsL with <a class="reference internal" href="#libPoMo.cf.CFWriter.close" title="libPoMo.cf.CFWriter.close"><tt class="xref py py-func docutils literal"><span class="pre">close()</span></tt></a>.</p>
+<p>Important: Remember to close the attached file objectsL with
+<a class="reference internal" href="#libPoMo.cf.CFWriter.close" title="libPoMo.cf.CFWriter.close"><tt class="xref py py-func docutils literal"><span class="pre">close()</span></tt></a>.  If the CFWriter is not closed, the counts file
+is not usable because the first line is missing!</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -184,6 +250,8 @@ respective counts are summed up.  If <em>self.nL[i]</em> is given, the
 name of the summed sequence will be <em>self.nL[i]</em>.  If not, the
 name of the first individual in <em>vcfL[i]</em> will be used.</li>
 <li><strong>nameL</strong> (<em>[str]</em>) &#8211; Optional; a list of names. Cf. <em>self.mL</em>.</li>
+<li><strong>oneIndividual</strong> (<em>Boolean</em>) &#8211; Optional; pick one individual out
+of each population.</li>
 </ul>
 </td>
 </tr>
@@ -224,7 +292,7 @@ is the list of individuals found in <em>self.vcfL[i]</em>.</li>
 <li><strong>nIndL</strong> (<em>[int]</em>) &#8211; List with number of individuals in
 <em>self.vcfL[i]</em>.</li>
 <li><strong>assM</strong> &#8211; Assignment matrix that connects the individuals from
-the vcf files to the correct <em>self.cd</em> index.  Cf. <em>self.cD</em></li>
+the vcf files to the correct <em>self.cD</em> index.  Cf. <em>self.cD</em></li>
 <li><strong>nPop</strong> (<em>int</em>) &#8211; Number of different populations in count format
 output file (e.g. number of populations).  Filled by
 <em>self.__init_assM()</em> during initialization.</li>
@@ -235,6 +303,7 @@ be set manually to the correct value for non-diploids!</li>
 <li><strong>splitCh</strong> (<em>char</em>) &#8211; Character that is used to split the
 individual names.</li>
 <li><strong>onlySynonymous</strong> (<em>Boolean</em>) &#8211; Only write 4-fold degenerate sites.</li>
+<li><strong>baseCounter</strong> (<em>int</em>) &#8211; Counts the total number of bases.</li>
 <li><strong>__force</strong> (<em>Boolean</em>) &#8211; If set to true, skip name checks.</li>
 </ul>
 </td>
@@ -244,7 +313,9 @@ individual names.</li>
 <dl class="method">
 <dt id="libPoMo.cf.CFWriter.close">
 <tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter.close" title="Permalink to this definition">¶</a></dt>
-<dd><p>Close fileobjects.</p>
+<dd><p>Write file type specifier, number of populations and number of
+sites to the beginning of the output file.  Close
+fileobjects.</p>
 </dd></dl>
 
 <dl class="method">
@@ -301,6 +372,12 @@ with this function.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="libPoMo.cf.CFWriter.write_Ln">
+<tt class="descname">write_Ln</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter.write_Ln"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter.write_Ln" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a line in counts format to <em>self.outFN</em>.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="libPoMo.cf.CFWriter.write_Rn">
 <tt class="descname">write_Rn</tt><big>(</big><em>rg</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#CFWriter.write_Rn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.CFWriter.write_Rn" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write lines in counts format to <em>self.outFN</em>.</p>
@@ -328,6 +405,112 @@ covered.</td>
 <dt id="libPoMo.cf.NoSynBase">
 <em class="property">exception </em><tt class="descclassname">libPoMo.cf.</tt><tt class="descname">NoSynBase</tt><a class="reference internal" href="_modules/libPoMo/cf.html#NoSynBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.NoSynBase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Not a 4-fold degenerate site.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="libPoMo.cf.NotACountsFormatFileError">
+<em class="property">exception </em><tt class="descclassname">libPoMo.cf.</tt><tt class="descname">NotACountsFormatFileError</tt><a class="reference internal" href="_modules/libPoMo/cf.html#NotACountsFormatFileError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.NotACountsFormatFileError" title="Permalink to this definition">¶</a></dt>
+<dd><p>CF file not valid.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.cf.cf_to_fasta">
+<tt class="descclassname">libPoMo.cf.</tt><tt class="descname">cf_to_fasta</tt><big>(</big><em>cfS</em>, <em>outname</em>, <em>consensus=False</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#cf_to_fasta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.cf_to_fasta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a <a class="reference internal" href="#libPoMo.cf.CFStream" title="libPoMo.cf.CFStream"><tt class="xref py py-class docutils literal"><span class="pre">CFStream</span></tt></a> to a fasta file.</p>
+<p>Extracts the sequences of a counts file that has been initialized
+with an <a class="reference internal" href="#libPoMo.cf.CFStream" title="libPoMo.cf.CFStream"><tt class="xref py py-class docutils literal"><span class="pre">CFStream</span></tt></a>.  The conversion starts at the line
+pointed to by the <a class="reference internal" href="#libPoMo.cf.CFStream" title="libPoMo.cf.CFStream"><tt class="xref py py-class docutils literal"><span class="pre">CFStream</span></tt></a>.</p>
+<p>If more than one base is present at a single site, one base is
+sampled out of all present ones according to its abundance.</p>
+<p>If consensus is set to True, the consensus sequence is extracted
+(e.g., no sampling but the bases with highest counts for each
+individual or population are chosen).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>cfS</strong> (<em>CFStream</em>) &#8211; Counts format file stream.</li>
+<li><strong>outname</strong> (<em>str</em>) &#8211; Fasta output file name.</li>
+<li><strong>consensus</strong> (<em>Boolean</em>) &#8211; Optional; Extract consensus sequence?
+Defaults to False.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.cf.faseq_append_base_of_cfS">
+<tt class="descclassname">libPoMo.cf.</tt><tt class="descname">faseq_append_base_of_cfS</tt><big>(</big><em>faS</em>, <em>cfS</em>, <em>consensus=False</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#faseq_append_base_of_cfS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.faseq_append_base_of_cfS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Append a <a class="reference internal" href="#libPoMo.cf.CFStream" title="libPoMo.cf.CFStream"><tt class="xref py py-class docutils literal"><span class="pre">CFStream</span></tt></a> line to an <a class="reference internal" href="fasta.html#libPoMo.fasta.FaSeq" title="libPoMo.fasta.FaSeq"><tt class="xref py py-class docutils literal"><span class="pre">libPoMo.fasta.FaSeq</span></tt></a>.</p>
+<p>Randomly chooses bases for each position according to their
+abundance.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>faS</strong> (<em>FaSeq</em>) &#8211; Fasta sequence to append base to.</li>
+<li><strong>cfS</strong> (<em>CFStream</em>) &#8211; CFStream containing the base.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.cf.fasta_to_cf">
+<tt class="descclassname">libPoMo.cf.</tt><tt class="descname">fasta_to_cf</tt><big>(</big><em>fastaFN</em>, <em>countsFN</em>, <em>splitChar='-'</em>, <em>chromName='NA'</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#fasta_to_cf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.fasta_to_cf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert fasta to counts format.</p>
+<p>The (aligned) sequences in the fasta file are read in and the data
+is written to a counts format file.</p>
+<p>Sequence names are stripped at the first dash.  If the strupped
+sequence name coincide, individuals are put into the same
+population.</p>
+<p>E.g., homo_sapiens-XXX and homo_sapiens-YYY will be in the same
+population homo_sapiens.</p>
+<p>Take care with large files, this uses a lot of memory.</p>
+<p>The input as well as the output files can additionally be gzipped
+(indicated by a .gz file ending).</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.cf.interpret_cf_line">
+<tt class="descclassname">libPoMo.cf.</tt><tt class="descname">interpret_cf_line</tt><big>(</big><em>ln</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#interpret_cf_line"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.interpret_cf_line" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interpret a counts file line.</p>
+<p>Return type is a tuple containing the chromosome name, the
+position and a list with nucleotide counts (cf. counts file).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ln</strong> (<em>str</em>) &#8211; Line in counts format.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">(str, int, [[int]])</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.cf.weighted_choice">
+<tt class="descclassname">libPoMo.cf.</tt><tt class="descname">weighted_choice</tt><big>(</big><em>lst</em><big>)</big><a class="reference internal" href="_modules/libPoMo/cf.html#weighted_choice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.cf.weighted_choice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose element in integer list according to its value.</p>
+<p>E.g., in [1,10], the second element will be chosen 10 times as
+often as the first one.  Returns the index of the chosen element.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Variables:</th><td class="field-body"><strong>lst</strong> (<em>[int]</em>) &#8211; List of integers.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -416,7 +599,7 @@ the VCF files.</li>
     </div>
     <div class="footer">
         &copy; Copyright 2013, Dominik Schrempf.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

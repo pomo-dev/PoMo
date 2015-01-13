@@ -79,6 +79,43 @@ but not much effieciency is needed with small samples).</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="libPoMo.main.get_data_from_cf_line">
+<tt class="descclassname">libPoMo.main.</tt><tt class="descname">get_data_from_cf_line</tt><big>(</big><em>cfStr</em><big>)</big><a class="reference internal" href="_modules/libPoMo/main.html#get_data_from_cf_line"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.main.get_data_from_cf_line" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read in the data of a single counts format line.</p>
+<p>The return type is a list with the number of samples and a two
+dimensional array of the form data[species][nucleotide], where
+species is the index of the species and nucleotide is the index of
+the nucleotide (0,1,2 or 3 for a,c,g and t, respectively).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>CFStream</strong> (<em>cfStr</em>) &#8211; The CFStream pointing to the line to be
+read in.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">([int] n_samples, [[int]] data)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.main.get_species_from_cf_headerline">
+<tt class="descclassname">libPoMo.main.</tt><tt class="descname">get_species_from_cf_headerline</tt><big>(</big><em>line</em><big>)</big><a class="reference internal" href="_modules/libPoMo/main.html#get_species_from_cf_headerline"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.main.get_species_from_cf_headerline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the number of species and the names fom a counts format header line.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>line</strong> (<em>str</em>) &#8211; The header line.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">(int n_species, [str] sp_names)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="libPoMo.main.is_number">
 <tt class="descclassname">libPoMo.main.</tt><tt class="descname">is_number</tt><big>(</big><em>s</em><big>)</big><a class="reference internal" href="_modules/libPoMo/main.html#is_number"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.main.is_number" title="Permalink to this definition">¶</a></dt>
 <dd><p>Determine if value is an integer.</p>
@@ -97,6 +134,42 @@ but not much effieciency is needed with small samples).</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="libPoMo.main.read_data_write_HyPhy_input">
+<tt class="descclassname">libPoMo.main.</tt><tt class="descname">read_data_write_HyPhy_input</tt><big>(</big><em>fn</em>, <em>N</em>, <em>thresh</em>, <em>path_bf</em>, <em>muts</em>, <em>mutgamma</em>, <em>sels</em>, <em>selgamma</em>, <em>PoModatafile</em>, <em>PoModatafile_cons</em>, <em>theta=None</em>, <em>vb=None</em><big>)</big><a class="reference internal" href="_modules/libPoMo/main.html#read_data_write_HyPhy_input"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.main.read_data_write_HyPhy_input" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read the count data and write the HyPhy input file.</p>
+<p>The provided filename has to point to a data file in counts format
+(cf. <a class="reference internal" href="cf.html"><em>cf</em></a>).  The data will be downsampled if necessary
+and the HyPhy batch and input files will be written.  The number
+of species, the species names, the number of species samples and
+the theta value (usr_def) will be returned in a tuple.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fn</strong> (<em>str</em>) &#8211; Counts format file name.</li>
+<li><strong>N</strong> (<em>int</em>) &#8211; Virtual population size.</li>
+<li><strong>thresh</strong> (<em>float</em>) &#8211; Trheshold of data discard for downsampling.</li>
+<li><strong>path_bf</strong> (<em>str</em>) &#8211; Path to the HyPhy batch files</li>
+<li><strong>muts</strong> (<em>str</em>) &#8211; Mutation model (<a class="reference internal" href="#libPoMo.main.mutModel" title="libPoMo.main.mutModel"><tt class="xref py py-func docutils literal"><span class="pre">mutModel()</span></tt></a>).</li>
+<li><strong>mutgamma</strong> (<em>str</em>) &#8211; Gamma of the mutation model (<a class="reference internal" href="#libPoMo.main.setGM" title="libPoMo.main.setGM"><tt class="xref py py-func docutils literal"><span class="pre">setGM()</span></tt></a>).</li>
+<li><strong>sels</strong> (<em>str</em>) &#8211; Selection model (<a class="reference internal" href="#libPoMo.main.selModel" title="libPoMo.main.selModel"><tt class="xref py py-func docutils literal"><span class="pre">selModel()</span></tt></a>).</li>
+<li><strong>selgamma</strong> (<em>str</em>) &#8211; Gamma of selection model (<a class="reference internal" href="#libPoMo.main.setGS" title="libPoMo.main.setGS"><tt class="xref py py-func docutils literal"><span class="pre">setGS()</span></tt></a>).</li>
+<li><strong>PoModatafile</strong> (<em>str</em>) &#8211; Path to HyPhy input file.</li>
+<li><strong>PoModatafile_cons</strong> (<em>str</em>) &#8211; Path to HyPhy input file.</li>
+<li><strong>vb</strong> (<em>Boolean</em>) &#8211; Verbosity.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(int n_species, [str] sp_names, [str] sp_samples, Boolean all_one,
+float usr_def)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="libPoMo.main.selModel">
 <tt class="descclassname">libPoMo.main.</tt><tt class="descname">selModel</tt><big>(</big><em>sm</em><big>)</big><a class="reference internal" href="_modules/libPoMo/main.html#selModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.main.selModel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Selection model <strong>type</strong> for argparse.</p>
@@ -112,6 +185,12 @@ but not much effieciency is needed with small samples).</p>
 <dt id="libPoMo.main.setGS">
 <tt class="descclassname">libPoMo.main.</tt><tt class="descname">setGS</tt><big>(</big><em>gs</em><big>)</big><a class="reference internal" href="_modules/libPoMo/main.html#setGS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.main.setGS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set fixation bias, if <cite>gs</cite> is given.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="libPoMo.main.timeStr">
+<tt class="descclassname">libPoMo.main.</tt><tt class="descname">timeStr</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/main.html#timeStr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.main.timeStr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Time in human readable format.</p>
 </dd></dl>
 
 </div>
@@ -171,7 +250,7 @@ but not much effieciency is needed with small samples).</p>
     </div>
     <div class="footer">
         &copy; Copyright 2013, Dominik Schrempf.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

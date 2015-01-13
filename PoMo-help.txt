@@ -1,5 +1,5 @@
-usage: PoMo [-h] [-m {0,1}] [-u MM] [-s SM] [-g GM] [-f GS] [-d DS_RATIO] [-v]
-            [--version]
+usage: PoMo [-h] [-m {0,1}] [-u MM] [-s SM] [-g GM] [-f GS] [-d DS_RATIO]
+            [-t THETA] [-v] [--version]
             hyphy_bin file
 
 PoMo10 script version 1.0.2
@@ -7,14 +7,14 @@ PoMo10 script version 1.0.2
 positional arguments:
   hyphy_bin             Path of the HYPHY binary used to maximize the
                         likelihood.
-  file                  Name of the fasta file containing the alignment. Each
-                        individual's name must be species_n where "species" is
-                        the name of its species, without underscores, and "n"
-                        is a number identifying the individual among the other
+  file                  Name of the counts or fasta file containing the
+                        alignment. Each individual's name must be "species-n"
+                        where "species" is the name of its species, and "n" is
+                        a number identifying the individual among the other
                         samples of the same population/species (it actually
                         does not matter which number is given to which
-                        individual). As now, no gaps or Ns are allowed, which
-                        means, you have to remove columns where one of the
+                        individual). No gaps or Ns are allowed, which means,
+                        you have to remove columns where one of the
                         individuals has missing characters or unknowns. It
                         does not matter from which individual each base comes,
                         so you can sub-sample and randomly assign to
@@ -62,5 +62,10 @@ optional arguments:
                         sites above the specified threshold. By default,
                         sample sizes are decreased until at least 2 thirds of
                         the sites are included (`-d 0.66`).
-  -v, --verbose         turn on verbosity
+  -t THETA, --theta THETA
+                        Manyally set population diversity theta. This value
+                        can only be set, if all species have a sample size of
+                        1. If no value is specified, PoMo will ask the user
+                        for theta on the command line if necessary.
+  -v, --verbose         turn on verbosity (-v or -vv)
   --version             show program's version number and exit

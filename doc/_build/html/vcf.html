@@ -82,6 +82,9 @@
 string</li>
 <li><a class="reference internal" href="#libPoMo.vcf.get_indiv_from_field_header" title="libPoMo.vcf.get_indiv_from_field_header"><tt class="xref py py-func docutils literal"><span class="pre">get_indiv_from_field_header()</span></tt></a>, extract list of individuals
 from header</li>
+<li><a class="reference internal" href="#libPoMo.vcf.init_seq" title="libPoMo.vcf.init_seq"><tt class="xref py py-func docutils literal"><span class="pre">init_seq()</span></tt></a>, open VCF file and initialize <cite>VCFStream</cite></li>
+<li><a class="reference internal" href="#libPoMo.vcf.open_seq" title="libPoMo.vcf.open_seq"><tt class="xref py py-func docutils literal"><span class="pre">open_seq()</span></tt></a>, open VCF file and save it to a <cite>VCFSeq</cite></li>
+<li><a class="reference internal" href="#libPoMo.vcf.get_header_line_string" title="libPoMo.vcf.get_header_line_string"><tt class="xref py py-func docutils literal"><span class="pre">get_header_line_string()</span></tt></a>, print vcf header line</li>
 </ul>
 </dd>
 </dl>
@@ -134,6 +137,34 @@ sequenced individuals. Can be set with
 <dt id="libPoMo.vcf.NucBase.get_alt_base_list">
 <tt class="descname">get_alt_base_list</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#NucBase.get_alt_base_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.NucBase.get_alt_base_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return alternative bases as a list.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="libPoMo.vcf.NucBase.get_base_ind">
+<tt class="descname">get_base_ind</tt><big>(</big><em>iI</em>, <em>iC</em><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#NucBase.get_base_ind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.NucBase.get_base_ind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the base of a specific individual.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>indiv</strong> (<em>int</em>) &#8211; 0-based index of individual.</li>
+<li><strong>chrom</strong> (<em>int</em>) &#8211; 0-based index of chromosome (for n-ploid
+individuals).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">character with nucleotide base.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="libPoMo.vcf.NucBase.get_info">
+<tt class="descname">get_info</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#NucBase.get_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.NucBase.get_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return nucleotide base information string.</p>
 </dd></dl>
 
 <dl class="method">
@@ -336,6 +367,12 @@ without having to read the whole file at one.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="libPoMo.vcf.get_header_line_string">
+<tt class="descclassname">libPoMo.vcf.</tt><tt class="descname">get_header_line_string</tt><big>(</big><em>indiv</em><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#get_header_line_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.get_header_line_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a standard VCF File header string with individuals <em>indiv</em>.</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="libPoMo.vcf.get_indiv_from_field_header">
 <tt class="descclassname">libPoMo.vcf.</tt><tt class="descname">get_indiv_from_field_header</tt><big>(</big><em>ln</em><big>)</big><a class="reference internal" href="_modules/libPoMo/vcf.html#get_indiv_from_field_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#libPoMo.vcf.get_indiv_from_field_header" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return species from a fixed field header line <em>ln</em>.</p>
@@ -491,7 +528,7 @@ speciesData will be read.</p>
     </div>
     <div class="footer">
         &copy; Copyright 2013, Dominik Schrempf.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

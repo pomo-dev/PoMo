@@ -434,7 +434,7 @@
 <span class="sd">      than `maxGapLength` (defaults to 30) bases.</span>
 <span class="sd">    :ivar Boolean check_nonsense_codon: Check if there is no</span>
 <span class="sd">      premature stop codon).</span>
-<span class="sd">    :ivar Boolean check_gene_length: Check that the gene is</span>
+<span class="sd">    :ivar Boolean check_exon_length: Check that the exon is</span>
 <span class="sd">      longer than `minExonLen` (defaults to 21).</span>
 <span class="sd">    :ivar Boolean check_exon_numbers: Check if exon number match</span>
 <span class="sd">      for all sequences in the alignment.</span>
@@ -452,7 +452,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">check_for_long_gaps</span> <span class="o">=</span> <span class="bp">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">maxGapLength</span> <span class="o">=</span> <span class="mi">30</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">check_nonsense_codon</span> <span class="o">=</span> <span class="bp">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">check_gene_length</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_exon_length</span> <span class="o">=</span> <span class="bp">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">minExonLen</span> <span class="o">=</span> <span class="mi">21</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">check_exon_numbers</span> <span class="o">=</span> <span class="bp">True</span>
 
@@ -574,7 +574,7 @@
                     <span class="k">return</span> <span class="bp">False</span>
         <span class="k">return</span> <span class="bp">True</span>
 
-    <span class="k">def</span> <span class="nf">check_gene_length</span><span class="p">():</span>
+    <span class="k">def</span> <span class="nf">check_exon_length</span><span class="p">():</span>
         <span class="n">dataStr</span> <span class="o">=</span> <span class="n">mfaStr</span><span class="o">.</span><span class="n">seqL</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataStr</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">fp</span><span class="o">.</span><span class="n">minExonLen</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">verb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
@@ -617,8 +617,8 @@
     <span class="k">if</span> <span class="n">fp</span><span class="o">.</span><span class="n">check_nonsense_codon</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">check_nonsense_codon</span><span class="p">():</span>
             <span class="k">return</span> <span class="bp">False</span>
-    <span class="k">if</span> <span class="n">fp</span><span class="o">.</span><span class="n">check_gene_length</span><span class="p">:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_gene_length</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">fp</span><span class="o">.</span><span class="n">check_exon_length</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_exon_length</span><span class="p">():</span>
             <span class="k">return</span> <span class="bp">False</span>
     <span class="k">if</span> <span class="n">fp</span><span class="o">.</span><span class="n">check_exon_numbers</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">check_exon_numbers</span><span class="p">():</span>
@@ -950,7 +950,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2013, Dominik Schrempf.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>
