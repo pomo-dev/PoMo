@@ -65,7 +65,7 @@ to set a variable mutation rate over sites, gamma-distributed,
 approximated with a number of classes as specified by the
 user. Default: uniform mutation rate. For example, `--GM 6` specifies
 a gamma distribution of total mutation rate with 6 discrete
-cathegories.""")
+categories.""")
 parser.add_argument('-f', '--GS', type=int, default=0, help="""Allows
 to set a variable fixation bias over sites, gamma-distributed,
 approximated with a number of classes as specified by the
@@ -83,7 +83,7 @@ parser.add_argument('-d', '--ds-ratio', type=lp.main.dsRatio, default=0.66,
                     sizes are decreased until at least 2 thirds of the
                     sites are included (`-d 0.66`).""")
 parser.add_argument('-t', "--theta", type=float, default=None,
-                    help="""Manyally set population diversity theta.
+                    help="""Manually set population diversity theta.
                     This value can only be set, if all species have a
                     sample size of 1.  If no value is specified, PoMo
                     will ask the user for theta on the command line if
