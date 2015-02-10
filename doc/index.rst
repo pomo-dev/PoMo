@@ -3,7 +3,6 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-
 Welcome to PoMo's documentation!
 ================================
 Implementation of a polymorphism aware phylogenetic model using HYPHY.
@@ -16,12 +15,11 @@ Contributors:
   * Dominik Schrempf
 
 For a reference, please see and cite: De Maio, Schlotterer, Kosiol
-(MBE, 2013), and/or: De Maio, Kosiol (in preparation). You can use
-this software for non-commercial purposes but please always
-acknowledge the authors.
+(MBE, 2013), and/or: De Maio, Schrempf and Kosiol (in
+preparation). You can use this software for non-commercial purposes
+but please always acknowledge the authors.
 
 Feel free to post any suggestions, doubts and bugs.
-
 
 libPoMo
 =======
@@ -30,9 +28,11 @@ PoMo comes with a small python package :doc:`libPoMo`. It contains
 several modules that ease the handling and preparation of data files
 in variant call format (vcf), fasta format and counts format (cf).
 
-This documentation mainly focusses on this library. For a general
+This documentation focusses on this library. For a general
 introduction to PoMo, please visit `PoMo at github.com
-<https://github.com/fazky/PoMo>`_.
+<https://github.com/pomo-dev/PoMo>`_.  If you only want to convert
+file formats, you are invited to use **prepared scripts** than come
+together with PoMo on github.
 
 The *libPoMo* package is split into the following modules:
   * :doc:`main <main>`: Contains functions that are used by PoMo.
@@ -45,13 +45,12 @@ The *libPoMo* package is split into the following modules:
   * :doc:`cf <cf>`: Provides functions to read, write and access files
     that are in counts format.
 
-Contents:
+Contents
 =========
 .. toctree::
    :maxdepth: 2
 
    libPoMo
-
 
 Indices and tables
 ==================
@@ -59,4 +58,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

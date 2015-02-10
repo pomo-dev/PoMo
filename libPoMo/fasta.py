@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""libPomo.fasta
+"""libPoMo.fasta
 ================
 
 This module provides functions to read, write and access fasta files.

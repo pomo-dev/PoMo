@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""libPomo.vcf
+"""libPoMo.vcf
 ==============
 
 This module provides functions to read, write and access vcf files.
@@ -99,8 +99,9 @@ def get_nuc_base_from_line(ln, info=False, ploidy=None):
 
 
 class NucBase():
-    # TODO SPECIES DATA WITH / and |
     """Stores a nucleotide base.
+
+    FIXME: Bases are split by '/'.  They should also be split by '|'.
 
     A class that stores a single nucleotide base and related
     information retrieved from a VCF file.  Please see
@@ -178,6 +179,7 @@ class NucBase():
     def set_ploidy(self):
         """Set self.ploidy."""
         baseInfo = self.speciesData[0].split(':')[0]
+        # FIXME: Also split '|'.
         self.ploidy = len(baseInfo.split('/'))
         return self.ploidy
 
@@ -208,6 +210,7 @@ class NucBase():
             else:
                 # Diploid or even more
                 baseInfo = self.speciesData[i].split(':')[0]
+                # FIXME: Also split '|'.
                 baseInfoL = baseInfo.split('/')
                 for j in range(len(baseInfoL)):
                     try:
@@ -476,7 +479,15 @@ def open_seq(VCFFileName, maxskip=100, name=None):
 
     """
     def test_sequence(seq):
-        """Test a given VCF sequence. TODO."""
+        """ Test a given VCF sequence.
+
+        TODO: implement this.
+
+        :param seq:
+        :returns:
+        :rtype:
+
+        """
         pass
 
     seq = VCFSeq()

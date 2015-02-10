@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""libPomo.cf
+"""libPoMo.cf
 =============
 
 This model provides functions to read, write and access files that are
