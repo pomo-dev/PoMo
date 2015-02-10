@@ -111,8 +111,9 @@ selgamma = lp.main.setGS(args.GS)
 # Selection model.
 sels = lp.main.selmod[args.SM]
 
-# Population diversity theta.
-theta = args.theta
+# Population diversity theta.  Needs to be multiplied by a(10), so
+# that it refers to the expected number of polymorphisms per base.
+theta = lp.main.a(10) * args.theta
 
 # Verbosity and logger.
 vb = args.verbose
