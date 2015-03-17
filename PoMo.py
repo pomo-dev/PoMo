@@ -436,10 +436,10 @@ elif n_species <= 3 and noMC == 1:
     HPfile2.write("inp = \"" + PoModata_name + "\";\n")
     HPfile2.write("out2=\"PoMo10_NoMolClock_out.txt\";\n")
     if all_one == 1:
-        HPfile2.write("user_defining=1;\n")
+        HPfile2.write("user_defining:=1;\n")
     else:
-        HPfile2.write("user_defining=0;\n")
-    HPfile2.write("user_defined_Ppol="+str(usr_def)+";\n")
+        HPfile2.write("user_defining:=0;\n")
+    HPfile2.write("user_defined_Ppol:="+str(usr_def)+";\n")
     if all_one == 1:
         HPfile2.write("scale_Ppol:=1.0;\n")
     else:
@@ -507,10 +507,10 @@ else:
     HPfile2.write("inp = \"" + PoModata_name + "\";\n")
     HPfile2.write("out2=\"PoMo10_NNI_sampling_rooted_out.txt\";\n")
     if all_one == 1:
-        HPfile2.write("user_defining=1;\n")
+        HPfile2.write("user_defining:=1;\n")
     else:
-        HPfile2.write("user_defining=0;\n")
-    HPfile2.write("user_defined_Ppol=" + str(usr_def) + ";\n")
+        HPfile2.write("user_defining:=0;\n")
+    HPfile2.write("user_defined_Ppol:=" + str(usr_def) + ";\n")
     if all_one == 1:
         HPfile2.write("scale_Ppol:=1.0;\n")
     else:
