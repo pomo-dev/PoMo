@@ -101,6 +101,14 @@ path.
 * [MSAToCounts.py](./scripts/MSAToCounts.py): Convert multiple
   sequence alignments with VCF files to counts format.
 
+Data
+====
+Sample data can be found in
+[`pomo-dev/data`](https://github.com/pomo-dev/data).  This repository
+also includes the data sets of our manuscript that has been accepted
+to Systematic Biology.  A proper citation will follow, for now please
+refer to [BioRxiv](http://dx.doi.org/10.1101/016360).
+
 Notes
 =====
 PoMo works best if data about within-population variation is
