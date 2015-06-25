@@ -108,7 +108,7 @@ class NucBase():
     http://www.1000genomes.org/ for a detailed description of the vcf
     format.
 
-    :ivar str chom: Chromosome name.
+    :ivar str chrom: Chromosome name.
     :ivar int pos: 1-based position on the chromosome.
     :ivar str id: ID.
     :ivar str ref: Reference base.
