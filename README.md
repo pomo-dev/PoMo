@@ -57,7 +57,8 @@ that can be found in the folder created above.  To build this version
 of HyPhy, extract the `HYPHY.tar.gz` (this archive is part of the git
 repo; PoMo will not work if you use another version of HyPhy) and do
 ```sh
-cd path_to_HYPHY/ cmake ./
+cd path_to_HYPHY/
+cmake ./
 make MP2
 ```
 
