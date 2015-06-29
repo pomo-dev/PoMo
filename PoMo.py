@@ -113,7 +113,8 @@ sels = lp.main.selmod[args.SM]
 
 # Population diversity theta.  Needs to be multiplied by a(10), so
 # that it refers to the expected number of polymorphisms per base.
-theta = lp.main.a(10) * args.theta
+if args.theta is not None:
+    theta = lp.main.a(10) * args.theta
 
 # Verbosity and logger.
 vb = args.verbose
