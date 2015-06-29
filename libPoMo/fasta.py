@@ -627,10 +627,21 @@ class FaSeq():
             i = names.index(seq)
         except:
             raise sb.SequenceDataError("Sequence name not found.")
-        if pos > self.dataLen[i]:
+        if pos > self.seqL[i].dataLen:
             raise sb.SequenceDataError("Position out of range.")
         return self.seqL[i].get_base(pos)
 
+    def get_distance(self):
+        """Number of segregating bases.
+        """
+        count = 0
+        for i in range(self.seqL[0].dataLen):
+            base = self.seqL[0].get_base(i)
+            for s in range(self.nSpecies):
+                if base != self.seqL[s].get_base(i):
+                    count += 1
+                    break
+        return count
 
 def init_seq(faFileName, maxskip=50, name=None):
     """Open a fasta file and initialize an :class:`FaStream`.
