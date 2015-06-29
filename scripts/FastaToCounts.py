@@ -18,7 +18,7 @@ descr = """Convert fasta to counts format.
 The (aligned) sequences in the fasta file are read in and the data is
 written to a counts format file.
 
-Sequence names are stripped at the first dash.  If the strupped
+Sequence names are stripped at the first dash.  If the stripped
 sequence name coincide, individuals are put into the same population.
 
 E.g., homo_sapiens-XXX and homo_sapiens-YYY will be in the same

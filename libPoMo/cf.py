@@ -983,14 +983,17 @@ class CFWriter():
 
         # Insert the first line.  The whole file needs to be copied,
         # maybe there is a better method?
-        fo = sb.gz_open("temp_"+self.outFN, mode='w')
+        temp_fn = "temp_" + os.path.basename(self.outFN)
+        temp_fd = os.path.dirname(self.outFN)
+        temp_path = os.path.join(temp_fd, temp_fn)
+        fo = sb.gz_open(temp_path, mode='w')
         print("COUNTSFILE\tNPOP ", self.nPop, "\tNSITES ",
               self.baseCounter, sep='', file=fo)
         with sb.gz_open(self.outFN, mode='r') as f:
             for ln in f:
                 print(ln, file=fo, end='')
         fo.close()
-        os.rename("temp_"+self.outFN, self.outFN)
+        os.rename(temp_path, self.outFN)
 
 
 def write_cf_from_MFaStream(refMFaStr, cfWr):
