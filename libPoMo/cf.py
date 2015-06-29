@@ -917,6 +917,8 @@ class CFWriter():
 
     def write_Ln(self):
         """Write a line in counts format to *self.outFN*."""
+        # Increment counter and write line.
+        self.baseCounter += 1
         print(self.__get_Ln(), file=self.outFO)
 
     def write_HLn(self):
@@ -967,8 +969,6 @@ class CFWriter():
                 # Do nothing if reference base is not valid.
                 logging.debug("Ignoring invalid reference base.")
             else:
-                # Increment counter and write line.
-                self.baseCounter += 1
                 self.write_Ln()
 
     def close(self):
@@ -981,8 +981,8 @@ class CFWriter():
             tf.close()
         self.outFO.close()
 
-        # Insert the first line.  The whole file needs to be copied,
-        # maybe there is a better method?
+        # Insert the first line.  TODO: The whole file needs to be
+        # copied, maybe there is a better method?
         temp_fn = "temp_" + os.path.basename(self.outFN)
         temp_fd = os.path.dirname(self.outFN)
         temp_path = os.path.join(temp_fd, temp_fn)
