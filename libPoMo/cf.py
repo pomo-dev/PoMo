@@ -266,7 +266,7 @@ def fasta_to_cf(fastaFN, countsFN, splitChar='-', chromName="NA"):
     """
 
     FaStr = fasta.init_seq(fastaFN)
-    logging.info("Read in fasta file.")
+    logging.info("Read in fasta file %s.", fastaFN)
     seqL = [copy.deepcopy(FaStr.seq)]
 
     while (FaStr.read_next_seq() is not None):
@@ -280,7 +280,7 @@ def fasta_to_cf(fastaFN, countsFN, splitChar='-', chromName="NA"):
         s.name = newName
         # s.print_info()
 
-    logging.info("Checking sequence lengths")
+    logging.info("Checking sequence lengths.")
     nSites = seqL[0].dataLen
     for s in seqL[1:]:
         if (nSites != s.dataLen):
@@ -596,7 +596,7 @@ class CFWriter():
         compressed and is opened with gzip.open().
 
         """
-        self.outFO = sb.gz_open(self.outFN, mode='w')
+        self.outFO = sb.gz_open(self.outFN, mode='w', buffering=1048576)
 
     def __init_indM(self):
 
