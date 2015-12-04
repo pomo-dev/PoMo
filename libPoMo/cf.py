@@ -266,27 +266,27 @@ def fasta_to_cf(fastaFN, countsFN, splitChar='-', chromName="NA"):
     """
 
     FaStr = fasta.init_seq(fastaFN)
-    logging.info("Read in fasta file %s.", fastaFN)
+    logging.debug("Read in fasta file %s.", fastaFN)
     seqL = [copy.deepcopy(FaStr.seq)]
 
     while (FaStr.read_next_seq() is not None):
         seqL.append(copy.deepcopy(FaStr.seq))
 
     nSeqs = len(seqL)
-    logging.info("Number of sequences: %s", nSeqs)
+    logging.debug("Number of sequences: %s", nSeqs)
 
     for s in seqL:
         newName = s.name.rsplit(splitChar, maxsplit=1)[0]
         s.name = newName
         # s.print_info()
 
-    logging.info("Checking sequence lengths.")
+    logging.debug("Checking sequence lengths.")
     nSites = seqL[0].dataLen
     for s in seqL[1:]:
         if (nSites != s.dataLen):
             raise sb.SequenceDataError("Sequences do not have equal length.")
 
-    logging.info("Creating assignment list.")
+    logging.debug("Creating assignment list.")
     assL = []
     nameL = [seqL[0].name]
     i = 0
@@ -299,13 +299,13 @@ def fasta_to_cf(fastaFN, countsFN, splitChar='-', chromName="NA"):
             assL.append(len(nameL)-1)
     nPops = len(nameL)
 
-    logging.info("Number of Populations: %s", nPops)
-    logging.info("Number of Sites: %s", nSites)
-    logging.info("Populations: %s", nameL)
-    logging.info("Assignment list: %s", assL)
+    logging.debug("Number of Populations: %s", nPops)
+    logging.debug("Number of Sites: %s", nSites)
+    logging.debug("Populations: %s", nameL)
+    logging.debug("Assignment list: %s", assL)
 
     cfw = CFWriter([], countsFN)
-    logging.warning("Manually initializing CFWriter.")
+    logging.debug("Manually initializing CFWriter.")
     cfw.nL = nameL
     cfw.nPop = len(nameL)
     cfw.write_HLn()
@@ -318,11 +318,13 @@ def fasta_to_cf(fastaFN, countsFN, splitChar='-', chromName="NA"):
         # Loop over sequences / individuals.
         for s in range(0, nSeqs):
             base = seqL[s].data[i].lower()
-            try:
-                baseI = dna[base]
-            except KeyError:
-                raise sb.NotAValidRefBase()
-            cfw.cD[assL[s]][baseI] += 1
+            # Ignore indels and unknown bases.
+            if base != '-' or base != 'N':
+                try:
+                    baseI = dna[base]
+                except KeyError:
+                    raise sb.NotAValidRefBase()
+                cfw.cD[assL[s]][baseI] += 1
         cfw.write_Ln()
     cfw.close()
 
@@ -586,8 +588,8 @@ class CFWriter():
         for fn in self.vcfL:
             self.vcfTfL.append(ps.Tabixfile(fn))
         if (len(self.vcfTfL) < 1):
-            logging.warning("No VCF file given, "
-                            "CFWriter has to be initialized manually.")
+            logging.debug("No VCF file given, "
+                          "CFWriter has to be initialized manually.")
 
     def __init_outFO(self):
         """Open *self.outFN*.
