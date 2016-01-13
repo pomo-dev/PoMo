@@ -239,7 +239,6 @@ class CFStream():
             return self.pos
         else:
             raise ValueError("End of CFStream.")
-            return None
 
     def close(self):
         self.fo.close()
@@ -1019,4 +1018,33 @@ def write_cf_from_MFaStream(refMFaStr, cfWr):
         cfWr.set_seq(refMFaStr.seqL[0])
         cfWr.write_Rn(rg)
         if refMFaStr.read_next_align() is None:
+            break
+
+
+def write_cf_from_gp_stream(gp_stream, cfWr):
+    """Write counts file using a given GP stream with reference and CFWriter.
+
+    Write the counts format file using all genes in the GP stream.
+    The sequences are automatically reversed and complemented if this
+    is needed.
+
+    :param GPStream gp_stream: The GP stream and reference :class:`GPStream
+      <libPoMo.gp.GPStream>`.
+    :param CFWriter cfWf: The :class:`CFWriter` object that contains
+      the VCF files.
+
+    """
+    while True:
+        # Orient sequences.
+        for s in gp_stream.seqs:
+            if s.get_rc() is True:
+                s.rev_comp()
+        # Write to CF.
+        for i in range(gp_stream.gene.nr_exons):
+            rg = gp_stream.seqs[i].get_region()
+            cfWr.set_seq(gp_stream.seqs[i])
+            cfWr.write_Rn(rg)
+        try:
+            gp_stream.read_next_gene()
+        except ValueError:
             break

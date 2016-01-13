@@ -57,11 +57,12 @@ class Region():
     :ivar int end: 0-base end position.
     :ivar str name: Region name.
     """
-    def __init__(self, chrom, start, end, name=None):
+    def __init__(self, chrom, start, end, name=None, orientation="+"):
         self.chrom = chrom
         self.start = start - 1
         self.end = end - 1
         self.name = name
+        self.orientation = orientation
 
     def print_info(self):
         """Print information about the region."""
@@ -86,9 +87,9 @@ class Seq:
 
     """
     def __init__(self):
-        self.name = ''
-        self.descr = ''
-        self.data = ''
+        self.name = None
+        self.descr = None
+        self.data = None
         self.dataLen = 0
         self.rc = False
 
@@ -180,7 +181,7 @@ class Seq:
         """
         return self.rc
 
-    def rev_comp(self):
+    def rev_comp(self, change_sequence_only=False):
         """Reverses and complements the sequence.
 
         This is rather slow for long sequences.
@@ -198,8 +199,9 @@ class Seq:
             tempDescr = self.descr[:-1] + '-'
         elif self.descr[-1] == '-':
             tempDescr = self.descr[:-1] + '+'
-        self.descr = tempDescr
-        self.toggle_rc()
+        if change_sequence_only is False:
+            self.descr = tempDescr
+            self.toggle_rc()
 
     def get_exon_nr(self):
         """Try to find the current and the total exon number of the sequence.
@@ -277,6 +279,9 @@ class Seq:
           is invalid.
 
         """
+        raise ValueError("Reverse complemented genes not handled correctly.")
+        if self.rc is True:
+            raise ValueError("Examination of reverse complemented sequence.")
         degTriplets = ["tc", "ct", "cc", "cg", "ac", "gt", "gc", "gg"]
         inFr = self.get_in_frame()
         if pos < 2:
@@ -373,7 +378,11 @@ def gz_open(fn, mode='r', buffering=-1):
 
     """
     if fn[-2:] == "gz":
-        fo = gzip.open(fn, mode=mode+'t', buffering=buffering)
+        # Tue Jan 12 12:50:50 CET 2016 Ignore buffering because it
+        # leads to an error.
+        fo = gzip.open(fn, mode=mode+'t')
+        # fo = gzip.open(fn, mode=mode+'t', buffering=buffering)
     else:
         fo = open(fn, mode=mode, buffering=buffering)
+        # fo = open(fn, mode=mode, buffering=buffering)
     return fo
