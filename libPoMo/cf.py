@@ -103,8 +103,8 @@ import libPoMo.fasta as fasta
 import libPoMo.vcf as vcf
 import numpy as np
 
-dna = {'a': 0, 'c': 1, 'g': 2, 't': 3}
-ind2dna = ['a', 'c', 'g', 't']
+dna = {'a': 0, 'c': 1, 'g': 2, 't': 3, 'n': 4}
+ind2dna = ['a', 'c', 'g', 't', 'n']
 
 
 class NotACountsFormatFileError(sb.SequenceDataError):
@@ -784,9 +784,9 @@ class CFWriter():
 
         """
         if snpL is not None:
-            logging.info("Next SNP(s):")
+            logging.debug("Next SNP(s):")
             for s in snpL:
-                logging.info(s.get_info())
+                logging.debug(s.get_info())
 
         def get_refBase():
             """Get reference base on *chrom* at *pos*."""
@@ -794,13 +794,17 @@ class CFWriter():
 
         def update_cD(pop, baseI, delta=self.ploidy):
             """Add counts to the countsDictionary cD."""
+            if baseI == dna['n']:
+                logging.info("Reference base is unknown.  Continue.")
+                return
             if pop in range(0, self.nPop):
                 self.cD[pop][baseI] += delta
                 logging.debug("Updating counts dictionary; population %s, "
                               "base index %s.", pop, baseI)
             else:
-                logging.debug("Ignoring data because population index %s is "
-                              "out of range.", pop)
+                logging.info("Ignoring data because population index %s is "
+                             "out of range.", pop)
+                raise ValueError()
 
         self.purge_cD()
 
@@ -914,7 +918,7 @@ class CFWriter():
 
         """
         self.offset = offset
-        logging.info('Offset in CFWriter: %s.', self.offset)
+        logging.debug('Offset in CFWriter: %s.', self.offset)
 
     def write_Ln(self):
         """Write a line in counts format to *self.outFN*."""

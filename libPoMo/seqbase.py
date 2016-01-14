@@ -187,7 +187,7 @@ class Seq:
         This is rather slow for long sequences.
 
         """
-        compDict = {'a': 't', 'c': 'g', 'g': 'c', 't': 'a'}
+        compDict = {'a': 't', 'c': 'g', 'g': 'c', 't': 'a', 'n': 'n'}
         self.data = self.data[::-1]
         if self.__lowered is not True:
             self.data = self.data.lower()

@@ -115,7 +115,7 @@ def convert_exon_to_seq(gene, exon, rf):
     # should be made more general in the future.
     if gene.chrom[:3] == "chr":
         chrom = gene.chrom[3:]
-        print("Fixme; chromosome name changed for baboon data.")
+        # print("Fixme; chromosome name changed for baboon data.")
     else:
         chrom = gene.chrom
     # Also set appropriate description so that the helper functions of
