@@ -137,7 +137,8 @@ def interpret_cf_line(ln):
     :rtype: (str, int, [[int]])
 
     """
-    ln.strip()
+    tmp = ln.strip()
+    ln = tmp
     lnL = ln.split('\t')
     l = len(lnL)
     if (l <= 2):
