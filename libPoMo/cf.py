@@ -801,7 +801,7 @@ class CFWriter():
             """Add counts to the countsDictionary cD."""
             # FIXME: IUPAC code not handled here.  Is this even necessary?
             if baseI == dna['n']:
-                logging.info("Reference base is unknown.  Continue.")
+                logging.debug("Reference base is unknown.  Continue.")
                 return
             if pop in range(0, self.nPop):
                 self.cD[pop][baseI] += delta
