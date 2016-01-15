@@ -1,3 +1,18 @@
+If you are interested in PoMo, please also consider using the newer,
+reversible version that is being implemented in
+[IQ-TREE](http://www.cibiv.at/software/iqtree/).  Please check out the
+[PoMo branch](https://github.com/Cibiv/IQ-TREE/tree/PoMo) of the
+GitHub repository.
+
+Schrempf, D., Minh, B. Q., De Maio, N., von Haeseler, A., & Kosiol,
+C. (2015). Reversible Polmorphism-Aware Phylotenetic Models and their
+Application to Tree Inference (Manuscript in Preparation).
+
+L.-T. Nguyen, H.A. Schmidt, A. von Haeseler, and B.Q. Minh (2015)
+IQ-TREE: A fast and effective stochastic algorithm for estimating
+maximum likelihood phylogenies. Mol. Biol. Evol., 32, 268-274. DOI:
+10.1093/molbev/msu300
+
 PoMo 1.1.0
 ==========
 
@@ -124,8 +139,13 @@ for now, population samples larger than 10 are down-sampled to 10.
 
 The model assumes that all data from the loci considered is provided:
 both variable sites, and sites that are fixed through species and
-populations. If you have only a SNP dataset (no fixed sites), there is
-probably a way to work around it, let me know.
+populations.  If you have a SNP dataset only and do not know the level
+of polymorphism, we do not recommend to use PoMo, because it infers
+the level of polymorphism during the maximization of the likelihood
+and will fail then.  If you know have SNPs only but are aware of the
+level of polymorphism, we advice you for now to add the fixed fixed
+sites to you data in the right proportions.  This will not slow down
+PoMo significantly but allow you to get meaningful estimations.
 
 The publication that is out in MBE about PoMo discusses estimation of
 population parameters (mutation rates, fixation biases, etc) and not
