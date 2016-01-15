@@ -50,8 +50,8 @@ parser.add_argument("VCFFiles", metavar="VCFFileN", nargs='+',
                     help="path to (gzipped) vcf files with SNP information")
 parser.add_argument("output",
                     help="name of (gzipped) outputfile in counts format")
-# parser.add_argument("-s", "--synonymous", action="count",
-#                     help="only print position with a synonymous base")
+parser.add_argument("-s", "--synonymous", action="store_true",
+                    help="only print position with a synonymous base")
 parser.add_argument("-v", "--verbose", action="count",
                     help="turn on verbosity (-v or -vv)")
 parser.add_argument("-i", "--one-indiv", action="store_true",
@@ -76,10 +76,10 @@ elif args.verbose == 2:
 
 cfw = cf.CFWriter(vcfFnL, output, oneIndividual=oneI)
 
-# if args.synonymous is not None:
-#     cfw.onlySynonymous = True
-# TODO: Only use synonymous bases.
-# cfw.onlySynonymous = True
+if args.synonymous is True:
+    raise ValueError("No supported yet, " +
+                     "no information about frame shift in the data.")
+    cfw.onlySynonymous = True
 
 gp_stream = gp.GPStream(gp_fn, rf_fn)
 

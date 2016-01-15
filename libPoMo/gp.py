@@ -100,13 +100,13 @@ def convert_exon_to_seq(gene, exon, rf):
     seq.dataLen = exon.end - exon.start + 1
     # import pdb; pdb.set_trace()
     # Get orientation.
-    if gene.orientation == "+":
-        rc = False
-    elif gene.orientation == "-":
-        rc = True
-    else:
-        raise ValueError("Invalid orientation.")
-    seq.rc = rc
+    # if gene.orientation == "+":
+    #     rc = False
+    # elif gene.orientation == "-":
+    #     rc = True
+    # else:
+    #     raise ValueError("Invalid orientation.")
+    seq.rc = False
 
     in_frame = (exon.start - gene.start) % 3
     out_frame = (exon.end - gene.start) % 3
@@ -123,6 +123,7 @@ def convert_exon_to_seq(gene, exon, rf):
     seq.descr = str(seq.dataLen) + " " + str(in_frame) + " "
     seq.descr += str(out_frame) + " " + chrom + ":"
     seq.descr += str(exon.start) + "-" + str(exon.end) + gene.orientation
-    if gene.orientation == "-":
-        seq.rev_comp(change_sequence_only=True)
+    # if gene.orientation == "-":
+    #     seq.rev_comp(change_sequence_only=True)
+    seq.set_gene_is_rc_from_descr()
     return seq

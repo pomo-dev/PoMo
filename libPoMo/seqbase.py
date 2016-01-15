@@ -92,8 +92,13 @@ class Seq:
         self.data = None
         self.dataLen = 0
         self.rc = False
+        self.gene_is_rc = False
 
         self.__lowered = False
+
+    def set_gene_is_rc_from_descr(self):
+        if self.descr[-1] == "-":
+            self.gene_is_rc = True
 
     def print_fa_header(self, fo=sys.stdout):
         """Print the sequence header line in fasta format.
@@ -165,7 +170,7 @@ class Seq:
         :raises: *ValueError()* if state could not be detected.
 
         """
-
+        self.set_gene_is_rc_from_descr()
         if self.descr[-1] == '-':
             self.rc = True
         elif self.descr[-1] == '+':
@@ -195,12 +200,14 @@ class Seq:
         for i in range(self.dataLen):
             rcData.append(compDict[self.data[i]])
         self.data = ''.join(rcData)
-        if self.descr[-1] == '+':
-            tempDescr = self.descr[:-1] + '-'
-        elif self.descr[-1] == '-':
-            tempDescr = self.descr[:-1] + '+'
+        # Fri Jan 15 17:39:23 CET 2016: Do not change description
+        # because it is not necessary.
+        # if self.descr[-1] == '+':
+        #     tempDescr = self.descr[:-1] + '-'
+        # elif self.descr[-1] == '-':
+        #     tempDescr = self.descr[:-1] + '+'
         if change_sequence_only is False:
-            self.descr = tempDescr
+            # self.descr = tempDescr
             self.toggle_rc()
 
     def get_exon_nr(self):
@@ -279,13 +286,14 @@ class Seq:
           is invalid.
 
         """
-        raise ValueError("Reverse complemented genes not handled correctly.")
         if self.rc is True:
-            raise ValueError("Examination of reverse complemented sequence.")
+            raise ValueError("Reverse complemented sequence.")
+        if self.gene_is_rc is True:
+            self.__is_synonymous_rc(pos)
         degTriplets = ["tc", "ct", "cc", "cg", "ac", "gt", "gc", "gg"]
         inFr = self.get_in_frame()
         if pos < 2:
-            # Degeneracy can not be determined.
+            # Degeneracy cannot be determined because data is not there.
             return False
         elif (pos + 1 + inFr) % 3 != 0:
             # Position within a Frame is not the third one.
@@ -296,6 +304,26 @@ class Seq:
             if triplet[0:2] in degTriplets:
                 return True
         return False
+
+    def __is_synonymous_rc(self, pos):
+        """Same as `is_synonymous()` but with data being reverse
+        complemented.
+
+        """
+        if self.rc is True:
+            raise ValueError("Reverse complemented sequence.")
+        # degTriplets = ["tc", "ct", "cc", "cg", "ac", "gt", "gc", "gg"]
+        degTriplets = ["ga", "ag", "gg", "cg", "gt", "ac", "gc", "cc"]
+        if pos > self.dataLen - 3:
+            # Degeneracy cannot be determined because data is not there.
+            return False
+        elif (self.dataLen - pos + self.get_in_frame()) % 3 != 0:
+            return False
+        else:
+            triplet = self.data[pos:pos+3]
+            triplet = triplet.lower()
+            if triplet[1:3] in degTriplets:
+                return True
 
     def get_region(self):
 
