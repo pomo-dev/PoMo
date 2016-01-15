@@ -249,7 +249,8 @@ class CFStream():
         self.fo.close()
 
 
-def fasta_to_cf(fastaFN, countsFN, splitChar='-', chromName="NA"):
+def fasta_to_cf(fastaFN, countsFN, splitChar='-', chromName="NA",
+                double_fixed_sites=False):
     """Convert fasta to counts format.
 
     The (aligned) sequences in the fasta file are read in and the data
@@ -266,6 +267,10 @@ def fasta_to_cf(fastaFN, countsFN, splitChar='-', chromName="NA"):
 
     The input as well as the output files can additionally be gzipped
     (indicated by a .gz file ending).
+
+    :ivar bool double_fixed_sites: Set to true if heterozygotes are
+    encoded with IUPAC codes.  Then, fixed sites will be counted twice
+    so that the level of polymorphism stays correct.
 
     """
 
@@ -322,7 +327,7 @@ def fasta_to_cf(fastaFN, countsFN, splitChar='-', chromName="NA"):
         # Loop over sequences / individuals.
         for s in range(0, nSeqs):
             base = seqL[s].data[i].lower()
-            cfw.add_base_to_sequence(assL[s], base)
+            cfw.add_base_to_sequence(assL[s], base, double_fixed_sites)
         cfw.write_Ln()
     cfw.close()
 
@@ -971,7 +976,14 @@ class CFWriter():
             else:
                 self.write_Ln()
 
-    def add_base_to_sequence(self, pop_id, base_char):
+    def add_base_to_sequence(self, pop_id, base_char,
+                             double_fixed_sites=False):
+        """Adds the base given in `base_char` to the counts of population with
+        id `pop_id`.  If `double_fixed_sited` is true, fixed sites are
+        counted twice.  This makes sense, when heterozygotes are
+        encoded with IUPAC codes.
+
+        """
         base = base_char.lower()
         try:
             base_id = dna[base]
@@ -980,6 +992,8 @@ class CFWriter():
         # Honor IUPAC code.
         if base_id <= 3:
             self.cD[pop_id][base_id] += 1
+            if double_fixed_sites:
+                self.cD[pop_id][base_id] += 1
             return
         elif base == 'r':
             # C or G.
