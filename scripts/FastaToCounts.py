@@ -29,6 +29,10 @@ Take care with large files, this uses a lot of memory.
 The input as well as the output files can additionally be gzipped
 (indicated by a .gz file ending).
 
+If heterozygotes are encoded with IUPAC codes (e.g., 'r' for A or G),
+homozygotes need to be counted twice so that the level of polymorphism
+stays correct.  This can be done with the `--iupac` flag.
+
 """
 
 parser = argparse.ArgumentParser(
@@ -41,6 +45,8 @@ parser.add_argument("output",
                     help="name of (gzipped) outputfile in counts format")
 parser.add_argument("-v", "--verbose", action="count",
                     help="turn on verbosity (-v or -vv)")
+parser.add_argument("--iupac", action="store_true",
+                    help="heteorzygotes are encoded with IUPAC codes")
 # TODO
 # parser.add_argument("-i", "--one-indiv", action="store_true",
 #                     help="randomly choose one indivual per population")
@@ -49,6 +55,7 @@ args = parser.parse_args()
 FaRefFN = args.fastaFile
 output = args.output
 vb = args.verbose
+iupac_flag = args.iupac
 # oneI = args.one_indiv
 
 logging.basicConfig(format='%(levelname)s: %(message)s')
@@ -60,4 +67,4 @@ elif args.verbose == 1:
 elif args.verbose == 2:
     logger.setLevel(logging.DEBUG)
 
-cf.fasta_to_cf(FaRefFN, output)
+cf.fasta_to_cf(FaRefFN, output, double_fixed_sites=iupac_flag)

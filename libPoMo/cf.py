@@ -103,8 +103,12 @@ import libPoMo.fasta as fasta
 import libPoMo.vcf as vcf
 import numpy as np
 
-dna = {'a': 0, 'c': 1, 'g': 2, 't': 3, 'n': 4}
-ind2dna = ['a', 'c', 'g', 't', 'n']
+# Honor IUPAC code.
+dna = {'a': 0, 'c': 1, 'g': 2, 't': 3, 'u': 3, 'r': 5, 'y': 6, 's': 7,
+       'w': 8, 'k': 9, 'm': 10, 'b': 11, 'd': 12, 'h': 13, 'v': 15,
+       'n': 15, '.': 16, '-': 17}
+ind2dna = ['a', 'c', 'g', 't', 'u', 'r', 'y', 's', 'w', 'k',
+           'm', 'b', 'd', 'h', 'v', 'n', '.', '-']
 
 
 class NotACountsFormatFileError(sb.SequenceDataError):
@@ -133,6 +137,8 @@ def interpret_cf_line(ln):
     :rtype: (str, int, [[int]])
 
     """
+    tmp = ln.strip()
+    ln = tmp
     lnL = ln.split('\t')
     l = len(lnL)
     if (l <= 2):
@@ -244,7 +250,8 @@ class CFStream():
         self.fo.close()
 
 
-def fasta_to_cf(fastaFN, countsFN, splitChar='-', chromName="NA"):
+def fasta_to_cf(fastaFN, countsFN, splitChar='-', chromName="NA",
+                double_fixed_sites=False):
     """Convert fasta to counts format.
 
     The (aligned) sequences in the fasta file are read in and the data
@@ -261,6 +268,10 @@ def fasta_to_cf(fastaFN, countsFN, splitChar='-', chromName="NA"):
 
     The input as well as the output files can additionally be gzipped
     (indicated by a .gz file ending).
+
+    :ivar bool double_fixed_sites: Set to true if heterozygotes are
+    encoded with IUPAC codes.  Then, fixed sites will be counted twice
+    so that the level of polymorphism stays correct.
 
     """
 
@@ -317,13 +328,7 @@ def fasta_to_cf(fastaFN, countsFN, splitChar='-', chromName="NA"):
         # Loop over sequences / individuals.
         for s in range(0, nSeqs):
             base = seqL[s].data[i].lower()
-            # Ignore indels and unknown bases.
-            if base != '-' or base != 'N':
-                try:
-                    baseI = dna[base]
-                except KeyError:
-                    raise sb.NotAValidRefBase()
-                cfw.cD[assL[s]][baseI] += 1
+            cfw.add_base_to_sequence(assL[s], base, double_fixed_sites)
         cfw.write_Ln()
     cfw.close()
 
@@ -505,7 +510,7 @@ class CFWriter():
     :ivar cD: List with allele or base counts. The alleles of
         individuals from the same population are summed up.  Hence,
         *self.cD[p]* gives the base counts of population *p* in the
-        form: [0, 0, 0, 0].  Population *p`*does not need to be the
+        form: [0, 0, 0, 0].  Population *p* does not need to be the
         one from *self.vcfL[p]* because several populations might be
         present in one vcf file.  *self.assM* connects the individual
         j from *self.vcfL[i]* such that *self.assM[i][j]* is *p*.
@@ -794,6 +799,7 @@ class CFWriter():
 
         def update_cD(pop, baseI, delta=self.ploidy):
             """Add counts to the countsDictionary cD."""
+            # FIXME: IUPAC code not handled here.  Is this even necessary?
             if baseI == dna['n']:
                 logging.info("Reference base is unknown.  Continue.")
                 return
@@ -975,6 +981,86 @@ class CFWriter():
                 logging.debug("Ignoring invalid reference base.")
             else:
                 self.write_Ln()
+
+    def add_base_to_sequence(self, pop_id, base_char,
+                             double_fixed_sites=False):
+        """Adds the base given in `base_char` to the counts of population with
+        id `pop_id`.  If `double_fixed_sited` is true, fixed sites are
+        counted twice.  This makes sense, when heterozygotes are
+        encoded with IUPAC codes.
+
+        """
+        base = base_char.lower()
+        try:
+            base_id = dna[base]
+        except KeyError:
+            raise sb.NotAValidRefBase()
+        # Honor IUPAC code.
+        if base_id <= 3:
+            self.cD[pop_id][base_id] += 1
+            if double_fixed_sites:
+                self.cD[pop_id][base_id] += 1
+            return
+        elif base == 'r':
+            # C or G.
+            self.cD[pop_id][0] += 1
+            self.cD[pop_id][2] += 1
+        elif base == 'y':
+            # C or T.
+            self.cD[pop_id][1] += 1
+            self.cD[pop_id][3] += 1
+        elif base == 's':
+            # G or C.
+            self.cD[pop_id][1] += 1
+            self.cD[pop_id][2] += 1
+        elif base == 'w':
+            # A or T.
+            self.cD[pop_id][0] += 1
+            self.cD[pop_id][3] += 1
+        elif base == 'k':
+            # G or T.
+            self.cD[pop_id][2] += 1
+            self.cD[pop_id][3] += 1
+        elif base == 'm':
+            # A or C.
+            self.cD[pop_id][0] += 1
+            self.cD[pop_id][1] += 1
+        elif base == 'b':
+            # C or G or T.
+            logging.info("Ambivalent base with 3 possibilities.")
+            logging.info("This base will be ignored upon running PoMo.")
+            self.cD[pop_id][1] += 1
+            self.cD[pop_id][2] += 1
+            self.cD[pop_id][3] += 1
+        elif base == 'd':
+            # A or G or T.
+            logging.info("Ambivalent base with 3 possibilities.")
+            logging.info("This base will be ignored upon running PoMo.")
+            self.cD[pop_id][0] += 1
+            self.cD[pop_id][2] += 1
+            self.cD[pop_id][3] += 1
+        elif base == 'h':
+            # A or C or T.
+            logging.info("Ambivalent base with 3 possibilities.")
+            logging.info("This base will be ignored upon running PoMo.")
+            self.cD[pop_id][0] += 1
+            self.cD[pop_id][1] += 1
+            self.cD[pop_id][3] += 1
+        elif base == 'v':
+            # A or C or G.
+            logging.info("Ambivalent base with 3 possibilities.")
+            logging.info("This base will be ignored upon running PoMo.")
+            self.cD[pop_id][0] += 1
+            self.cD[pop_id][1] += 1
+            self.cD[pop_id][2] += 1
+        elif base == 'n':
+            # Any base.
+            pass
+        elif base == '-' or base == '.':
+            # Gap.
+            pass
+        logging.info("IUPAC code handled.  This might bias the analysis.")
+        return
 
     def close(self):
         """Write file type specifier, number of populations and number of
