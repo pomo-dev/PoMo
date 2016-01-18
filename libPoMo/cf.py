@@ -1124,17 +1124,37 @@ def write_cf_from_gp_stream(gp_stream, cfWr):
       the VCF files.
 
     """
+    nr_rc_genes_correct_start_codon = 0
+    nr_genes_correct_start_codon = 0
+    nr_genes_total = 0
     while True:
+        correct_start_codon_flag = False
+        # Count sequences that have correct start codon.
+        if gp_stream.gene.is_rc and\
+           (gp_stream.seqs[0].data[-3:] == "CAT"):
+            nr_rc_genes_correct_start_codon += 1
+            correct_start_codon_flag = True
+        elif (not gp_stream.gene.is_rc) and\
+             (gp_stream.seqs[0].data[:3] == "ATG"):
+            nr_genes_correct_start_codon += 1
+            correct_start_codon_flag = True
+        nr_genes_total += 1
         # Orient sequences.
         for s in gp_stream.seqs:
             if s.get_rc() is True:
                 s.rev_comp()
         # Write to CF.
-        for i in range(gp_stream.gene.nr_exons):
-            rg = gp_stream.seqs[i].get_region()
-            cfWr.set_seq(gp_stream.seqs[i])
-            cfWr.write_Rn(rg)
+        if correct_start_codon_flag:
+            for i in range(gp_stream.gene.nr_exons):
+                rg = gp_stream.seqs[i].get_region()
+                cfWr.set_seq(gp_stream.seqs[i])
+                cfWr.write_Rn(rg)
         try:
             gp_stream.read_next_gene()
         except ValueError:
             break
+    print("+ genes with correct start codon ATG:",
+          nr_rc_genes_correct_start_codon)
+    print("- genes with correct start codon ATG:",
+          nr_genes_correct_start_codon)
+    print("Total number of processed genes:", nr_genes_total)

@@ -43,17 +43,30 @@ class Gene():
         exons_ends = ends_str.split(",")
         self.exons = [Exon(int(exons_starts[i]), int(exons_ends[i]))
                       for i in range(self.nr_exons)]
-        self.regions = self.__get_regions__()
 
-    def __get_regions__(self):
-        if self.orientation not in ["+", "-"]:
-            raise sb.SequenceDataError("Direction character is missing.")
-        rgs = []
-        for i in range(self.nr_exons):
-            rgs.append(sb.Region(self.chrom, self.exons[i].start,
-                                 self.exons[i].end,
-                                 orientation=self.orientation))
-        return rgs
+        if self.orientation == "-":
+            self.is_rc = True
+        elif self.orientation == "+":
+            self.is_rc = False
+        else:
+            raise ValueError("Invalid orientation.")
+
+        # TODO: Correctly handle in and out frame for reverse
+        # complemented genes.
+        if self.is_rc:
+            self.exons.reverse()
+
+        # self.regions = self.__get_regions__()
+
+    # def __get_regions__(self):
+    #     if self.orientation not in ["+", "-"]:
+    #         raise sb.SequenceDataError("Direction character is missing.")
+    #     rgs = []
+    #     for i in range(self.nr_exons):
+    #         rgs.append(sb.Region(self.chrom, self.exons[i].start,
+    #                              self.exons[i].end,
+    #                              orientation=self.orientation))
+    #     return rgs
 
 
 class GPStream():
@@ -75,8 +88,12 @@ class GPStream():
         ln = self.fo.readline()
         if ln != "":
             self.gene = Gene(ln)
-            self.seqs = [convert_exon_to_seq(self.gene, e, self.rf)
-                         for e in self.gene.exons]
+            inframe = 0
+            self.seqs = []
+            for e in self.gene.exons:
+                self.seqs.append(convert_exon_to_seq(self.gene, e,
+                                                     inframe, self.rf))
+                inframe = self.seqs[-1].get_out_frame()
         else:
             raise ValueError("End of CFStream.")
 
@@ -84,20 +101,28 @@ class GPStream():
         self.fo.close()
 
 
-def convert_exon_to_seq(gene, exon, rf):
+def convert_exon_to_seq(gene, exon, inframe, rf):
     """Extract the sequence information of gene from a reference.
 
     The `Gene()` only contains the positional information.  To get a
-    valid sequence, information from a reference genome
-    `fasta.FaSeq()` is needed.  A `seqbase.Seq()` object is returned.
+    valid sequence, information from a reference genome `rf`
+    `fasta.FaSeq()` is needed.  The `inframe` should give the position
+    in the triplet of the first base of the exon (0, 1 or 2).
+
+    For the baboon GP file, the `inframe` is 0 for the first exon.
+    The next exon always continues with the outframe of the previous
+    one (i.e., the exons are directly connected).
+
+    A `seqbase.Seq()` object is returned.
 
     """
     seq = sb.Seq()
     seq.name = gene.name
     # TODO: How are exon start and end defined?  Here: Indexing starts
-    # with 1; exon end is included in the sequence.
-    seq.data = rf.seqD[gene.chrom].data[exon.start-1:exon.end]
-    seq.dataLen = exon.end - exon.start + 1
+    # with 0 but the exon end is not included in the sequence, this
+    # seems to be most coherent with start codons in the data.
+    seq.data = rf.seqD[gene.chrom].data[exon.start:exon.end]
+    seq.dataLen = exon.end - exon.start
     # import pdb; pdb.set_trace()
     # Get orientation.
     # if gene.orientation == "+":
@@ -108,8 +133,9 @@ def convert_exon_to_seq(gene, exon, rf):
     #     raise ValueError("Invalid orientation.")
     seq.rc = False
 
-    in_frame = (exon.start - gene.start) % 3
-    out_frame = (exon.end - gene.start) % 3
+    # in_frame = (exon.start - gene.start) % 3
+    in_frame = inframe
+    out_frame = (seq.dataLen + in_frame) % 3
     # FIXME: For the baboon data the chromosome names in the VCF file
     # do not include 'chr'.  That's why I remove this here, but this
     # should be made more general in the future.
@@ -122,7 +148,7 @@ def convert_exon_to_seq(gene, exon, rf):
     # `sb.Seq()` can be used.
     seq.descr = str(seq.dataLen) + " " + str(in_frame) + " "
     seq.descr += str(out_frame) + " " + chrom + ":"
-    seq.descr += str(exon.start) + "-" + str(exon.end) + gene.orientation
+    seq.descr += str(exon.start+1) + "-" + str(exon.end) + gene.orientation
     # if gene.orientation == "-":
     #     seq.rev_comp(change_sequence_only=True)
     seq.set_gene_is_rc_from_descr()

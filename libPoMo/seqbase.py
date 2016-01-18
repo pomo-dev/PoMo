@@ -267,6 +267,34 @@ class Seq:
             raise SequenceDataError("Description format is invalid.")
         return inFrame
 
+    def get_out_frame(self):
+        """Try to find the `outFrame` of the gene.
+
+        `outFrame`: the frame number of the last nucleotide in the
+        exon. Frame numbers can be 0, 1, or 2 depending on what
+        position that nucleotide takes in the codon which contains it.
+        This function gets the `outFrame`, if the description of the
+        sequence is of the form (cf. `UCSC Table Browser
+        <http://genome.ucsc.edu/goldenPath/help/hgTablesHelp.html#FASTA>`_)::
+
+          918 0 0 chr1:58954-59871+
+
+        :rtype: int
+
+        :raises: :class:`SequenceDataError`, if format of description
+          is invalid.
+
+        """
+        descrL = self.descr[:-1].split(maxsplit=3)
+        if len(descrL) >= 3:
+            try:
+                outFrame = int(descrL[2])
+            except ValueError:
+                raise SequenceDataError("Description format is invalid.")
+        else:
+            raise SequenceDataError("Description format is invalid.")
+        return outFrame
+
     def is_synonymous(self, pos):
         """Return True if the base at `pos` is 4-fold degenerate.
 
