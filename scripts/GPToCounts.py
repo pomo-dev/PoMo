@@ -77,8 +77,6 @@ elif args.verbose == 2:
 cfw = cf.CFWriter(vcfFnL, output, oneIndividual=oneI)
 
 if args.synonymous is True:
-    raise ValueError("No supported yet, " +
-                     "no information about frame shift in the data.")
     cfw.onlySynonymous = True
 
 gp_stream = gp.GPStream(gp_fn, rf_fn)

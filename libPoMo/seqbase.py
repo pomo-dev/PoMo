@@ -317,7 +317,7 @@ class Seq:
         if self.rc is True:
             raise ValueError("Reverse complemented sequence.")
         if self.gene_is_rc is True:
-            self.__is_synonymous_rc(pos)
+            return self.__is_synonymous_rc(pos)
         degTriplets = ["tc", "ct", "cc", "cg", "ac", "gt", "gc", "gg"]
         inFr = self.get_in_frame()
         if pos < 2:
@@ -352,6 +352,7 @@ class Seq:
             triplet = triplet.lower()
             if triplet[1:3] in degTriplets:
                 return True
+        return False
 
     def get_region(self):
 
