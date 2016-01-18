@@ -567,7 +567,12 @@ for spes in range(n_species):
     pap = re.compile("\\(s" + str(n_species-spes) + ":" + "\\d+(\\.\\d+)?" +
                      "(e-\\d\\d)?\\)u" + str(n_species-spes))
     mam = pap.search(swap_fast_samp_tree)
-    swap_fast_samp_tree = swap_fast_samp_tree.replace(mam.group(), sp_names[(n_species - 1) - spes])  # noqa
+    swap_fast_samp_tree = swap_fast_samp_tree.replace(
+        mam.group(), sp_names[(n_species - 1) - spes])
+
+inner_node_pattern = re.compile(r"\)\d*_?\d?")
+swap_fast_samp_tree = inner_node_pattern.sub(")", swap_fast_samp_tree)
+
 out_wr2 += swap_fast_samp_tree
 outfile = open(out_name, "w")
 outfile.write(out_wr2)
