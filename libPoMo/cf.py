@@ -1124,31 +1124,48 @@ def write_cf_from_gp_stream(gp_stream, cfWr):
       the VCF files.
 
     """
+    # Tomas Vigor, the person who created the GP files wrote: The
+    # first codon of the first exon does not need to be the start
+    # codon, because ends may be cut off. BUT, the first exon
+    # should always start on a boundary of a codon (i.e., all
+    # should be in frame, or in other words, parts that were cut
+    # off were always multiple-of-3 length). The gene names in
+    # these genes would usually have "inc" in their names (as
+    # "incomplete"),
     nr_rc_genes_correct_start_codon = 0
     nr_genes_correct_start_codon = 0
+    nr_genes_inc = 0
     nr_genes_total = 0
     while True:
-        correct_start_codon_flag = False
-        # Count sequences that have correct start codon.
+        correct_frame_shift_flag = False
+        # Count sequences that have correct start codon or check if
+        # they have "inc" in their name.
         if gp_stream.gene.is_rc and\
-           (gp_stream.seqs[0].data[-3:] == "CAT"):
+           (gp_stream.seqs[0].data[-3:].lower() == "cat"):
             nr_rc_genes_correct_start_codon += 1
-            correct_start_codon_flag = True
+            correct_frame_shift_flag = True
         elif (not gp_stream.gene.is_rc) and\
-             (gp_stream.seqs[0].data[:3] == "ATG"):
+             (gp_stream.seqs[0].data[:3].lower() == "atg"):
             nr_genes_correct_start_codon += 1
-            correct_start_codon_flag = True
+            correct_frame_shift_flag = True
+        if (correct_frame_shift_flag is False) and\
+           gp_stream.gene.name.find("inc") != -1:
+            nr_genes_inc += 1
+            correct_frame_shift_flag = True
         nr_genes_total += 1
         # Orient sequences.
         for s in gp_stream.seqs:
             if s.get_rc() is True:
                 s.rev_comp()
         # Write to CF.
-        if correct_start_codon_flag:
+        if correct_frame_shift_flag:
             for i in range(gp_stream.gene.nr_exons):
                 rg = gp_stream.seqs[i].get_region()
                 cfWr.set_seq(gp_stream.seqs[i])
                 cfWr.write_Rn(rg)
+        else:
+            print("Gene has no start codon and is not flagged incomplete:")
+            print(gp_stream.gene.name)
         try:
             gp_stream.read_next_gene()
         except ValueError:
@@ -1157,4 +1174,6 @@ def write_cf_from_gp_stream(gp_stream, cfWr):
           nr_rc_genes_correct_start_codon)
     print("- genes with correct start codon ATG:",
           nr_genes_correct_start_codon)
+    print("Incomplete genes without start codon:",
+          nr_genes_inc)
     print("Total number of processed genes:", nr_genes_total)
