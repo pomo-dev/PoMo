@@ -603,7 +603,7 @@ class CFWriter():
         compressed and is opened with gzip.open().
 
         """
-        self.outFO = sb.gz_open(self.outFN, mode='w', buffering=1048576)
+        self.outFO = sb.gz_open(self.outFN, mode='w')
 
     def __init_indM(self):
 
@@ -840,6 +840,14 @@ class CFWriter():
             for sI in range(len(iL)):
                 # Check if the reference bases match.
                 vcfRefBase = snpL[sI].get_ref_base().lower()
+                # Thu Jun 9 09:26:55 CEST 2016: Just use first base if
+                # there are more.
+                indel = False
+                if len(vcfRefBase) > 1:
+                    logging.warn("Indel at chrom %s pos %d.", self.chrom,
+                                 self.pos + self.offset)
+                    indel = True
+                    vcfRefBase = vcfRefBase[0]
                 if dna[vcfRefBase] != r:
                     print("Error at NucBase:")
                     snpL[sI].print_info()
@@ -850,6 +858,11 @@ class CFWriter():
                           vcfRefBase, end=".\n")
                     raise sb.SequenceDataError("Reference bases do not match.")
                 altBases = snpL[sI].get_alt_base_list()
+                for altBase in altBases:
+                    if len(altBase) > 1:
+                        indel = True
+                        logging.warn("Indel at chrom %s pos %d.", self.chrom,
+                                     self.pos + self.offset)
                 spData = snpL[sI].get_speciesData()
                 vI = iL[sI]
                 # Loop over individuals.
@@ -858,7 +871,7 @@ class CFWriter():
                     for d in range(0, self.ploidy):
                         if spData[i][d] is None:
                             pass
-                        elif spData[i][d] == 0:
+                        elif indel or spData[i][d] == 0:
                             bI = r
                             update_cD(self.assM[vI][i], bI, delta=1)
                         else:
