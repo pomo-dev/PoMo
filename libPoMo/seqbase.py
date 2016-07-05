@@ -427,7 +427,7 @@ def stripFName(fn):
     return filename_without_path.rsplit('.', maxsplit=1)[0]
 
 
-def gz_open(fn, mode='r', buffering=-1):
+def gz_open(fn, mode='r'):
     """Open file with io.open() or gzip.open().
 
     :param str fn: Name of the file to open.
@@ -435,11 +435,7 @@ def gz_open(fn, mode='r', buffering=-1):
 
     """
     if fn[-2:] == "gz":
-        # Tue Jan 12 12:50:50 CET 2016 Ignore buffering because it
-        # leads to an error.
         fo = gzip.open(fn, mode=mode+'t')
-        # fo = gzip.open(fn, mode=mode+'t', buffering=buffering)
     else:
-        fo = open(fn, mode=mode, buffering=buffering)
-        # fo = open(fn, mode=mode, buffering=buffering)
+        fo = open(fn, mode=mode)
     return fo
