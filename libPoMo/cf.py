@@ -430,6 +430,7 @@ def cf_to_fasta(cfS, outname, consensus=False):
         print('', file=of)
     of.close()
 
+
 class CFWriter():
     """Write a counts format file.
 
