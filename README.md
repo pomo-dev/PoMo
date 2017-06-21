@@ -1,8 +1,9 @@
-If you are interested in PoMo, please also consider using the newer,
-reversible version that is being implemented in
-[IQ-TREE](http://www.cibiv.at/software/iqtree/).  Please check out the
-[PoMo branch](https://github.com/Cibiv/IQ-TREE/tree/PoMo) of the
-GitHub repository.
+If you are interested in PoMo, please also consider using the newer, reversible
+version that is being implemented
+in [IQ-TREE](http://www.cibiv.at/software/iqtree/). Please also check out
+the
+[PoMo development branch](https://github.com/Cibiv/IQ-TREE/tree/pomo_latest/) of
+the GitHub repository.
 
 Schrempf, D., Minh, B. Q., De Maio, N., von Haeseler, A., & Kosiol,
 C. (2015). Reversible Polmorphism-Aware Phylotenetic Models and their
