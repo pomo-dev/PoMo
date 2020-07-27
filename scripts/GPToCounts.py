@@ -1,28 +1,26 @@
 #!/usr/bin/env python
 
-"""Convert multiple sequence alignments to counts format.
+"""Convert gene prediction file with reference to counts format.
 
-This script converts the alignments given in a multiple sequence
-alignment file to counts format.  It uses the SNP data from variant
-call format files.  The SNP data will be merged with the reference
-genome to create a complete sequence that contains SNPs as well as
-unchanged bases (which are also informative for phylogenetic
-analysis).
+EXPERIMENTAL.  This script converts the gene predictions given in a
+gene prediction file together with a reference into to counts format.
+It uses SNP data from variant call format files.  The SNP data will be
+merged with the reference genome to create a complete sequence that
+contains SNPs as well as unchanged bases (which are also informative
+for phylogenetic analysis).
 
 """
 
 import argparse
-import os
 import logging
-import libPoMo.fasta as fa
-import libPoMo.cf as cf  # noqa
+import libPoMo.gp as gp
+import libPoMo.cf as cf
 
-descr = """Convert multiple sequence alignments to counts format.
+descr = """Convert gene prediction file with reference to counts format.
 
-This script converts the alignments given in a multiple sequence
-alignment file to counts format.  It uses the SNP data from bgzipped
-variant call format files that need to be aligned to the reference
-used in the multiple sequence alignment file.  The SNP data will be
+EXPERIMENTAL.  This script converts the gene predictions given in a
+gene prediction file together with a reference into to counts format.
+It uses SNP data from variant call format files.  The SNP data will be
 merged with the reference genome to create a complete sequence that
 contains SNPs as well as unchanged bases (which are also informative
 for phylogenetic analysis).
@@ -36,10 +34,6 @@ In order to correctly match the SNPs to the reference, the chromosome
 names given in the multiple alignment reference (cf. CCDS alignments
 from UCSC) have to match the chromosome names of the VCF file.
 
-The command line argument -m collapses all individuals of all VCF
-files so that they are represented by a single population for each VCF
-file.
-
 The input as well as the output files can additionally be gzipped
 (indicated by a .gz file ending).
 
@@ -49,15 +43,14 @@ parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
     description=descr)
 
+parser.add_argument("gpfile", help="path to gp file")
 parser.add_argument("reference",
                     help="path to (gzipped) multiple sequence alignment file")
 parser.add_argument("VCFFiles", metavar="VCFFileN", nargs='+',
                     help="path to (gzipped) vcf files with SNP information")
 parser.add_argument("output",
                     help="name of (gzipped) outputfile in counts format")
-parser.add_argument("-m", "--merge", action="count",
-                    help="merge individuals within all given VCFFiles")
-parser.add_argument("-s", "--synonymous", action="count",
+parser.add_argument("-s", "--synonymous", action="store_true",
                     help="only print position with a synonymous base")
 parser.add_argument("-v", "--verbose", action="count",
                     help="turn on verbosity (-v or -vv)")
@@ -65,7 +58,8 @@ parser.add_argument("-i", "--one-indiv", action="store_true",
                     help="randomly choose one indivual per population")
 args = parser.parse_args()
 
-MFaRefFN = args.reference
+gp_fn = args.gpfile
+rf_fn = args.reference
 vcfFnL = args.VCFFiles
 output = args.output
 vb = args.verbose
@@ -80,24 +74,14 @@ elif args.verbose == 1:
 elif args.verbose == 2:
     logger.setLevel(logging.DEBUG)
 
-if args.merge is None:
-    cfw = cf.CFWriter(vcfFnL, output, oneIndividual=oneI)
-else:
-    mergeList = []
-    nameList = []
-    for fn in vcfFnL:
-        mergeList.append(True)
-        strippedFn = os.path.basename(fn)
-        nameList.append(strippedFn.split('.', maxsplit=1)[0])
-    cfw = cf.CFWriter(vcfFnL, output, mergeL=mergeList,
-                      nameL=nameList, oneIndividual=oneI)
+cfw = cf.CFWriter(vcfFnL, output, oneIndividual=oneI)
 
-if args.synonymous is not None:
+if args.synonymous is True:
     cfw.onlySynonymous = True
 
-mFaStr = fa.MFaStream(MFaRefFN)
+gp_stream = gp.GPStream(gp_fn, rf_fn)
 
 cfw.write_HLn()
-cf.write_cf_from_MFaStream(mFaStr, cfw)
+cf.write_cf_from_gp_stream(gp_stream, cfw)
 
 cfw.close()

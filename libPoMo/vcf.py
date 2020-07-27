@@ -414,9 +414,11 @@ def get_indiv_from_field_header(ln):
 
     """
     speciesL = []
-    lnList = ln.split('\t', maxsplit=9)
+    lnList = ln.split(maxsplit=9)
+    # lnList = ln.split('\t', maxsplit=9)
     if len(lnList) == 10:
-        speciesL = lnList[9].rstrip().split('\t')
+        # speciesL = lnList[9].rstrip().split('\t')
+        speciesL = lnList[9].rstrip().split()
     else:
         raise NotAVariantCallFormatFileError('No species in header line.')
     return speciesL

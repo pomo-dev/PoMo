@@ -57,11 +57,12 @@ class Region():
     :ivar int end: 0-base end position.
     :ivar str name: Region name.
     """
-    def __init__(self, chrom, start, end, name=None):
+    def __init__(self, chrom, start, end, name=None, orientation="+"):
         self.chrom = chrom
         self.start = start - 1
         self.end = end - 1
         self.name = name
+        self.orientation = orientation
 
     def print_info(self):
         """Print information about the region."""
@@ -86,13 +87,18 @@ class Seq:
 
     """
     def __init__(self):
-        self.name = ''
-        self.descr = ''
-        self.data = ''
+        self.name = None
+        self.descr = None
+        self.data = None
         self.dataLen = 0
         self.rc = False
+        self.gene_is_rc = False
 
         self.__lowered = False
+
+    def set_gene_is_rc_from_descr(self):
+        if self.descr[-1] == "-":
+            self.gene_is_rc = True
 
     def print_fa_header(self, fo=sys.stdout):
         """Print the sequence header line in fasta format.
@@ -164,7 +170,7 @@ class Seq:
         :raises: *ValueError()* if state could not be detected.
 
         """
-
+        self.set_gene_is_rc_from_descr()
         if self.descr[-1] == '-':
             self.rc = True
         elif self.descr[-1] == '+':
@@ -180,13 +186,13 @@ class Seq:
         """
         return self.rc
 
-    def rev_comp(self):
+    def rev_comp(self, change_sequence_only=False):
         """Reverses and complements the sequence.
 
         This is rather slow for long sequences.
 
         """
-        compDict = {'a': 't', 'c': 'g', 'g': 'c', 't': 'a'}
+        compDict = {'a': 't', 'c': 'g', 'g': 'c', 't': 'a', 'n': 'n'}
         self.data = self.data[::-1]
         if self.__lowered is not True:
             self.data = self.data.lower()
@@ -194,12 +200,15 @@ class Seq:
         for i in range(self.dataLen):
             rcData.append(compDict[self.data[i]])
         self.data = ''.join(rcData)
-        if self.descr[-1] == '+':
-            tempDescr = self.descr[:-1] + '-'
-        elif self.descr[-1] == '-':
-            tempDescr = self.descr[:-1] + '+'
-        self.descr = tempDescr
-        self.toggle_rc()
+        # Fri Jan 15 17:39:23 CET 2016: Do not change description
+        # because it is not necessary.
+        # if self.descr[-1] == '+':
+        #     tempDescr = self.descr[:-1] + '-'
+        # elif self.descr[-1] == '-':
+        #     tempDescr = self.descr[:-1] + '+'
+        if change_sequence_only is False:
+            # self.descr = tempDescr
+            self.toggle_rc()
 
     def get_exon_nr(self):
         """Try to find the current and the total exon number of the sequence.
@@ -258,6 +267,34 @@ class Seq:
             raise SequenceDataError("Description format is invalid.")
         return inFrame
 
+    def get_out_frame(self):
+        """Try to find the `outFrame` of the gene.
+
+        `outFrame`: the frame number of the last nucleotide in the
+        exon. Frame numbers can be 0, 1, or 2 depending on what
+        position that nucleotide takes in the codon which contains it.
+        This function gets the `outFrame`, if the description of the
+        sequence is of the form (cf. `UCSC Table Browser
+        <http://genome.ucsc.edu/goldenPath/help/hgTablesHelp.html#FASTA>`_)::
+
+          918 0 0 chr1:58954-59871+
+
+        :rtype: int
+
+        :raises: :class:`SequenceDataError`, if format of description
+          is invalid.
+
+        """
+        descrL = self.descr[:-1].split(maxsplit=3)
+        if len(descrL) >= 3:
+            try:
+                outFrame = int(descrL[2])
+            except ValueError:
+                raise SequenceDataError("Description format is invalid.")
+        else:
+            raise SequenceDataError("Description format is invalid.")
+        return outFrame
+
     def is_synonymous(self, pos):
         """Return True if the base at `pos` is 4-fold degenerate.
 
@@ -277,10 +314,14 @@ class Seq:
           is invalid.
 
         """
+        if self.rc is True:
+            raise ValueError("Reverse complemented sequence.")
+        if self.gene_is_rc is True:
+            return self.__is_synonymous_rc(pos)
         degTriplets = ["tc", "ct", "cc", "cg", "ac", "gt", "gc", "gg"]
         inFr = self.get_in_frame()
         if pos < 2:
-            # Degeneracy can not be determined.
+            # Degeneracy cannot be determined because data is not there.
             return False
         elif (pos + 1 + inFr) % 3 != 0:
             # Position within a Frame is not the third one.
@@ -289,6 +330,27 @@ class Seq:
             triplet = self.data[pos-2:pos+1]
             triplet = triplet.lower()
             if triplet[0:2] in degTriplets:
+                return True
+        return False
+
+    def __is_synonymous_rc(self, pos):
+        """Same as `is_synonymous()` but with data being reverse
+        complemented.
+
+        """
+        if self.rc is True:
+            raise ValueError("Reverse complemented sequence.")
+        # degTriplets = ["tc", "ct", "cc", "cg", "ac", "gt", "gc", "gg"]
+        degTriplets = ["ga", "ag", "gg", "cg", "gt", "ac", "gc", "cc"]
+        if pos > self.dataLen - 3:
+            # Degeneracy cannot be determined because data is not there.
+            return False
+        elif (self.dataLen - pos + self.get_in_frame()) % 3 != 0:
+            return False
+        else:
+            triplet = self.data[pos:pos+3]
+            triplet = triplet.lower()
+            if triplet[1:3] in degTriplets:
                 return True
         return False
 

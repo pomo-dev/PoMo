@@ -245,7 +245,6 @@ class CFStream():
             return self.pos
         else:
             raise ValueError("End of CFStream.")
-            return None
 
     def close(self):
         self.fo.close()
@@ -791,9 +790,9 @@ class CFWriter():
 
         """
         if snpL is not None:
-            logging.info("Next SNP(s):")
+            logging.debug("Next SNP(s):")
             for s in snpL:
-                logging.info(s.get_info())
+                logging.debug(s.get_info())
 
         def get_refBase():
             """Get reference base on *chrom* at *pos*."""
@@ -801,13 +800,18 @@ class CFWriter():
 
         def update_cD(pop, baseI, delta=self.ploidy):
             """Add counts to the countsDictionary cD."""
+            # FIXME: IUPAC code not handled here.  Is this even necessary?
+            if baseI == dna['n']:
+                logging.debug("Reference base is unknown.  Continue.")
+                return
             if pop in range(0, self.nPop):
                 self.cD[pop][baseI] += delta
                 logging.debug("Updating counts dictionary; population %s, "
                               "base index %s.", pop, baseI)
             else:
-                logging.debug("Ignoring data because population index %s is "
-                              "out of range.", pop)
+                logging.info("Ignoring data because population index %s is "
+                             "out of range.", pop)
+                raise ValueError()
 
         self.purge_cD()
 
@@ -934,7 +938,7 @@ class CFWriter():
 
         """
         self.offset = offset
-        logging.info('Offset in CFWriter: %s.', self.offset)
+        logging.debug('Offset in CFWriter: %s.', self.offset)
 
     def write_Ln(self):
         """Write a line in counts format to *self.outFN*."""
@@ -1119,3 +1123,71 @@ def write_cf_from_MFaStream(refMFaStr, cfWr):
         cfWr.write_Rn(rg)
         if refMFaStr.read_next_align() is None:
             break
+
+
+def write_cf_from_gp_stream(gp_stream, cfWr):
+    """Write counts file using a given GP stream with reference and CFWriter.
+
+    Write the counts format file using all genes in the GP stream.
+    The sequences are automatically reversed and complemented if this
+    is needed.
+
+    :param GPStream gp_stream: The GP stream and reference :class:`GPStream
+      <libPoMo.gp.GPStream>`.
+    :param CFWriter cfWf: The :class:`CFWriter` object that contains
+      the VCF files.
+
+    """
+    # Tomas Vigor, the person who created the GP files wrote: The
+    # first codon of the first exon does not need to be the start
+    # codon, because ends may be cut off. BUT, the first exon
+    # should always start on a boundary of a codon (i.e., all
+    # should be in frame, or in other words, parts that were cut
+    # off were always multiple-of-3 length). The gene names in
+    # these genes would usually have "inc" in their names (as
+    # "incomplete"),
+    nr_rc_genes_correct_start_codon = 0
+    nr_genes_correct_start_codon = 0
+    nr_genes_inc = 0
+    nr_genes_total = 0
+    while True:
+        correct_frame_shift_flag = False
+        # Count sequences that have correct start codon or check if
+        # they have "inc" in their name.
+        if gp_stream.gene.is_rc and\
+           (gp_stream.seqs[0].data[-3:].lower() == "cat"):
+            nr_rc_genes_correct_start_codon += 1
+            correct_frame_shift_flag = True
+        elif (not gp_stream.gene.is_rc) and\
+             (gp_stream.seqs[0].data[:3].lower() == "atg"):
+            nr_genes_correct_start_codon += 1
+            correct_frame_shift_flag = True
+        if (correct_frame_shift_flag is False) and\
+           gp_stream.gene.name.find("inc") != -1:
+            nr_genes_inc += 1
+            correct_frame_shift_flag = True
+        nr_genes_total += 1
+        # Orient sequences.
+        for s in gp_stream.seqs:
+            if s.get_rc() is True:
+                s.rev_comp()
+        # Write to CF.
+        if correct_frame_shift_flag:
+            for i in range(gp_stream.gene.nr_exons):
+                rg = gp_stream.seqs[i].get_region()
+                cfWr.set_seq(gp_stream.seqs[i])
+                cfWr.write_Rn(rg)
+        else:
+            print("Gene has no start codon and is not flagged incomplete:")
+            print(gp_stream.gene.name)
+        try:
+            gp_stream.read_next_gene()
+        except ValueError:
+            break
+    print("+ genes with correct start codon ATG:",
+          nr_rc_genes_correct_start_codon)
+    print("- genes with correct start codon ATG:",
+          nr_genes_correct_start_codon)
+    print("Incomplete genes without start codon:",
+          nr_genes_inc)
+    print("Total number of processed genes:", nr_genes_total)

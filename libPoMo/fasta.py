@@ -589,6 +589,7 @@ class FaSeq():
     def __init__(self):
         self.name = ""
         self.seqL = []
+        self.seqD = {}
         self.nSpecies = 0
 
     def print_info(self, maxB=50):
@@ -740,6 +741,9 @@ def open_seq(faFileName, maxskip=50, name=None):
         fastaSeq.nSpecies += 1
     faFile.close()
     test_sequence(fastaSeq)
+
+    for s in fastaSeq.seqL:
+        fastaSeq.seqD[s.name] = s
     return fastaSeq
 
 
