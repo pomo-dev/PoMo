@@ -7,7 +7,7 @@ the [PoMo development branch](https://github.com/Cibiv/IQ-TREE/tree/pomo_latest)
 of the respective GitHub repository.
 
 Further, **the conversion scripts have also moved to a new, separate
-repository:** [counts file library](http://www.iqtree.org/).
+repository:** [counts file library](https://github.com/pomo-dev/cflib).
 
 Schrempf, D., Minh, B. Q., De Maio, N., von Haeseler, A., & Kosiol,
 C. (2015). Reversible Polmorphism-Aware Phylotenetic Models and their
